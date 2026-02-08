@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "532850332803",
+    "project_id": "forge-by-alpfit",
+    "storage_bucket": "forge-by-alpfit.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:532850332803:android:8d38b7e7cf4956d2ed37b6",
+        "android_client_info": {
+          "package_name": "com.example.forge_senior_project_version"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuNfHtNMAwP39w-IOPTAzEj3VFy1d5c2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
