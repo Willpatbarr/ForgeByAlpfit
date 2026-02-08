@@ -1,4 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../app/auth_state.dart';
+import '../../../../core/firebase/firestore_refs.dart';
+import '../../../../services/auth_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,14 +17,16 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  // User profile data
-  String _userName = 'John Doe';
+  // User profile data (loaded from Firestore)
+  String _userName = '';
   String? _contactInfo;
   bool _isEditingProfile = false;
+  bool _profileLoading = true;
+  String? _loadError;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
-  // Dummy friends list
+  // Dummy friends list (unchanged for now)
   final List<Map<String, dynamic>> _friends = [
     {'name': 'Alex Smith', 'avatar': null},
     {'name': 'Jordan Taylor', 'avatar': null},
@@ -27,7 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
     {'name': 'Taylor Davis', 'avatar': null},
   ];
 
-  // Dummy gym communities
+  // Dummy gym communities (unchanged for now)
   final List<Map<String, dynamic>> _joinedGyms = [
     {'name': 'BYU-I Fitness Center', 'avatar': null},
     {'name': 'Rexburg Gym', 'avatar': null},
@@ -36,8 +44,54 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _nameController.text = _userName;
-    _contactController.text = _contactInfo ?? '';
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _profileLoading = false;
+        _userName = 'Guest';
+      });
+      _nameController.text = _userName;
+      return;
+    }
+    try {
+      final doc = await FirestoreRefs.userDoc(user.uid).get();
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        final name = data['displayName'] as String? ?? user.displayName ?? user.email ?? 'User';
+        final contact = data['contactInfo'] as String?;
+        setState(() {
+          _userName = name;
+          _contactInfo = contact;
+          _profileLoading = false;
+        });
+        _nameController.text = _userName;
+        _contactController.text = contact ?? '';
+      } else {
+        setState(() {
+          _userName = user.displayName ?? user.email ?? 'User';
+          _profileLoading = false;
+        });
+        _nameController.text = _userName;
+        _contactController.text = _contactInfo ?? '';
+      }
+    } catch (e) {
+      setState(() {
+        _loadError = e.toString();
+        _userName = user.displayName ?? user.email ?? 'User';
+        _profileLoading = false;
+      });
+      _nameController.text = _userName;
+    }
+  }
+
+  Future<void> _logout() async {
+    await AuthService().signOut();
+    AuthStateNotifier.instance.notifyListeners();
+    if (mounted) context.go('/login');
   }
 
   @override
@@ -166,21 +220,27 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
                     if (_isEditingProfile) {
-                      // Save changes
+                      final name = _nameController.text.trim();
+                      final contact = _contactController.text.trim();
                       setState(() {
-                        _userName = _nameController.text;
-                        _contactInfo = _contactController.text.isEmpty
-                            ? null
-                            : _contactController.text;
+                        _userName = name.isEmpty ? _userName : name;
+                        _contactInfo = contact.isEmpty ? null : contact;
                         _isEditingProfile = false;
                       });
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      if (uid != null) {
+                        try {
+                          await FirestoreRefs.userDoc(uid).set({
+                            'displayName': _userName,
+                            'contactInfo': _contactInfo,
+                            'updatedAt': FieldValue.serverTimestamp(),
+                          }, SetOptions(merge: true));
+                        } catch (_) {}
+                      }
                     } else {
-                      // Start editing
-                      setState(() {
-                        _isEditingProfile = true;
-                      });
+                      setState(() => _isEditingProfile = true);
                     }
                   },
                   child: Icon(
@@ -196,8 +256,21 @@ class _ProfilePageState extends State<ProfilePage> {
           // Body
           Padding(
             padding: const EdgeInsets.all(24),
-            child: Column(
+            child: _profileLoading
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : Column(
               children: [
+                if (_loadError != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Text(
+                      'Could not load profile',
+                      style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                    ),
+                  ),
                 // Profile photo
                 GestureDetector(
                   onTap: _isEditingProfile ? _changeProfilePhoto : null,
@@ -255,6 +328,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   enabled: _isEditingProfile,
                   icon: Icons.phone_outlined,
                   isOptional: true,
+                ),
+                // Log out button
+                const SizedBox(height: 24),
+                OutlinedButton.icon(
+                  onPressed: _logout,
+                  icon: const Icon(Icons.logout, size: 20),
+                  label: const Text('Log out'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red.shade700,
+                    side: BorderSide(color: Colors.red.shade300),
+                  ),
                 ),
               ],
             ),
