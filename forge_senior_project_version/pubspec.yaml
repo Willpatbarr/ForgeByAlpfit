@@ -18,6 +18,9 @@ dependencies:
   # Routing
   go_router: ^14.0.0
 
+  # Fonts
+  google_fonts: ^6.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -26,3 +29,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - images/forgeIcon.png
+    - images/forgeWordmarkWhite.png

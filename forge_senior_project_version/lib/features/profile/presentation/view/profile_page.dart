@@ -2,9 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/app_header.dart';
 import '../../../../app/auth_state.dart';
 import '../../../../core/firebase/firestore_refs.dart';
 import '../../../../services/auth_service.dart';
+import '../../../../services/friends_service.dart';
+import '../../../../services/gyms_service.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,20 +29,11 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
-  // Dummy friends list (unchanged for now)
-  final List<Map<String, dynamic>> _friends = [
-    {'name': 'Alex Smith', 'avatar': null},
-    {'name': 'Jordan Taylor', 'avatar': null},
-    {'name': 'Sam Johnson', 'avatar': null},
-    {'name': 'Riley Brown', 'avatar': null},
-    {'name': 'Taylor Davis', 'avatar': null},
-  ];
+  // Friends list loaded from Firestore (current user's friendIds → friend profiles)
+  List<Map<String, dynamic>> _friends = [];
 
-  // Dummy gym communities (unchanged for now)
-  final List<Map<String, dynamic>> _joinedGyms = [
-    {'name': 'BYU-I Fitness Center', 'avatar': null},
-    {'name': 'Rexburg Gym', 'avatar': null},
-  ];
+  // Joined gyms loaded from Firestore (current user's joinedGymIds → gym profiles)
+  List<Map<String, dynamic>> _joinedGyms = [];
 
   @override
   void initState() {
@@ -70,6 +64,8 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         _nameController.text = _userName;
         _contactController.text = contact ?? '';
+        await _loadFriends(data['friendIds'] as List<dynamic>?);
+        await _loadGyms(data['joinedGymIds'] as List<dynamic>?);
       } else {
         setState(() {
           _userName = user.displayName ?? user.email ?? 'User';
@@ -77,6 +73,8 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         _nameController.text = _userName;
         _contactController.text = _contactInfo ?? '';
+        await _loadFriends(null);
+        await _loadGyms(null);
       }
     } catch (e) {
       setState(() {
@@ -85,7 +83,57 @@ class _ProfilePageState extends State<ProfilePage> {
         _profileLoading = false;
       });
       _nameController.text = _userName;
+      await _loadFriends(null);
+      await _loadGyms(null);
     }
+  }
+
+  Future<void> _loadFriends(List<dynamic>? friendIds) async {
+    if (friendIds == null || friendIds.isEmpty) {
+      setState(() => _friends = []);
+      return;
+    }
+    final list = <Map<String, dynamic>>[];
+    for (final id in friendIds) {
+      final uid = id is String ? id : id.toString();
+      if (uid.isEmpty) continue;
+      try {
+        final doc = await FirestoreRefs.userDoc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          final d = doc.data()!;
+          list.add({
+            'uid': uid,
+            'name': d['displayName'] as String? ?? 'Unknown',
+            'avatar': d['avatarUrl'] as String?,
+          });
+        }
+      } catch (_) {}
+    }
+    setState(() => _friends = list);
+  }
+
+  Future<void> _loadGyms(List<dynamic>? joinedGymIds) async {
+    if (joinedGymIds == null || joinedGymIds.isEmpty) {
+      setState(() => _joinedGyms = []);
+      return;
+    }
+    final list = <Map<String, dynamic>>[];
+    for (final id in joinedGymIds) {
+      final uid = id is String ? id : id.toString();
+      if (uid.isEmpty) continue;
+      try {
+        final doc = await FirestoreRefs.userDoc(uid).get();
+        if (doc.exists && doc.data() != null) {
+          final d = doc.data()!;
+          list.add({
+            'uid': uid,
+            'name': d['displayName'] as String? ?? 'Unknown',
+            'avatar': d['avatarUrl'] as String?,
+          });
+        }
+      } catch (_) {}
+    }
+    setState(() => _joinedGyms = list);
   }
 
   Future<void> _logout() async {
@@ -109,7 +157,7 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           children: [
             // Header
-            _buildHeader(),
+            const AppHeader(),
 
             // Main content
             Expanded(
@@ -132,50 +180,6 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: ProfilePage.forgeBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Forge flame icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'FORGE',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 4,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.grey,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -234,6 +238,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         try {
                           await FirestoreRefs.userDoc(uid).set({
                             'displayName': _userName,
+                            'displayNameLower': _userName.toLowerCase(),
                             'contactInfo': _contactInfo,
                             'updatedAt': FieldValue.serverTimestamp(),
                           }, SetOptions(merge: true));
@@ -542,10 +547,19 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           // Remove button
           GestureDetector(
-            onTap: () {
-              setState(() {
-                _friends.remove(friend);
-              });
+            onTap: () async {
+              final uid = friend['uid'] as String?;
+              if (uid == null) return;
+              try {
+                await removeFriend(uid);
+                final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                List<dynamic>? ids;
+                if (currentUid != null) {
+                  final doc = await FirestoreRefs.userDoc(currentUid).get();
+                  ids = doc.data()?['friendIds'] as List<dynamic>?;
+                }
+                await _loadFriends(ids);
+              } catch (_) {}
             },
             child: Container(
               padding: const EdgeInsets.all(8),
@@ -684,10 +698,19 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           // Leave button
           GestureDetector(
-            onTap: () {
-              setState(() {
-                _joinedGyms.remove(gym);
-              });
+            onTap: () async {
+              final uid = gym['uid'] as String?;
+              if (uid == null) return;
+              try {
+                await removeGym(uid);
+                final currentUid = FirebaseAuth.instance.currentUser?.uid;
+                List<dynamic>? ids;
+                if (currentUid != null) {
+                  final doc = await FirestoreRefs.userDoc(currentUid).get();
+                  ids = doc.data()?['joinedGymIds'] as List<dynamic>?;
+                }
+                await _loadGyms(ids);
+              } catch (_) {}
             },
             child: Container(
               padding: const EdgeInsets.all(8),

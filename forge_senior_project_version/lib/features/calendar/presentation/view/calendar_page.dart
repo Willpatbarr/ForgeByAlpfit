@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../app/app_header.dart';
 
 enum CalendarView { day, multi, month }
 
@@ -122,7 +123,35 @@ class _CalendarPageState extends State<CalendarPage> {
             Column(
               children: [
                 // Header
-                _buildHeader(),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppHeader(
+                      leading: GestureDetector(
+                        onTap: () {
+                          setState(() => _showFilterPopup = !_showFilterPopup);
+                        },
+                        child: const Icon(
+                          Icons.more_vert,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // View tabs
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildViewTab('Day', CalendarView.day),
+                        const SizedBox(width: 16),
+                        _buildViewTab('Multi', CalendarView.multi),
+                        const SizedBox(width: 16),
+                        _buildViewTab('Month', CalendarView.month),
+                      ],
+                    ),
+                  ],
+                ),
 
                 // Main content
                 Expanded(
@@ -138,80 +167,6 @@ class _CalendarPageState extends State<CalendarPage> {
             if (_selectedEvent != null) _buildEventDetailOverlay(),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: CalendarPage.forgeBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Three dots menu
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _showFilterPopup = !_showFilterPopup;
-                  });
-                },
-                child: const Icon(
-                  Icons.more_vert,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Forge flame icon
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'FORGE',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 4,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // View tabs
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildViewTab('Day', CalendarView.day),
-              const SizedBox(width: 16),
-              _buildViewTab('Multi', CalendarView.multi),
-              const SizedBox(width: 16),
-              _buildViewTab('Month', CalendarView.month),
-            ],
-          ),
-        ],
       ),
     );
   }

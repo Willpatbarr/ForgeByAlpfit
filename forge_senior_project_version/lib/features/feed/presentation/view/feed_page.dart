@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../app/app_header.dart';
 
 enum FeedLayout { base, schedule, updates }
 
@@ -103,7 +104,7 @@ class _FeedPageState extends State<FeedPage> {
         child: Column(
           children: [
             // ---------- TOP HEADER BAR ----------
-            _buildHeader(),
+            const AppHeader(),
 
             // ---------- MAIN CONTENT ----------
             Expanded(
@@ -111,50 +112,6 @@ class _FeedPageState extends State<FeedPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: FeedPage.forgeBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Forge flame icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'FORGE',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 4,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.grey,
-            ),
-          ),
-        ],
       ),
     );
   }

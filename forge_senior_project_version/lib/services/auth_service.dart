@@ -44,13 +44,17 @@ class AuthService {
 
     await user.updateDisplayName(displayName.trim());
 
+    final name = displayName.trim();
     final ref = FirestoreRefs.userDoc(user.uid);
     await ref.set({
       'uid': user.uid,
       'email': user.email,
-      'displayName': displayName.trim(),
+      'displayName': name,
+      'displayNameLower': name.toLowerCase(),
       'accountType': accountType.name,
       'contactInfo': null,
+      'friendIds': <String>[],
+      'joinedGymIds': <String>[],
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     });

@@ -1,1 +1,55 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"forge-by-alpfit","appId":"1:532850332803:android:8d38b7e7cf4956d2ed37b6","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"forge-by-alpfit","appId":"1:532850332803:ios:24a1529a55f66e4ded37b6","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"forge-by-alpfit","appId":"1:532850332803:ios:24a1529a55f66e4ded37b6","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"forge-by-alpfit","configurations":{"android":"1:532850332803:android:8d38b7e7cf4956d2ed37b6","ios":"1:532850332803:ios:24a1529a55f66e4ded37b6","macos":"1:532850332803:ios:24a1529a55f66e4ded37b6","web":"1:532850332803:web:b45248241d0f8c7fed37b6","windows":"1:532850332803:web:dd826ceea76d267ced37b6"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "forge-by-alpfit",
+          "appId": "1:532850332803:android:8d38b7e7cf4956d2ed37b6",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "forge-by-alpfit",
+          "appId": "1:532850332803:ios:24a1529a55f66e4ded37b6",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "forge-by-alpfit",
+          "appId": "1:532850332803:ios:24a1529a55f66e4ded37b6",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "forge-by-alpfit",
+          "configurations": {
+            "android": "1:532850332803:android:8d38b7e7cf4956d2ed37b6",
+            "ios": "1:532850332803:ios:24a1529a55f66e4ded37b6",
+            "macos": "1:532850332803:ios:24a1529a55f66e4ded37b6",
+            "web": "1:532850332803:web:b45248241d0f8c7fed37b6",
+            "windows": "1:532850332803:web:dd826ceea76d267ced37b6"
+          }
+        }
+      }
+    }
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}

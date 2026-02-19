@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../app/app_header.dart';
 
 enum EventType { basic, workout }
 
@@ -99,7 +100,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         child: Column(
           children: [
             // Header
-            _buildHeader(),
+            const AppHeader(),
 
             // Main content
             Expanded(
@@ -126,50 +127,6 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         onPressed: _showEventTypeDialog,
         backgroundColor: EventCreatorPage.forgeBlue,
         child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: EventCreatorPage.forgeBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Forge flame icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'FORGE',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 4,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.grey,
-            ),
-          ),
-        ],
       ),
     );
   }

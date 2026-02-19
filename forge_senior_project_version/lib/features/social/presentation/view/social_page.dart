@@ -1,4 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../app/app_header.dart';
+import '../../../../services/friends_service.dart';
+import '../../../../services/gyms_service.dart';
+import '../../../../services/search_service.dart';
 
 enum SocialTab { messages, friends, gyms, search }
 
@@ -72,16 +77,56 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     },
   ];
 
-  final List<Map<String, dynamic>> _searchResults = [];
+  List<Map<String, dynamic>> _searchResults = [];
+  final TextEditingController _searchController = TextEditingController();
+  SearchFilter _searchFilter = SearchFilter.all;
+  bool _searchLoading = false;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 350), _runSearch);
+  }
+
+  Future<void> _runSearch() async {
+    final query = _searchController.text.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _searchResults = [];
+        _searchLoading = false;
+      });
+      return;
+    }
+    setState(() => _searchLoading = true);
+    try {
+      final results = await searchUsersAndGyms(
+        query: query,
+        filter: _searchFilter,
+      );
+      if (mounted) setState(() {
+        _searchResults = results;
+        _searchLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _searchResults = [];
+        _searchLoading = false;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -94,7 +139,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
         child: Column(
           children: [
             // Header
-            _buildHeader(),
+            const AppHeader(),
 
             // Tabs
             _buildTabs(),
@@ -113,50 +158,6 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      color: SocialPage.forgeBlue,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          // Forge flame icon
-          Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'FORGE',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 4,
-              color: Colors.white,
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: 38,
-            height: 38,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: Colors.grey,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -492,10 +493,25 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
           padding: const EdgeInsets.all(16),
           color: Colors.white,
           child: TextField(
+            controller: _searchController,
             decoration: InputDecoration(
               hintText: 'Search for users or gyms...',
               prefixIcon: const Icon(Icons.search),
-              suffixIcon: _buildSearchFilters(),
+              suffixIcon: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_searchLoading)
+                    const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  _buildSearchFilters(),
+                ],
+              ),
               filled: true,
               fillColor: Colors.grey.withValues(alpha: 0.1),
               border: OutlineInputBorder(
@@ -511,54 +527,56 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
               fontFamily: 'Poppins',
               fontSize: 16,
             ),
-            onChanged: (value) {
-              // TODO: Implement search
-            },
           ),
         ),
         // Search results
         Expanded(
-          child: _searchResults.isEmpty
-              ? const Center(
-                  child: Text(
-                    'Search for users or gyms',
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      color: Colors.black54,
+          child: _searchLoading && _searchResults.isEmpty
+              ? const Center(child: CircularProgressIndicator())
+              : _searchResults.isEmpty
+                  ? Center(
+                      child: Text(
+                        _searchController.text.trim().isEmpty
+                            ? 'Search for users or gyms'
+                            : 'No results',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _searchResults.length,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemBuilder: (context, index) {
+                        final result = _searchResults[index];
+                        return _buildSearchResultItem(result);
+                      },
                     ),
-                  ),
-                )
-              : ListView.builder(
-                  itemCount: _searchResults.length,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemBuilder: (context, index) {
-                    final result = _searchResults[index];
-                    return _buildSearchResultItem(result);
-                  },
-                ),
         ),
       ],
     );
   }
 
   Widget _buildSearchFilters() {
-    return PopupMenuButton<String>(
+    return PopupMenuButton<SearchFilter>(
       icon: const Icon(Icons.filter_list),
       onSelected: (value) {
-        // TODO: Implement filter
+        setState(() => _searchFilter = value);
+        _runSearch();
       },
       itemBuilder: (context) => [
         const PopupMenuItem(
-          value: 'all',
+          value: SearchFilter.all,
           child: Text('All'),
         ),
         const PopupMenuItem(
-          value: 'users',
+          value: SearchFilter.users,
           child: Text('Users Only'),
         ),
         const PopupMenuItem(
-          value: 'gyms',
+          value: SearchFilter.gyms,
           child: Text('Gyms Only'),
         ),
       ],
@@ -615,9 +633,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             // Action button
             if (isGym)
               ElevatedButton(
-                onPressed: () {
-                  // TODO: Join gym or view community
-                },
+                onPressed: () => _addGym(context, result['uid'] as String?, result['name'] as String?),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: SocialPage.forgeBlue,
                   padding: const EdgeInsets.symmetric(
@@ -626,7 +642,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                   ),
                 ),
                 child: const Text(
-                  'View',
+                  'Join',
                   style: TextStyle(
                     fontFamily: 'Poppins',
                     fontSize: 14,
@@ -636,9 +652,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
               )
             else
               IconButton(
-                onPressed: () {
-                  // TODO: Add friend
-                },
+                onPressed: () => _addFriend(context, result['uid'] as String?, result['name'] as String?),
                 icon: const Icon(Icons.person_add, color: SocialPage.forgeBlue),
               ),
           ],
@@ -647,6 +661,42 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     );
   }
 
+
+  Future<void> _addFriend(BuildContext context, String? friendUid, String? friendName) async {
+    if (friendUid == null || friendUid.isEmpty) return;
+    try {
+      await addFriend(friendUid);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${friendName ?? 'User'} added as friend')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not add friend: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _addGym(BuildContext context, String? gymUid, String? gymName) async {
+    if (gymUid == null || gymUid.isEmpty) return;
+    try {
+      await addGym(gymUid);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Joined ${gymName ?? 'gym'}')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not join gym: $e')),
+        );
+      }
+    }
+  }
 
   void _showProfilePage(Map<String, dynamic> profile, {required bool isGym}) {
     Navigator.push(
@@ -746,8 +796,23 @@ class _ProfileViewPage extends StatelessWidget {
                   if (!isGym) ...[
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Add friend or message
+                        onPressed: () async {
+                          final uid = profile['uid'] as String?;
+                          if (uid == null) return;
+                          try {
+                            await addFriend(uid);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('${profile['name'] ?? 'User'} added as friend')),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Could not add friend: $e')),
+                              );
+                            }
+                          }
                         },
                         icon: const Icon(Icons.person_add),
                         label: const Text('Add Friend'),
