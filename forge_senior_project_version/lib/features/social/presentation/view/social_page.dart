@@ -1,11 +1,14 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
+import '../../../../core/firebase/firestore_refs.dart';
 import '../../../../services/friends_service.dart';
 import '../../../../services/gyms_service.dart';
 import '../../../../services/search_service.dart';
+import 'channel_page.dart';
 
-enum SocialTab { messages, friends, gyms, search }
+enum SocialTab { messages, friends, gyms, channels, search }
 
 class SocialPage extends StatefulWidget {
   const SocialPage({super.key});
@@ -62,20 +65,9 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     {'name': 'Taylor Davis', 'avatar': null, 'mutualFriends': 4},
   ];
 
-  final List<Map<String, dynamic>> _joinedGyms = [
-    {
-      'name': 'BYU-I Fitness Center',
-      'avatar': null,
-      'members': 1250,
-      'channels': ['General', 'Announcements', 'Workouts'],
-    },
-    {
-      'name': 'Rexburg Gym',
-      'avatar': null,
-      'members': 450,
-      'channels': ['General', 'Events'],
-    },
-  ];
+  // Joined gyms loaded from Firestore (uid, name, avatar, channels, members)
+  List<Map<String, dynamic>> _joinedGyms = [];
+  bool _joinedGymsLoading = true;
 
   List<Map<String, dynamic>> _searchResults = [];
   final TextEditingController _searchController = TextEditingController();
@@ -83,11 +75,105 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   bool _searchLoading = false;
   Timer? _searchDebounce;
 
+  // Gym-only: account type and channel management
+  bool? _isGym;
+  List<String> _gymChannels = [];
+  bool _channelsLoading = false;
+  final TextEditingController _newChannelController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _searchController.addListener(_onSearchChanged);
+    _loadAccountTypeAndChannels();
+  }
+
+  Future<void> _loadAccountTypeAndChannels() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isGym = false);
+      return;
+    }
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final accountType = doc.data()?['accountType'] as String?;
+      final isGym = accountType == 'gym';
+      if (mounted) setState(() => _isGym = isGym);
+      if (isGym) await _loadChannels();
+    } catch (_) {
+      if (mounted) setState(() => _isGym = false);
+    }
+    await _loadJoinedGyms();
+  }
+
+  Future<void> _loadJoinedGyms() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() {
+        _joinedGyms = [];
+        _joinedGymsLoading = false;
+      });
+      return;
+    }
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final joinedGymIds = doc.data()?['joinedGymIds'] as List<dynamic>?;
+      if (joinedGymIds == null || joinedGymIds.isEmpty) {
+        if (mounted) setState(() {
+          _joinedGyms = [];
+          _joinedGymsLoading = false;
+        });
+        return;
+      }
+      final list = <Map<String, dynamic>>[];
+      for (final id in joinedGymIds) {
+        final gymUid = id is String ? id : id.toString();
+        if (gymUid.isEmpty) continue;
+        try {
+          final gymDoc = await FirestoreRefs.userDoc(gymUid).get();
+          if (gymDoc.exists && gymDoc.data() != null) {
+            final d = gymDoc.data()!;
+            final channelNames = d['channelNames'] as List<dynamic>?;
+            final memberIds = d['memberUserIds'] as List<dynamic>?;
+            list.add({
+              'uid': gymUid,
+              'name': d['displayName'] as String? ?? 'Unknown',
+              'avatar': d['avatarUrl'] as String?,
+              'channels': channelNames?.map((e) => e.toString()).toList() ?? [],
+              'members': memberIds?.length ?? 0,
+            });
+          }
+        } catch (_) {}
+      }
+      if (mounted) setState(() {
+        _joinedGyms = list;
+        _joinedGymsLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _joinedGyms = [];
+        _joinedGymsLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadChannels() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    if (mounted) setState(() => _channelsLoading = true);
+    try {
+      final list = await getGymChannels(uid);
+      if (mounted) setState(() {
+        _gymChannels = list;
+        _channelsLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() {
+        _gymChannels = [];
+        _channelsLoading = false;
+      });
+    }
   }
 
   void _onSearchChanged() {
@@ -127,6 +213,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _newChannelController.dispose();
     _tabController.dispose();
     super.dispose();
   }
@@ -152,6 +239,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                   _buildMessagesTab(),
                   _buildFriendsTab(),
                   _buildGymsTab(),
+                  _buildChannelsTab(),
                   _buildSearchTab(),
                 ],
               ),
@@ -184,6 +272,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
           Tab(text: 'Messages'),
           Tab(text: 'Friends'),
           Tab(text: 'Gyms'),
+          Tab(text: 'Channels'),
           Tab(text: 'Search'),
         ],
       ),
@@ -389,6 +478,42 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   }
 
   Widget _buildGymsTab() {
+    if (_joinedGymsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_joinedGyms.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.fitness_center, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              Text(
+                'No gyms yet',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey.shade700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Search for a gym and tap to join. It will show up here.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _joinedGyms.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -468,7 +593,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${(gym['channels'] as List).length} channels',
+                    '${(gym['channels'] as List?)?.length ?? 0} channels',
                     style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 12,
@@ -481,6 +606,222 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildChannelsTab() {
+    if (_isGym != true) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(
+            'Channel management is for gym accounts. Sign in as a gym to add and manage your social channels.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              color: Colors.grey.shade700,
+            ),
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: [
+        // Add channel button
+        Container(
+          padding: const EdgeInsets.all(16),
+          color: Colors.white,
+          child: SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _channelsLoading ? null : _showAddChannelDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Add channel'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: SocialPage.forgeBlue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: _channelsLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _gymChannels.isEmpty
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'No channels yet. Tap "Add channel" to create one (e.g. General, Announcements, Workouts).',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: _gymChannels.length,
+                      itemBuilder: (context, index) {
+                        final name = _gymChannels[index];
+                        return _buildChannelItem(name);
+                      },
+                    ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddChannelDialog() {
+    _newChannelController.clear();
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add channel'),
+        content: TextField(
+          controller: _newChannelController,
+          decoration: const InputDecoration(
+            hintText: 'Channel name (e.g. General, Announcements)',
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+          onSubmitted: (_) => _submitAddChannel(context),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => _submitAddChannel(context),
+            child: const Text('Add'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submitAddChannel(BuildContext dialogContext) async {
+    final name = _newChannelController.text.trim();
+    if (name.isEmpty) return;
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    Navigator.pop(dialogContext);
+    try {
+      await addGymChannel(uid, name);
+      await _loadChannels();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Channel "$name" added')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not add channel: $e')),
+        );
+      }
+    }
+  }
+
+  void _openChannel(String channelName) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => ChannelPage(
+          gymUid: uid,
+          channelName: channelName,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChannelItem(String channelName) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => _openChannel(channelName),
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  children: [
+                    Icon(Icons.tag, color: SocialPage.forgeBlue, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        channelName,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              final uid = FirebaseAuth.instance.currentUser?.uid;
+              if (uid == null) return;
+              try {
+                await removeGymChannel(uid, channelName);
+                await _loadChannels();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Channel "$channelName" removed')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not remove channel: $e')),
+                  );
+                }
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.close, size: 20, color: Colors.red),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -688,6 +1029,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Joined ${gymName ?? 'gym'}')),
         );
+        await _loadJoinedGyms();
       }
     } catch (e) {
       if (context.mounted) {
@@ -860,28 +1202,31 @@ class _GymCommunityPage extends StatefulWidget {
 }
 
 class _GymCommunityPageState extends State<_GymCommunityPage> {
-  String _selectedChannel = 'General';
+  String? _selectedChannel;
 
-  // Dummy posts
-  final List<Map<String, dynamic>> _posts = [
-    {
-      'author': 'BYU-I Fitness Center',
-      'content': 'New yoga class starting next week! Sign up now.',
-      'time': '2h ago',
-      'likes': 45,
-      'comments': 12,
-    },
-    {
-      'author': 'BYU-I Fitness Center',
-      'content': 'Reminder: Pool maintenance this weekend. Pool will be closed Saturday.',
-      'time': '1d ago',
-      'likes': 23,
-      'comments': 5,
-    },
-  ];
+  List<String> get _channels {
+    final raw = widget.gym['channels'] as List?;
+    if (raw == null || raw.isEmpty) return [];
+    return raw.map((e) => e.toString()).toList();
+  }
+
+  void _openChannel(String channelName) {
+    final gymUid = widget.gym['uid'] as String?;
+    if (gymUid == null) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (context) => ChannelPage(
+          gymUid: gymUid,
+          channelName: channelName,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final channels = _channels;
     return Scaffold(
       backgroundColor: SocialPage.background,
       body: SafeArea(
@@ -915,29 +1260,34 @@ class _GymCommunityPageState extends State<_GymCommunityPage> {
                         const Divider(color: Colors.white24, height: 1),
                         // Channels
                         Expanded(
-                          child: ListView(
-                            children: (widget.gym['channels'] as List<String>).map((channel) {
-                              final isSelected = channel == _selectedChannel;
-                              return GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedChannel = channel;
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  color: isSelected
-                                      ? SocialPage.forgeBlue.withValues(alpha: 0.3)
-                                      : Colors.transparent,
-                                  child: Icon(
-                                    Icons.tag,
-                                    color: isSelected ? Colors.white : Colors.white70,
-                                    size: 24,
+                          child: channels.isEmpty
+                              ? Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Text(
+                                      'No channels',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
                                   ),
+                                )
+                              : ListView(
+                                  children: channels.map((channel) {
+                                    return GestureDetector(
+                                      onTap: () => _openChannel(channel),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Icon(
+                                          Icons.tag,
+                                          color: Colors.white70,
+                                          size: 24,
+                                        ),
+                                      ),
+                                    );
+                                  }).toList(),
                                 ),
-                              );
-                            }).toList(),
-                          ),
                         ),
                       ],
                     ),
@@ -999,36 +1349,79 @@ class _GymCommunityPageState extends State<_GymCommunityPage> {
                             ],
                           ),
                         ),
-                        // Channel name
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          color: Colors.white,
-                          child: Row(
-                            children: [
-                              const Icon(Icons.tag, size: 16, color: Colors.black54),
-                              const SizedBox(width: 8),
-                              Text(
-                                _selectedChannel,
-                                style: const TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(height: 1),
-                        // Feed
+                        // Prompt and channel list
                         Expanded(
-                          child: ListView.builder(
+                          child: SingleChildScrollView(
                             padding: const EdgeInsets.all(16),
-                            itemCount: _posts.length,
-                            itemBuilder: (context, index) {
-                              final post = _posts[index];
-                              return _buildPostCard(post);
-                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const SizedBox(height: 24),
+                                Icon(
+                                  Icons.chat_bubble_outline,
+                                  size: 48,
+                                  color: Colors.grey.shade400,
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Tap a channel on the left to view and join the conversation.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                if (channels.isNotEmpty) ...[
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'Channels',
+                                    style: TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.grey.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...channels.map((channel) => Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: Material(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: InkWell(
+                                            onTap: () => _openChannel(channel),
+                                            borderRadius: BorderRadius.circular(12),
+                                            child: Padding(
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 16, vertical: 14),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.tag,
+                                                      size: 20,
+                                                      color: SocialPage.forgeBlue),
+                                                  const SizedBox(width: 12),
+                                                  Text(
+                                                    channel,
+                                                    style: const TextStyle(
+                                                      fontFamily: 'Poppins',
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w500,
+                                                      color: Colors.black87,
+                                                    ),
+                                                  ),
+                                                  const Spacer(),
+                                                  const Icon(Icons.chevron_right,
+                                                      color: Colors.grey),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )),
+                                ],
+                              ],
+                            ),
                           ),
                         ),
                       ],

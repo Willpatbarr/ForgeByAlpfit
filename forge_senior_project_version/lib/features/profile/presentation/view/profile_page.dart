@@ -35,6 +35,10 @@ class _ProfilePageState extends State<ProfilePage> {
   // Joined gyms loaded from Firestore (current user's joinedGymIds → gym profiles)
   List<Map<String, dynamic>> _joinedGyms = [];
 
+  // For gym accounts: whether current user is a gym, and list of members (users who added this gym)
+  String? _accountType;
+  List<Map<String, dynamic>> _members = [];
+
   @override
   void initState() {
     super.initState();
@@ -57,18 +61,25 @@ class _ProfilePageState extends State<ProfilePage> {
         final data = doc.data()!;
         final name = data['displayName'] as String? ?? user.displayName ?? user.email ?? 'User';
         final contact = data['contactInfo'] as String?;
+        final accountType = data['accountType'] as String?;
         setState(() {
           _userName = name;
           _contactInfo = contact;
+          _accountType = accountType;
           _profileLoading = false;
         });
         _nameController.text = _userName;
         _contactController.text = contact ?? '';
         await _loadFriends(data['friendIds'] as List<dynamic>?);
-        await _loadGyms(data['joinedGymIds'] as List<dynamic>?);
+        if (accountType == 'gym') {
+          await _loadMembers();
+        } else {
+          await _loadGyms(data['joinedGymIds'] as List<dynamic>?);
+        }
       } else {
         setState(() {
           _userName = user.displayName ?? user.email ?? 'User';
+          _accountType = null;
           _profileLoading = false;
         });
         _nameController.text = _userName;
@@ -80,6 +91,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _loadError = e.toString();
         _userName = user.displayName ?? user.email ?? 'User';
+        _accountType = null;
         _profileLoading = false;
       });
       _nameController.text = _userName;
@@ -136,6 +148,20 @@ class _ProfilePageState extends State<ProfilePage> {
     setState(() => _joinedGyms = list);
   }
 
+  Future<void> _loadMembers() async {
+    final gymUid = FirebaseAuth.instance.currentUser?.uid;
+    if (gymUid == null) {
+      setState(() => _members = []);
+      return;
+    }
+    try {
+      final list = await getGymMemberProfiles(gymUid);
+      setState(() => _members = list);
+    } catch (_) {
+      setState(() => _members = []);
+    }
+  }
+
   Future<void> _logout() async {
     await AuthService().signOut();
     AuthStateNotifier.instance.notifyListeners();
@@ -171,8 +197,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     // Friends section
                     _buildFriendsSection(),
                     const SizedBox(height: 24),
-                    // Gym communities section
-                    _buildGymCommunitiesSection(),
+                    // For gyms: Members (users who added this gym). For regular users: Joined gym communities.
+                    if (_accountType == 'gym')
+                      _buildMembersSection()
+                    else
+                      _buildGymCommunitiesSection(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -569,6 +598,153 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               child: const Icon(
                 Icons.close,
+                size: 18,
+                color: Colors.red,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMembersSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: ProfilePage.forgeBlue,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Members',
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  '${_members.length}',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 16,
+                    color: Colors.white70,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: _members.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Text(
+                      'No members yet. Users who add your gym will appear here.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  )
+                : Column(
+                    children: _members.map((member) => _buildMemberItem(member)).toList(),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMemberItem(Map<String, dynamic> member) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: Colors.grey.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: member['avatar'] != null
+                ? ClipOval(
+                    child: Image.network(
+                      member['avatar'] as String,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : const Icon(
+                    Icons.person,
+                    color: Colors.grey,
+                  ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              member['name'] as String,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              final uid = member['uid'] as String?;
+              if (uid == null) return;
+              try {
+                await removeMemberFromGym(uid);
+                await _loadMembers();
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${member['name'] ?? 'Member'} removed')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Could not remove member: $e')),
+                  );
+                }
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.person_remove,
                 size: 18,
                 color: Colors.red,
               ),

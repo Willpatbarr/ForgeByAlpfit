@@ -35,6 +35,11 @@ service cloud.firestore {
       allow delete: if false;
     }
     
+    // User's events subcollection: Users can only read/write their own events
+    match /users/{userId}/events/{eventId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     // User preferences collection: Users can only read/write their own preferences
     match /user_preferences/{userId} {
       // Users can read their own preferences

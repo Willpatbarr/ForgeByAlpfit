@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:forge_senior_project_version/core/constants/app_text_styles.dart';
 import '../../../../app/app_header.dart';
 
 enum FeedLayout { base, schedule, updates }
@@ -153,14 +154,10 @@ class _FeedPageState extends State<FeedPage> {
                   ),
                 ],
               ),
-              child: const Text(
+              child: Text(
                 'Wednesday',
-                style: TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 22,
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.title
+                    .copyWith(fontSize: 24, fontWeight: AppTextStyles.lightWeight, color: Colors.white),
               ),
             ),
           ),
@@ -297,20 +294,16 @@ class _FeedPageState extends State<FeedPage> {
                 title: 'Cardio',
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(
+                  children: [
+                    const Icon(
                       Icons.directions_run,
                       size: 64,
                       color: Colors.orangeAccent,
                     ),
-                    SizedBox(height: 8),
+                    const SizedBox(height: 8),
                     Text(
                       'Workout of the day',
-                      style: TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                        color: Colors.white,
-                      ),
+                      style: AppTextStyles.bodySmallWithColor(Colors.white),
                     ),
                   ],
                 ),
@@ -342,11 +335,7 @@ class _FeedPageState extends State<FeedPage> {
                             child: Text(
                               name,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
+                              style: AppTextStyles.bodySmallWithColor(Colors.white),
                             ),
                           ),
                         ],
@@ -658,11 +647,7 @@ class _ScheduleTimeline extends StatelessWidget {
                             width: 60,
                             child: Text(
                               hour,
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 12,
-                                color: Colors.white70,
-                              ),
+                              style: AppTextStyles.captionWithColor(Colors.white70),
                             ),
                           ),
                           Expanded(
@@ -717,10 +702,8 @@ class _ScheduleTimeline extends StatelessWidget {
                                 children: [
                                   Text(
                                     event['title'] as String,
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      fontWeight: AppTextStyles.semiBoldWeight,
                                       color: Colors.white,
                                     ),
                                     maxLines: 1,
@@ -728,11 +711,7 @@ class _ScheduleTimeline extends StatelessWidget {
                                   ),
                                   Text(
                                     '${event['start']} - ${event['end']}',
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 12,
-                                      color: Colors.white70,
-                                    ),
+                                    style: AppTextStyles.captionWithColor(Colors.white70),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -756,10 +735,9 @@ class _ScheduleTimeline extends StatelessWidget {
                                       event['hasInvite'] == true
                                           ? '+ Invite'
                                           : '+ Attend',
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w600,
+                                      style: AppTextStyles.caption.copyWith(
+                                        fontSize: AppTextStyles.labelSmallSize,
+                                        fontWeight: AppTextStyles.semiBoldWeight,
                                         color: Colors.black87,
                                       ),
                                     ),
@@ -805,12 +783,7 @@ class _CollapsedCard extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTextStyles.subtitleWithColor(Colors.white),
             ),
             const Spacer(),
             const Icon(
@@ -866,11 +839,9 @@ class _UpdateCard extends StatelessWidget {
             ),
             child: Text(
               source,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
+              style: AppTextStyles.subtitle.copyWith(
+                fontWeight: AppTextStyles.semiBoldWeight,
                 color: Colors.white,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -891,11 +862,7 @@ class _UpdateCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           text,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
+                          style: AppTextStyles.bodySmall,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -915,11 +882,7 @@ class _UpdateCard extends StatelessWidget {
                   )
                 : Text(
                     text,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
+                    style: AppTextStyles.bodySmallWithColor(Colors.white),
                   ),
           ),
         ],
@@ -966,12 +929,7 @@ class _FeedSectionCard extends StatelessWidget {
             ),
             child: Text(
               title,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
+              style: AppTextStyles.subtitleWithColor(Colors.white),
             ),
           ),
 
@@ -1015,11 +973,7 @@ class _GoalRow extends StatelessWidget {
         Expanded(
           child: Text(
             '$label $current/$target',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              color: Colors.white,
-            ),
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
           ),
         ),
         const SizedBox(width: 12),
@@ -1073,10 +1027,8 @@ class _GoalProgressRing extends StatelessWidget {
           // number in center
           Text(
             '$current',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: AppTextStyles.semiBoldWeight,
               color: Colors.white,
             ),
           ),
@@ -1122,11 +1074,9 @@ class _UpdatesBar extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
+              style: AppTextStyles.bodySmall.copyWith(
+                fontWeight: AppTextStyles.mediumWeight,
                 color: Colors.black87,
-                fontWeight: FontWeight.w500,
               ),
             ),
           ),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
+import '../../../../core/constants/app_text_styles.dart';
+import '../../../../services/events_service.dart';
 
 enum CalendarView { day, multi, month }
 
@@ -17,8 +19,12 @@ class _CalendarPageState extends State<CalendarPage> {
   CalendarView _currentView = CalendarView.day;
   bool _showFilterPopup = false;
   Map<String, dynamic>? _selectedEvent;
-  DateTime _currentDate = DateTime(2025, 11, 11); // Tuesday, Nov 11th, 2025
-  DateTime _monthViewDate = DateTime(2025, 11, 1); // November 2025
+  DateTime _currentDate = DateTime.now();
+  DateTime _monthViewDate = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
 
   // Filter states
   final Map<String, bool> _filterStates = {
@@ -34,84 +40,6 @@ class _CalendarPageState extends State<CalendarPage> {
     'Ethan': Colors.blue,
     'Gym 1': Colors.green,
   };
-
-  // Dummy events data
-  static final List<Map<String, dynamic>> _dummyEvents = [
-    {
-      'id': '1',
-      'title': 'Push Day pt 1',
-      'start': DateTime(2025, 11, 11, 9, 0),
-      'end': DateTime(2025, 11, 11, 10, 30),
-      'color': Colors.orange,
-      'owner': 'You',
-      'hasInvite': true,
-      'location': 'BYU-I Fitness Center',
-      'attendees': ['John Whatsit', 'Derek Whatsit'],
-      'exercises': [
-        {'name': 'Flat Barbell Bench Press', 'sets': '4 X 8', 'weight': '75 lbs'}
-      ],
-      'notes': '',
-      'privacy': 'Friends Only',
-    },
-    {
-      'id': '2',
-      'title': 'Lunch',
-      'start': DateTime(2025, 11, 11, 11, 0),
-      'end': DateTime(2025, 11, 11, 12, 0),
-      'color': Colors.yellow,
-      'owner': 'You',
-      'hasInvite': false,
-    },
-    {
-      'id': '3',
-      'title': 'Push Day',
-      'start': DateTime(2025, 11, 11, 12, 0),
-      'end': DateTime(2025, 11, 11, 13, 30),
-      'color': Colors.blue,
-      'owner': 'Ethan Whatsit',
-      'hasAttend': true,
-      'location': 'BYU-I Fitness Center',
-      'attendees': ['John Whatsit', 'Derek Whatsit'],
-      'exercises': [
-        {'name': 'Flat Barbell Bench Press', 'sets': '4 X 8', 'weight': '75 lbs'}
-      ],
-      'notes': '',
-      'privacy': 'Friends Only',
-    },
-    {
-      'id': '4',
-      'title': 'Push Day pt 2',
-      'start': DateTime(2025, 11, 11, 14, 0),
-      'end': DateTime(2025, 11, 11, 15, 30),
-      'color': Colors.orange,
-      'owner': 'You',
-      'hasInvite': true,
-    },
-  ];
-
-  // Recurring events for multi-day view
-  List<Map<String, dynamic>> _getRecurringEvents() {
-    return [
-      {
-        'title': 'Push Day pt 1',
-        'time': '9:00 AM - 10:30 AM',
-        'color': Colors.orange,
-        'owner': 'You',
-      },
-      {
-        'title': 'Push Day',
-        'time': '12:00 PM - 1:30 PM',
-        'color': Colors.blue,
-        'owner': 'Ethan',
-      },
-      {
-        'title': 'Push Day pt 2',
-        'time': '2:00 PM - 3:30 PM',
-        'color': Colors.orange,
-        'owner': 'You',
-      },
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -187,11 +115,10 @@ class _CalendarPageState extends State<CalendarPage> {
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 16,
+          style: AppTextStyles.bodyWithColor(
+            isSelected ? CalendarPage.forgeBlue : Colors.black87,
+          ).copyWith(
             fontWeight: FontWeight.w600,
-            color: isSelected ? CalendarPage.forgeBlue : Colors.white70,
           ),
         ),
       ),
@@ -211,38 +138,93 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Widget _buildDayView() {
     final dateStr = _formatDate(_currentDate);
-    final eventsForDay = _getEventsForDate(_currentDate);
 
     return Column(
       children: [
         // Date header
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            dateStr,
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _currentDate = _currentDate.subtract(const Duration(days: 1));
+                  });
+                },
+              ),
+              Text(
+                dateStr,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _currentDate = _currentDate.add(const Duration(days: 1));
+                  });
+                },
+              ),
+            ],
           ),
         ),
 
-        // Timeline
+        // Timeline (streams events from Firestore for this day)
         Expanded(
-          child: _buildDayTimeline(eventsForDay),
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: getEventsForDayStream(_currentDate),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Could not load events',
+                    style: AppTextStyles.bodySmallWithColor(Colors.black54),
+                  ),
+                );
+              }
+              final eventsForDay = snapshot.data ?? [];
+              return _buildDayTimeline(eventsForDay);
+            },
+          ),
         ),
-
-        // Reminders section
-        _buildRemindersSection(),
       ],
     );
+  }
+
+  /// For each event, returns (columnIndex, totalColumns) so overlapping events
+  /// are placed side by side. Events overlap when startA < endB && endA > startB.
+  List<(int, int)> _eventColumns(List<Map<String, dynamic>> events) {
+    if (events.isEmpty) return [];
+    final starts = events.map((e) => (e['start'] as DateTime).millisecondsSinceEpoch).toList();
+    final ends = events.map((e) => (e['end'] as DateTime).millisecondsSinceEpoch).toList();
+    final result = <(int, int)>[];
+    for (int i = 0; i < events.length; i++) {
+      final overlapping = <int>[];
+      for (int j = 0; j < events.length; j++) {
+        if (starts[j] < ends[i] && ends[j] > starts[i]) overlapping.add(j);
+      }
+      overlapping.sort((a, b) => starts[a].compareTo(starts[b]));
+      final columnIndex = overlapping.indexOf(i);
+      result.add((columnIndex, overlapping.length));
+    }
+    return result;
   }
 
   Widget _buildDayTimeline(List<Map<String, dynamic>> events) {
     final hours = _generateHours();
     final hourHeight = 80.0;
+    final columns = _eventColumns(events);
+    const timeLabelWidth = 100.0;
+    const rightMargin = 16.0;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -257,135 +239,384 @@ class _CalendarPageState extends State<CalendarPage> {
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        child: Stack(
-          children: [
-            // Time markers
-            Column(
-              children: hours.map((hour) {
-                return Container(
-                  height: hourHeight,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 80,
-                        child: Text(
-                          hour,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Colors.white70,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final availableWidth = constraints.maxWidth - timeLabelWidth - rightMargin;
+          return SingleChildScrollView(
+            child: Stack(
+              children: [
+                // Time markers
+                Column(
+                  children: hours.map((hour) {
+                    return Container(
+                      height: hourHeight,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 80,
+                            child: Text(
+                              hour,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                color: Colors.white70,
+                              ),
+                            ),
                           ),
-                        ),
+                          Expanded(
+                            child: Container(
+                              height: 1,
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                          ),
+                        ],
                       ),
-                      Expanded(
-                        child: Container(
-                          height: 1,
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-            ),
-            // Events
-            ...events.map((event) {
-              final start = event['start'] as DateTime;
-              final end = event['end'] as DateTime;
-              final startHour = start.hour + start.minute / 60.0;
-              final endHour = end.hour + end.minute / 60.0;
-              final top = (startHour - 4) * hourHeight;
-              final height = (endHour - startHour) * hourHeight;
+                    );
+                  }).toList(),
+                ),
+                // Events (side by side when overlapping)
+                ...events.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final event = entry.value;
+                  final start = event['start'] as DateTime;
+                  final end = event['end'] as DateTime;
+                  final startHour = start.hour + start.minute / 60.0;
+                  final endHour = end.hour + end.minute / 60.0;
+                  final top = (startHour - 4) * hourHeight;
+                  final height = (endHour - startHour) * hourHeight;
+                  final (columnIndex, totalColumns) = columns[index];
+                  final eventWidth = availableWidth / totalColumns;
+                  final left = timeLabelWidth + columnIndex * eventWidth;
 
-              return Positioned(
-                left: 100,
-                right: 16,
-                top: top,
-                height: height,
-                child: GestureDetector(
+                  return Positioned(
+                    left: left,
+                    width: eventWidth - 2,
+                    top: top,
+                    height: height,
+                    child: GestureDetector(
                   onTap: () {
                     setState(() {
                       _selectedEvent = event;
                     });
                   },
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: event['color'] as Color,
+                  child: SizedBox(
+                    height: height,
+                    child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          event['title'] as String,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: event['color'] as Color,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        const SizedBox(height: 4),
-                        if (event['hasInvite'] == true || event['hasAttend'] == true)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Title: full (2 lines) when card is tall enough; 1 line only on very short cards
+                            Text(
+                              event['title'] as String,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(
-                                event['hasInvite'] == true ? '+ Invite' : '+ Attend',
-                                style: const TextStyle(
+                              maxLines: height >= 70 ? 2 : 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            // Time: only when there's space left under the title (don't sacrifice title space)
+                            if (height >= 90) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '${_formatTime(start)} – ${_formatTime(end)}',
+                                style: TextStyle(
                                   fontFamily: 'Poppins',
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.black87,
+                                  fontSize: 11,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          const SizedBox(height: 4),
+                          if (event['hasInvite'] == true || event['hasAttend'] == true)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  event['hasInvite'] == true ? '+ Invite' : '+ Attend',
+                                  style: const TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.black87,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                      ],
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              );
+                  ),
+                );
             }).toList(),
           ],
         ),
+      );
+        },
       ),
     );
   }
 
+  /// Events for the 4-day multi view: list of events, grouped by day index 0..3.
+  List<List<Map<String, dynamic>>> _eventsByDay(List<Map<String, dynamic>> rangeEvents) {
+    final start = _currentDate;
+    final byDay = <List<Map<String, dynamic>>>[
+      [],
+      [],
+      [],
+      [],
+    ];
+    for (final event in rangeEvents) {
+      final d = event['start'] as DateTime;
+      for (int i = 0; i < 4; i++) {
+        final dayDate = start.add(Duration(days: i));
+        if (d.year == dayDate.year && d.month == dayDate.month && d.day == dayDate.day) {
+          byDay[i].add(event);
+          break;
+        }
+      }
+    }
+    return byDay;
+  }
+
   Widget _buildMultiView() {
     final days = _getMultiViewDays();
-    final recurringEvents = _getRecurringEvents();
+    final rangeEnd = _currentDate.add(const Duration(days: 3));
 
     return Column(
       children: [
         // Date range header
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(
-            'Nov 1st - 4th',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _currentDate = _currentDate.subtract(const Duration(days: 1));
+                  });
+                },
+              ),
+              Text(
+                '${_formatDate(_currentDate)} - ${_formatDate(rangeEnd)}',
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _currentDate = _currentDate.add(const Duration(days: 1));
+                  });
+                },
+              ),
+            ],
           ),
         ),
 
-        // Multi-day grid
+        // Multi-day grid (events from Firestore)
+        Expanded(
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: getEventsForDateRangeStream(_currentDate, rangeEnd),
+            builder: (context, snapshot) {
+              final rangeEvents = snapshot.data ?? [];
+              final byDay = _eventsByDay(rangeEvents);
+
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF333333),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: days.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final day = entry.value;
+                    final date = day['date'] as DateTime;
+                    final isCurrentDay =
+                        date.year == _currentDate.year &&
+                        date.month == _currentDate.month &&
+                        date.day == _currentDate.day;
+                    final dayEvents = byDay[index];
+
+                    return Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: isCurrentDay
+                              ? Colors.white.withValues(alpha: 0.06)
+                              : Colors.transparent,
+                          border: Border(
+                            right: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              day['label'] as String,
+                              style: const TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ...dayEvents.map((event) {
+                              final start = event['start'] as DateTime;
+                              final end = event['end'] as DateTime;
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() => _selectedEvent = event);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: event['color'] as Color,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          event['title'] as String,
+                                          style: const TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.white,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${_formatTime(start)} – ${_formatTime(end)}',
+                                          style: TextStyle(
+                                            fontFamily: 'Poppins',
+                                            fontSize: 10,
+                                            color: Colors.white.withValues(alpha: 0.9),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMonthView() {
+    return Column(
+      children: [
+        // Month header
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.chevron_left),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _monthViewDate = DateTime(
+                      _monthViewDate.year,
+                      _monthViewDate.month - 1,
+                      1,
+                    );
+                    _currentDate = _monthViewDate;
+                  });
+                },
+              ),
+              Text(
+                _getMonthName(_monthViewDate),
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right),
+                color: Colors.black87,
+                onPressed: () {
+                  setState(() {
+                    _monthViewDate = DateTime(
+                      _monthViewDate.year,
+                      _monthViewDate.month + 1,
+                      1,
+                    );
+                    _currentDate = _monthViewDate;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+
+        // Calendar grid (full height, events from Firestore)
         Expanded(
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -400,131 +631,42 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
               ],
             ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: days.map((day) {
-                  return Container(
-                    width: 120,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(
-                          color: Colors.white.withValues(alpha: 0.1),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          day['label'] as String,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        ...recurringEvents.map((event) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: event['color'] as Color,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    event['title'] as String,
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    event['time'] as String,
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 10,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ],
-                    ),
-                  );
-                }).toList(),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: getEventsForDateRangeStream(
+                DateTime(_monthViewDate.year, _monthViewDate.month, 1),
+                DateTime(_monthViewDate.year, _monthViewDate.month + 1, 0),
               ),
+              builder: (context, snapshot) {
+                final monthEvents = snapshot.data ?? [];
+                final eventsByDay = _eventsForMonthMap(monthEvents);
+                return _buildCalendarGrid(eventsByDay);
+              },
             ),
           ),
         ),
-
-        // Reminders section
-        _buildRemindersSection(),
       ],
     );
   }
 
-  Widget _buildMonthView() {
-    return Column(
-      children: [
-        // Month header
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: Text(
-            'November',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-
-        // Calendar grid
-        Expanded(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: const [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 8,
-                  offset: Offset(0, 4),
-                ),
-              ],
-            ),
-            child: _buildCalendarGrid(),
-          ),
-        ),
-
-        // Reminders section
-        _buildRemindersSection(),
-      ],
-    );
+  /// Map day-of-month (1–31) to events for that day in the visible month.
+  Map<int, List<Map<String, dynamic>>> _eventsForMonthMap(
+    List<Map<String, dynamic>> monthEvents,
+  ) {
+    final map = <int, List<Map<String, dynamic>>>{};
+    for (final event in monthEvents) {
+      final d = event['start'] as DateTime;
+      if (d.month != _monthViewDate.month || d.year != _monthViewDate.year) continue;
+      map.putIfAbsent(d.day, () => []).add(event);
+    }
+    return map;
   }
 
-  Widget _buildCalendarGrid() {
+  Widget _buildCalendarGrid(Map<int, List<Map<String, dynamic>>> eventsByDay) {
     final firstDay = DateTime(_monthViewDate.year, _monthViewDate.month, 1);
     final lastDay = DateTime(_monthViewDate.year, _monthViewDate.month + 1, 0);
     final firstWeekday = firstDay.weekday % 7; // 0 = Sunday, 6 = Saturday
+    const rowCount = 6; // 6 weeks so grid fills height
+    const colCount = 7;
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -541,7 +683,7 @@ class _CalendarPageState extends State<CalendarPage> {
                             fontFamily: 'Poppins',
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.black54,
+                            color: Colors.white70,
                           ),
                         ),
                       ),
@@ -549,102 +691,87 @@ class _CalendarPageState extends State<CalendarPage> {
                 .toList(),
           ),
           const SizedBox(height: 8),
-          // Calendar days
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 7,
-                childAspectRatio: 1,
-                mainAxisSpacing: 4,
-                crossAxisSpacing: 4,
-              ),
-              itemCount: 35, // 5 weeks
-              itemBuilder: (context, index) {
-                final day = index - firstWeekday + 1;
-                if (day < 1 || day > lastDay.day) {
-                  return const SizedBox.shrink();
-                }
+          // Calendar days: 6 rows filling full height, each day shows number + event titles
+          ...List.generate(rowCount, (row) {
+            return Expanded(
+              child: Row(
+                children: List.generate(colCount, (col) {
+                  final index = row * colCount + col;
+                  final day = index - firstWeekday + 1;
+                  if (day < 1 || day > lastDay.day) {
+                    return Expanded(child: const SizedBox.shrink());
+                  }
 
-                final date = DateTime(_monthViewDate.year, _monthViewDate.month, day);
-                final eventsForDay = _getEventsForDate(date);
+                  final date = DateTime(_monthViewDate.year, _monthViewDate.month, day);
+                  final eventsForDay = eventsByDay[day] ?? [];
+                  final isCurrentDay =
+                      date.year == _currentDate.year &&
+                      date.month == _currentDate.month &&
+                      date.day == _currentDate.day;
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _currentDate = date;
-                      _currentView = CalendarView.day;
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            '$day',
-                            style: TextStyle(
-                              fontFamily: 'Poppins',
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: day == _currentDate.day &&
-                                      _monthViewDate.month == _currentDate.month
-                                  ? CalendarPage.forgeBlue
-                                  : Colors.black87,
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _currentDate = date;
+                            _currentView = CalendarView.day;
+                          });
+                        },
+                        child: SizedBox.expand(
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: isCurrentDay
+                                  ? Colors.white.withValues(alpha: 0.10)
+                                  : Colors.white.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                              Text(
+                                '$day',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isCurrentDay
+                                      ? CalendarPage.forgeBlue
+                                      : Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              // Event titles only
+                              ...eventsForDay.take(3).map((event) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 2),
+                                  child: Text(
+                                    event['title'] as String? ?? '',
+                                    style: const TextStyle(
+                                      fontFamily: 'Poppins',
+                                      fontSize: 10,
+                                      color: Colors.white70,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                );
+                              }),
+                            ],
                             ),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        // Event indicators
-                        ...eventsForDay.take(2).map((event) {
-                          return Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                            height: 3,
-                            decoration: BoxDecoration(
-                              color: event['color'] as Color,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          );
-                        }).toList(),
-                      ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
+                  );
+                }),
+              ),
+            );
+          }),
         ],
-      ),
-    );
-  }
-
-  Widget _buildRemindersSection() {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF333333),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: const Text(
-        'Reminders',
-        style: TextStyle(
-          fontFamily: 'Poppins',
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
       ),
     );
   }
@@ -1034,21 +1161,29 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   List<Map<String, dynamic>> _getMultiViewDays() {
-    return [
-      {'label': 'S'},
-      {'label': 'M'},
-      {'label': 'T'},
-      {'label': 'W'},
+    final start = _currentDate;
+    const shortWeekdays = [
+      'Mon',
+      'Tue',
+      'Wed',
+      'Thu',
+      'Fri',
+      'Sat',
+      'Sun',
     ];
+
+    return List.generate(4, (index) {
+      final date = start.add(Duration(days: index));
+      final weekdayLabel = shortWeekdays[date.weekday - 1];
+      return {
+        'label': '$weekdayLabel ${date.day}',
+        'date': date,
+      };
+    });
   }
 
   List<Map<String, dynamic>> _getEventsForDate(DateTime date) {
-    return _dummyEvents.where((event) {
-      final eventDate = event['start'] as DateTime;
-      return eventDate.year == date.year &&
-          eventDate.month == date.month &&
-          eventDate.day == date.day;
-    }).toList();
+    return [];
   }
 
   String _formatDate(DateTime date) {
@@ -1080,5 +1215,23 @@ class _CalendarPageState extends State<CalendarPage> {
       default:
         return 'th';
     }
+  }
+
+  String _getMonthName(DateTime date) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    return months[date.month - 1];
   }
 }

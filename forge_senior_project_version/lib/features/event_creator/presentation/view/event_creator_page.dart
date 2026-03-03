@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../app/app_header.dart';
+import '../../../../services/events_service.dart';
+import '../../../../core/firebase/firestore_refs.dart';
 
 enum EventType { basic, workout }
 
@@ -29,17 +33,18 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   TimeOfDay? _startTime;
   DateTime? _endDate;
   TimeOfDay? _endTime;
-  List<String> _selectedFriends = [];
+  List<String> _selectedFriends = []; // display names
+  List<String> _selectedFriendIds = [];
   List<Map<String, dynamic>> _exercises = [];
+  bool _isCreating = false;
 
-  // Dummy data
-  final List<String> _availableFriends = [
-    'Alex Smith',
-    'Jordan Taylor',
-    'Sam Johnson',
-    'Riley Brown',
-    'Taylor Davis',
-  ];
+  // Location (gym) selection
+  List<Map<String, String>> _joinedGyms = [];
+  String? _selectedGymId;
+  String? _selectedGymName;
+
+  // Friends selection
+  List<Map<String, String>> _friends = [];
 
   final List<Map<String, dynamic>> _premadeWorkouts = [
     {
@@ -80,6 +85,13 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
       'type': 'workout',
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJoinedGyms();
+    _loadFriends();
+  }
 
   @override
   void dispose() {
@@ -374,7 +386,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   void _showEventTypeDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -390,6 +402,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildEventTypeOption(
+              dialogContext,
               'Basic Event',
               'Create a simple event with friends',
               Icons.event,
@@ -397,6 +410,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
             ),
             const SizedBox(height: 16),
             _buildEventTypeOption(
+              dialogContext,
               'Workout Event',
               'Create a workout with exercises',
               Icons.fitness_center,
@@ -409,6 +423,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   }
 
   Widget _buildEventTypeOption(
+    BuildContext dialogContext,
     String title,
     String subtitle,
     IconData icon,
@@ -416,9 +431,12 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   ) {
     return GestureDetector(
       onTap: () {
-        Navigator.pop(context);
+        Navigator.of(dialogContext).pop();
         _selectedEventType = type;
-        _showEventForm();
+        // Delay until dialog is fully closed to avoid overlay stack issues
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _showEventForm();
+        });
       },
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -472,24 +490,35 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   }
 
   void _showEventForm() {
+    // Set sensible default times when opening the form
+    final now = DateTime.now();
+    final endDefault = now.add(const Duration(hours: 1));
+    setState(() {
+      _startDate ??= now;
+      _startTime ??= TimeOfDay.fromDateTime(now);
+      _endDate ??= endDefault;
+      _endTime ??= TimeOfDay.fromDateTime(endDefault);
+    });
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
-        maxChildSize: 0.95,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: EventCreatorPage.background,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+      builder: (context) {
+        final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+        final maxHeight = MediaQuery.of(context).size.height * 0.9;
+        return SizedBox(
+          height: maxHeight,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: EventCreatorPage.background,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
             ),
-          ),
-          child: Column(
-            children: [
+            child: Column(
+              children: [
               // Handle bar
               Container(
                 margin: const EdgeInsets.symmetric(vertical: 12),
@@ -524,53 +553,58 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                   ],
                 ),
               ),
-              // Form content
+              // Form content (StatefulBuilder so date/time changes rebuild the sheet)
               Expanded(
-                child: SingleChildScrollView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Title field
-                      _buildTextField(
-                        controller: _titleController,
-                        label: 'Event Title',
-                        icon: Icons.title,
-                      ),
-                      const SizedBox(height: 16),
+                child: StatefulBuilder(
+                  builder: (context, setModalState) {
+                    return SingleChildScrollView(
+                      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Title field
+                          _buildTextField(
+                            controller: _titleController,
+                            label: 'Event Title',
+                            icon: Icons.title,
+                          ),
+                          const SizedBox(height: 16),
 
-                      // Invite friends button
-                      _buildInviteFriendsButton(),
-                      const SizedBox(height: 16),
+                          // Location field
+                          _buildLocationField(setModalState),
+                          const SizedBox(height: 16),
 
-                      // Public/Private toggle
-                      _buildPrivacyToggle(),
-                      const SizedBox(height: 16),
+                          // Invite friends
+                          _buildInviteFriendsField(setModalState),
+                          const SizedBox(height: 16),
 
-                      // Start date/time
-                      _buildDateTimeField(
-                        label: 'Start Date & Time',
-                        date: _startDate,
-                        time: _startTime,
-                        onDateTap: () => _selectDate(true),
-                        onTimeTap: () => _selectTime(true),
-                      ),
-                      const SizedBox(height: 16),
+                          // Public/Private toggle
+                          _buildPrivacyToggle(),
+                          const SizedBox(height: 16),
 
-                      // End date/time
-                      _buildDateTimeField(
-                        label: 'End Date & Time',
-                        date: _endDate,
-                        time: _endTime,
-                        onDateTap: () => _selectDate(false),
-                        onTimeTap: () => _selectTime(false),
-                      ),
+                          // Start date/time
+                          _buildDateTimeField(
+                            label: 'Start Date & Time',
+                            date: _startDate,
+                            time: _startTime,
+                            onDateTap: () => _selectDate(true, onUpdated: () => setModalState(() {})),
+                            onTimeTap: () => _selectTime(true, onUpdated: () => setModalState(() {})),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // End date/time
+                          _buildDateTimeField(
+                            label: 'End Date & Time',
+                            date: _endDate,
+                            time: _endTime,
+                            onDateTap: () => _selectDate(false, onUpdated: () => setModalState(() {})),
+                            onTimeTap: () => _selectTime(false, onUpdated: () => setModalState(() {})),
+                          ),
                       const SizedBox(height: 16),
 
                       // Exercises section (only for workout events)
                       if (_selectedEventType == EventType.workout) ...[
-                        _buildExercisesSection(),
+                        _buildExercisesSection(onUpdated: () => setModalState(() {})),
                         const SizedBox(height: 16),
                       ],
 
@@ -583,34 +617,37 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Create button
-                      ElevatedButton(
-                        onPressed: _createEvent,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: EventCreatorPage.forgeBlue,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                          // Create button
+                          ElevatedButton(
+                            onPressed: _createEvent,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: EventCreatorPage.forgeBlue,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Create Event',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Create Event',
-                          style: TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
           ),
         ),
-      ),
+      );
+    },
     );
   }
 
@@ -671,15 +708,17 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
-  Widget _buildInviteFriendsButton() {
+  Widget _buildInviteFriendsField(void Function(void Function()) setModalState) {
+    final hasFriends = _friends.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          children: [
-            const Icon(Icons.group, size: 20, color: Colors.black54),
-            const SizedBox(width: 8),
-            const Text(
+          children: const [
+            Icon(Icons.group, size: 20, color: Colors.black54),
+            SizedBox(width: 8),
+            Text(
               'Invite Friends',
               style: TextStyle(
                 fontFamily: 'Poppins',
@@ -691,37 +730,105 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           ],
         ),
         const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _showFriendsSelectionDialog,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
+        DropdownButtonFormField<String>(
+          value: null,
+          items: _friends
+              .map(
+                (friend) => DropdownMenuItem<String>(
+                  value: friend['uid'],
+                  child: Text(
+                    friend['name'] ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: hasFriends
+              ? (value) {
+                  if (value == null) return;
+                  final idx = _selectedFriendIds.indexOf(value);
+                  setState(() {
+                    if (idx >= 0) {
+                      _selectedFriendIds.removeAt(idx);
+                      _selectedFriends.removeAt(idx);
+                    } else {
+                      final friend = _friends.firstWhere(
+                        (f) => f['uid'] == value,
+                        orElse: () => {'uid': value, 'name': 'Unknown'},
+                      );
+                      _selectedFriendIds.add(friend['uid'] ?? value);
+                      _selectedFriends.add(friend['name'] ?? 'Unknown');
+                    }
+                  });
+                  setModalState(() {});
+                }
+              : null,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            hintText: hasFriends
+                ? 'Select friends to invite'
+                : 'No friends to invite yet',
+            hintStyle: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              color: Colors.black54,
+            ),
+            border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
+              borderSide: BorderSide(
                 color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
               ),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _selectedFriends.isEmpty
-                      ? 'Select friends to invite'
-                      : '${_selectedFriends.length} friend${_selectedFriends.length == 1 ? '' : 's'} selected',
-                  style: TextStyle(
-                    fontFamily: 'Poppins',
-                    fontSize: 16,
-                    color: _selectedFriends.isEmpty
-                        ? Colors.black54
-                        : Colors.black87,
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.black54),
-              ],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
+              ),
             ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue,
+                width: 2,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
+        const SizedBox(height: 8),
+        if (_selectedFriends.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children: _selectedFriends
+                .asMap()
+                .entries
+                .map(
+                  (entry) => Chip(
+                    label: Text(
+                      entry.value,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 12,
+                      ),
+                    ),
+                    onDeleted: () {
+                      setState(() {
+                        _selectedFriends.removeAt(entry.key);
+                        _selectedFriendIds.removeAt(entry.key);
+                      });
+                      setModalState(() {});
+                    },
+                  ),
+                )
+                .toList(),
+          ),
       ],
     );
   }
@@ -847,7 +954,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
-  Widget _buildExercisesSection() {
+  Widget _buildExercisesSection({VoidCallback? onUpdated}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -871,12 +978,12 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         ..._exercises.asMap().entries.map((entry) {
           final index = entry.key;
           final exercise = entry.value;
-          return _buildExerciseCard(exercise, index);
-        }).toList(),
+          return _buildExerciseCard(exercise, index, onUpdated: onUpdated);
+        }),
         const SizedBox(height: 8),
         // Add exercise button
         ElevatedButton.icon(
-          onPressed: _showAddExerciseDialog,
+          onPressed: () => _showAddExerciseDialog(onUpdated: onUpdated),
           icon: const Icon(Icons.add),
           label: const Text('Add Exercise'),
           style: ElevatedButton.styleFrom(
@@ -892,7 +999,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
-  Widget _buildExerciseCard(Map<String, dynamic> exercise, int index) {
+  Widget _buildExerciseCard(Map<String, dynamic> exercise, int index, {VoidCallback? onUpdated}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -923,6 +1030,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                   setState(() {
                     _exercises.removeAt(index);
                   });
+                  onUpdated?.call();
                 },
                 icon: const Icon(Icons.delete, color: Colors.red, size: 20),
               ),
@@ -961,74 +1069,8 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
-  void _showFriendsSelectionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        title: const Text(
-          'Select Friends',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: StatefulBuilder(
-            builder: (context, setDialogState) {
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: _availableFriends.length,
-                itemBuilder: (context, index) {
-                  final friend = _availableFriends[index];
-                  final isSelected = _selectedFriends.contains(friend);
-                  return CheckboxListTile(
-                    title: Text(
-                      friend,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 16,
-                      ),
-                    ),
-                    value: isSelected,
-                    onChanged: (value) {
-                      setDialogState(() {
-                        if (value == true) {
-                          _selectedFriends.add(friend);
-                        } else {
-                          _selectedFriends.remove(friend);
-                        }
-                      });
-                    },
-                    activeColor: EventCreatorPage.forgeBlue,
-                  );
-                },
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Done',
-              style: TextStyle(
-                fontFamily: 'Poppins',
-                color: EventCreatorPage.forgeBlue,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showAddExerciseDialog() {
+  void _showAddExerciseDialog({VoidCallback? onUpdated}) {
+    FocusScope.of(context).unfocus();
     _exerciseNameController.clear();
     _setsController.clear();
     _repsController.clear();
@@ -1036,7 +1078,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
@@ -1102,28 +1144,29 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.of(dialogContext).pop(),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
             onPressed: () {
+              final name = _exerciseNameController.text.trim();
+              if (name.isEmpty) return;
               final sets = int.tryParse(_setsController.text) ?? 0;
               final reps = _repsController.text;
               final weight = _weightController.text;
-              final setDetails = List.generate(sets, (index) {
-                return {
-                  'reps': reps,
-                  'weight': weight,
-                };
+              final setDetails = List.generate(sets, (_) => {
+                'reps': reps,
+                'weight': weight,
               });
               setState(() {
                 _exercises.add({
-                  'name': _exerciseNameController.text,
+                  'name': name,
                   'sets': sets,
                   'setDetails': setDetails,
                 });
               });
-              Navigator.pop(context);
+              Navigator.of(dialogContext).pop();
+              onUpdated?.call();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: EventCreatorPage.forgeBlue,
@@ -1135,10 +1178,179 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
-  Future<void> _selectDate(bool isStart) async {
+  Widget _buildLocationField(void Function(void Function()) setModalState) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            Icon(Icons.location_on, size: 20, color: Colors.black54),
+            SizedBox(width: 8),
+            Text(
+              'Location',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedGymId,
+          items: _joinedGyms
+              .map(
+                (gym) => DropdownMenuItem<String>(
+                  value: gym['uid'],
+                  child: Text(
+                    gym['name'] ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: _joinedGyms.isEmpty
+              ? null
+              : (value) {
+                  if (value == null) return;
+                  final gym = _joinedGyms.firstWhere(
+                    (g) => g['uid'] == value,
+                    orElse: () => {'uid': value, 'name': 'Unknown Gym'},
+                  );
+                  setState(() {
+                    _selectedGymId = value;
+                    _selectedGymName = gym['name'];
+                  });
+                  setModalState(() {});
+                },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            hintText: _joinedGyms.isEmpty
+                ? 'No gyms joined yet'
+                : 'Select gym (optional)',
+            hintStyle: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 16,
+              color: Colors.black54,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
+              ),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue,
+                width: 2,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _loadJoinedGyms() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final joinedGymIds = doc.data()?['joinedGymIds'] as List<dynamic>?;
+      if (joinedGymIds == null || joinedGymIds.isEmpty) {
+        setState(() {
+          _joinedGyms = [];
+        });
+        return;
+      }
+
+      final gyms = <Map<String, String>>[];
+      for (final id in joinedGymIds) {
+        final gymUid = id is String ? id : id.toString();
+        if (gymUid.isEmpty) continue;
+        try {
+          final gymDoc = await FirestoreRefs.userDoc(gymUid).get();
+          final data = gymDoc.data();
+          if (gymDoc.exists && data != null) {
+            gyms.add({
+              'uid': gymUid,
+              'name': (data['displayName'] as String?) ?? 'Unknown Gym',
+            });
+          }
+        } catch (_) {
+          // Ignore individual gym load failures
+        }
+      }
+
+      setState(() {
+        _joinedGyms = gyms;
+      });
+    } catch (_) {
+      // Ignore load failures; leave list empty
+    }
+  }
+
+  Future<void> _loadFriends() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final friendIds = doc.data()?['friendIds'] as List<dynamic>?;
+      if (friendIds == null || friendIds.isEmpty) {
+        setState(() {
+          _friends = [];
+        });
+        return;
+      }
+
+      final list = <Map<String, String>>[];
+      for (final id in friendIds) {
+        final friendUid = id is String ? id : id.toString();
+        if (friendUid.isEmpty) continue;
+        try {
+          final friendDoc = await FirestoreRefs.userDoc(friendUid).get();
+          final data = friendDoc.data();
+          if (friendDoc.exists && data != null) {
+            list.add({
+              'uid': friendUid,
+              'name': (data['displayName'] as String?) ?? 'Unknown',
+            });
+          }
+        } catch (_) {
+          // Ignore individual failures
+        }
+      }
+
+      setState(() {
+        _friends = list;
+      });
+    } catch (_) {
+      // Ignore load failures
+    }
+  }
+
+  Future<void> _selectDate(bool isStart, {VoidCallback? onUpdated}) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: isStart ? (_startDate ?? DateTime.now()) : (_endDate ?? _startDate ?? DateTime.now()),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
@@ -1150,13 +1362,16 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           _endDate = picked;
         }
       });
+      onUpdated?.call();
     }
   }
 
-  Future<void> _selectTime(bool isStart) async {
+  Future<void> _selectTime(bool isStart, {VoidCallback? onUpdated}) async {
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: isStart
+          ? (_startTime ?? TimeOfDay.now())
+          : (_endTime ?? _startTime ?? TimeOfDay.now()),
     );
     if (picked != null) {
       setState(() {
@@ -1166,26 +1381,76 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           _endTime = picked;
         }
       });
+      onUpdated?.call();
     }
   }
 
-  void _createEvent() {
-    // TODO: Implement event creation logic
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Event created successfully!'),
-      ),
+  DateTime? _combineDateAndTime(DateTime? date, TimeOfDay? time) {
+    if (date == null || time == null) return null;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
     );
-    Navigator.pop(context);
-    // Reset form
-    _titleController.clear();
-    _notesController.clear();
-    _selectedFriends.clear();
-    _exercises.clear();
-    _startDate = null;
-    _startTime = null;
-    _endDate = null;
-    _endTime = null;
-    _isPublic = true;
+  }
+
+  Future<void> _createEvent() async {
+    if (_isCreating) return;
+    setState(() => _isCreating = true);
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Event title is required')),
+      );
+      setState(() => _isCreating = false);
+      return;
+    }
+
+    final eventType = _selectedEventType == EventType.workout ? 'workout' : 'basic';
+    final startAt = _combineDateAndTime(_startDate, _startTime);
+    final endAt = _combineDateAndTime(_endDate, _endTime);
+
+    try {
+      await createEvent(
+        title: title,
+        notes: _notesController.text,
+        eventType: eventType,
+        isPublic: _isPublic,
+        inviteeIds: List.from(_selectedFriendIds),
+        inviteeNames: List.from(_selectedFriends),
+        startAt: startAt,
+        endAt: endAt,
+        exercises: List.from(_exercises),
+        locationGymId: _selectedGymId,
+        locationGymName: _selectedGymName,
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Event created successfully!')),
+      );
+      navigator.pop(context);
+      // Reset form
+      _titleController.clear();
+      _notesController.clear();
+      _selectedFriends.clear();
+      _exercises.clear();
+      _startDate = null;
+      _startTime = null;
+      _endDate = null;
+      _endTime = null;
+      _isPublic = true;
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to create event: ${e.toString()}')),
+      );
+    } finally {
+      if (mounted) setState(() => _isCreating = false);
+    }
   }
 }
