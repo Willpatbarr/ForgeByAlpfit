@@ -91,6 +91,40 @@ Future<void> removeMemberFromGym(String memberUid) async {
   });
 }
 
+/// Returns list of {uid, name} for each gym the current user has joined.
+Future<List<Map<String, String>>> getJoinedGymsWithNames() async {
+  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+  if (currentUid == null) return [];
+
+  try {
+    final doc = await FirestoreRefs.userDoc(currentUid).get();
+    final joinedGymIds = doc.data()?['joinedGymIds'] as List<dynamic>?;
+    if (joinedGymIds == null || joinedGymIds.isEmpty) return [];
+
+    final gyms = <Map<String, String>>[];
+    for (final id in joinedGymIds) {
+      final gymUid = id is String ? id : id.toString();
+      if (gymUid.isEmpty) continue;
+      try {
+        final gymDoc = await FirestoreRefs.userDoc(gymUid).get();
+        final data = gymDoc.data();
+        if (gymDoc.exists && data != null) {
+          gyms.add({
+            'uid': gymUid,
+            'name': (data['displayName'] as String?) ?? 'Unknown Gym',
+          });
+        }
+      } catch (_) {
+        // Ignore individual gym load failures
+      }
+    }
+    return gyms;
+  } catch (_) {
+    // Ignore load failures; return empty
+    return [];
+  }
+}
+
 // --- Gym channel management (for gym accounts) ---
 
 /// Returns the list of channel names for a gym. Stored in gym doc as `channelNames`.

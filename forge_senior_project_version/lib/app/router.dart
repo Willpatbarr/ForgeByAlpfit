@@ -132,7 +132,7 @@ final router = GoRouter(
         GoRoute(
           path: '/event',
           pageBuilder: (context, state) => _buildPageWithTransition(
-            const EventCreatorPage(),
+            EventCreatorPage(eventId: state.uri.queryParameters['edit']),
             state,
           ),
         ),

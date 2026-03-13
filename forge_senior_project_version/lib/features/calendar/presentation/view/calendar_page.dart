@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../features/event_creator/presentation/view/event_creator_page.dart';
 import '../../../../services/events_service.dart';
 
 enum CalendarView { day, multi, month }
@@ -295,11 +296,7 @@ class _CalendarPageState extends State<CalendarPage> {
                     top: top,
                     height: height,
                     child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedEvent = event;
-                    });
-                  },
+                  onTap: () => _onEventTap(event),
                   child: SizedBox(
                     height: height,
                     child: ClipRRect(
@@ -378,6 +375,22 @@ class _CalendarPageState extends State<CalendarPage> {
         },
       ),
     );
+  }
+
+  void _onEventTap(Map<String, dynamic> event) {
+    if (event['isOwnEvent'] != false) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => EventCreatorPage(
+          eventId: event['id'] as String,
+          embedded: true,
+        ),
+      );
+    } else {
+      setState(() => _selectedEvent = event);
+    }
   }
 
   /// Events for the 4-day multi view: list of events, grouped by day index 0..3.
@@ -511,9 +524,7 @@ class _CalendarPageState extends State<CalendarPage> {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: GestureDetector(
-                                  onTap: () {
-                                    setState(() => _selectedEvent = event);
-                                  },
+                                  onTap: () => _onEventTap(event),
                                   child: Container(
                                     padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
@@ -744,19 +755,23 @@ class _CalendarPageState extends State<CalendarPage> {
                                 ),
                               ),
                               const SizedBox(height: 4),
-                              // Event titles only
+                              // Event titles only (tap to edit)
                               ...eventsForDay.take(3).map((event) {
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 2),
-                                  child: Text(
-                                    event['title'] as String? ?? '',
-                                    style: const TextStyle(
-                                      fontFamily: 'Poppins',
-                                      fontSize: 10,
-                                      color: Colors.white70,
+                                  child: GestureDetector(
+                                    onTap: () => _onEventTap(event),
+                                    behavior: HitTestBehavior.opaque,
+                                    child: Text(
+                                      event['title'] as String? ?? '',
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 10,
+                                        color: Colors.white70,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 );
                               }),

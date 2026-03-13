@@ -27,3 +27,34 @@ Future<void> removeFriend(String friendUid) async {
     'updatedAt': FieldValue.serverTimestamp(),
   }, SetOptions(merge: true));
 }
+
+/// Returns list of {uid, name} for each friend of the current user.
+Future<List<Map<String, String>>> getFriendIdsWithNames() async {
+  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+  if (currentUid == null) return [];
+
+  final doc = await FirestoreRefs.userDoc(currentUid).get();
+  final friendIds = doc.data()?['friendIds'] as List<dynamic>?;
+  if (friendIds == null || friendIds.isEmpty) return [];
+
+  final list = <Map<String, String>>[];
+  for (final id in friendIds) {
+    final friendUid = id is String ? id : id.toString();
+    if (friendUid.isEmpty) continue;
+    try {
+      final friendDoc = await FirestoreRefs.userDoc(friendUid).get();
+      final data = friendDoc.data();
+      if (friendDoc.exists && data != null) {
+        list.add({
+          'uid': friendUid,
+          'name': (data['displayName'] as String?) ?? 'Unknown',
+        });
+      } else {
+        list.add({'uid': friendUid, 'name': 'Unknown'});
+      }
+    } catch (_) {
+      list.add({'uid': friendUid, 'name': 'Unknown'});
+    }
+  }
+  return list;
+}

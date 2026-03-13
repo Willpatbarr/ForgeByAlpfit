@@ -8,7 +8,13 @@ import '../../../../core/firebase/firestore_refs.dart';
 enum EventType { basic, workout }
 
 class EventCreatorPage extends StatefulWidget {
-  const EventCreatorPage({super.key});
+  const EventCreatorPage({super.key, this.eventId, this.embedded = false});
+
+  /// When set, opens the form in edit mode with this event pre-loaded.
+  final String? eventId;
+
+  /// When true with eventId, renders only the form (for use in modal from calendar).
+  final bool embedded;
 
   static const Color background = Color(0xFFF5F5F7);
   static const Color forgeBlue = Color(0xFF4D7CFF);
@@ -45,6 +51,9 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
 
   // Friends selection
   List<Map<String, String>> _friends = [];
+
+  bool _isLoadingEventForEdit = false;
+  bool _loadEventError = false;
 
   final List<Map<String, dynamic>> _premadeWorkouts = [
     {
@@ -91,6 +100,67 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     super.initState();
     _loadJoinedGyms();
     _loadFriends();
+    if (widget.eventId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _loadEventForEdit());
+    }
+  }
+
+  Future<void> _loadEventForEdit() async {
+    final eventId = widget.eventId;
+    if (eventId == null || !mounted) return;
+
+    if (widget.embedded) setState(() => _isLoadingEventForEdit = true);
+
+    final event = await getEvent(eventId);
+    if (!mounted) return;
+    if (event == null) {
+      if (widget.embedded) {
+        setState(() {
+          _isLoadingEventForEdit = false;
+          _loadEventError = true;
+        });
+      }
+      return;
+    }
+
+    setState(() {
+      _titleController.text = event['title'] as String? ?? '';
+      _notesController.text = event['notes'] as String? ?? '';
+      _selectedEventType =
+          (event['eventType'] as String? ?? 'basic') == 'workout'
+              ? EventType.workout
+              : EventType.basic;
+      _isPublic = event['isPublic'] as bool? ?? true;
+      _selectedFriendIds = List<String>.from(event['inviteeIds'] as List? ?? []);
+      _selectedFriends = List<String>.from(event['inviteeNames'] as List? ?? []);
+      _selectedGymId = event['locationGymId'] as String?;
+      _selectedGymName = event['locationGymName'] as String?;
+      _exercises = ((event['exercises'] as List? ?? []) as List)
+          .map((e) {
+            final m = Map<String, dynamic>.from(e as Map);
+            final setDetails = m['setDetails'];
+            if (setDetails is List) {
+              m['setDetails'] = setDetails
+                  .map((s) => Map<String, dynamic>.from(s as Map))
+                  .toList();
+            }
+            return m;
+          })
+          .toList();
+
+      final startAt = event['startAt'] as DateTime?;
+      final endAt = event['endAt'] as DateTime?;
+      if (startAt != null) {
+        _startDate = startAt;
+        _startTime = TimeOfDay(hour: startAt.hour, minute: startAt.minute);
+      }
+      if (endAt != null) {
+        _endDate = endAt;
+        _endTime = TimeOfDay(hour: endAt.hour, minute: endAt.minute);
+      }
+      if (widget.embedded) _isLoadingEventForEdit = false;
+    });
+    if (mounted && !widget.embedded) _showEventForm();
   }
 
   @override
@@ -104,8 +174,180 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     super.dispose();
   }
 
+  Widget _buildEmbeddedEditForm() {
+    if (_loadEventError) {
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: EventCreatorPage.background,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Could not load event'),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_isLoadingEventForEdit || _startDate == null) {
+      return SizedBox(
+        height: MediaQuery.of(context).size.height * 0.9,
+        child: Container(
+          decoration: const BoxDecoration(
+            color: EventCreatorPage.background,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24),
+              topRight: Radius.circular(24),
+            ),
+          ),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight = MediaQuery.of(context).size.height * 0.9;
+    return SizedBox(
+      height: maxHeight,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: EventCreatorPage.background,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(24),
+            topRight: Radius.circular(24),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _selectedEventType == EventType.workout
+                        ? 'Edit Workout Event'
+                        : 'Edit Basic Event',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StatefulBuilder(
+                builder: (context, setModalState) {
+                  return SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildTextField(
+                          controller: _titleController,
+                          label: 'Event Title',
+                          icon: Icons.title,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildLocationField(setModalState),
+                        const SizedBox(height: 16),
+                        _buildInviteFriendsField(setModalState),
+                        const SizedBox(height: 16),
+                        _buildPrivacyToggle(),
+                        const SizedBox(height: 16),
+                        _buildDateTimeField(
+                          label: 'Start Date & Time',
+                          date: _startDate,
+                          time: _startTime,
+                          onDateTap: () => _selectDate(true, onUpdated: () => setModalState(() {})),
+                          onTimeTap: () => _selectTime(true, onUpdated: () => setModalState(() {})),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildDateTimeField(
+                          label: 'End Date & Time',
+                          date: _endDate,
+                          time: _endTime,
+                          onDateTap: () => _selectDate(false, onUpdated: () => setModalState(() {})),
+                          onTimeTap: () => _selectTime(false, onUpdated: () => setModalState(() {})),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_selectedEventType == EventType.workout) ...[
+                          _buildExercisesSection(onUpdated: () => setModalState(() {})),
+                          const SizedBox(height: 16),
+                        ],
+                        _buildTextField(
+                          controller: _notesController,
+                          label: 'Notes',
+                          icon: Icons.note,
+                          maxLines: 4,
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _createEvent,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: EventCreatorPage.forgeBlue,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Update Event',
+                            style: TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded && widget.eventId != null) {
+      return _buildEmbeddedEditForm();
+    }
+
     return Scaffold(
       backgroundColor: EventCreatorPage.background,
       body: SafeArea(
@@ -536,9 +778,13 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      _selectedEventType == EventType.workout
-                          ? 'Create Workout Event'
-                          : 'Create Basic Event',
+                      widget.eventId != null
+                          ? (_selectedEventType == EventType.workout
+                              ? 'Edit Workout Event'
+                              : 'Edit Basic Event')
+                          : (_selectedEventType == EventType.workout
+                              ? 'Create Workout Event'
+                              : 'Create Basic Event'),
                       style: const TextStyle(
                         fontFamily: 'Poppins',
                         fontSize: 20,
@@ -617,7 +863,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                       ),
                       const SizedBox(height: 24),
 
-                          // Create button
+                          // Create / Update button
                           ElevatedButton(
                             onPressed: _createEvent,
                             style: ElevatedButton.styleFrom(
@@ -627,9 +873,9 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: const Text(
-                              'Create Event',
-                              style: TextStyle(
+                            child: Text(
+                              widget.eventId != null ? 'Update Event' : 'Create Event',
+                              style: const TextStyle(
                                 fontFamily: 'Poppins',
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -1416,28 +1662,53 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     final endAt = _combineDateAndTime(_endDate, _endTime);
 
     try {
-      await createEvent(
-        title: title,
-        notes: _notesController.text,
-        eventType: eventType,
-        isPublic: _isPublic,
-        inviteeIds: List.from(_selectedFriendIds),
-        inviteeNames: List.from(_selectedFriends),
-        startAt: startAt,
-        endAt: endAt,
-        exercises: List.from(_exercises),
-        locationGymId: _selectedGymId,
-        locationGymName: _selectedGymName,
-      );
-      if (!mounted) return;
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Event created successfully!')),
-      );
+      final eventId = widget.eventId;
+      if (eventId != null) {
+        await updateEvent(
+          eventId: eventId,
+          title: title,
+          notes: _notesController.text,
+          eventType: eventType,
+          isPublic: _isPublic,
+          inviteeIds: List.from(_selectedFriendIds),
+          inviteeNames: List.from(_selectedFriends),
+          startAt: startAt,
+          endAt: endAt,
+          exercises: List.from(_exercises),
+          locationGymId: _selectedGymId,
+          locationGymName: _selectedGymName,
+        );
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Event updated successfully!')),
+        );
+        navigator.pop(context);
+        return;
+      } else {
+        await createEvent(
+          title: title,
+          notes: _notesController.text,
+          eventType: eventType,
+          isPublic: _isPublic,
+          inviteeIds: List.from(_selectedFriendIds),
+          inviteeNames: List.from(_selectedFriends),
+          startAt: startAt,
+          endAt: endAt,
+          exercises: List.from(_exercises),
+          locationGymId: _selectedGymId,
+          locationGymName: _selectedGymName,
+        );
+        if (!mounted) return;
+        messenger.showSnackBar(
+          const SnackBar(content: Text('Event created successfully!')),
+        );
+      }
       navigator.pop(context);
       // Reset form
       _titleController.clear();
       _notesController.clear();
       _selectedFriends.clear();
+      _selectedFriendIds.clear();
       _exercises.clear();
       _startDate = null;
       _startTime = null;
