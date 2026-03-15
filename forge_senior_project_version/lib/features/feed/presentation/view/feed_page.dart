@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:forge_senior_project_version/core/constants/app_text_styles.dart';
 import '../../../../app/app_header.dart';
+import '../../../../services/events_service.dart';
+import '../../../../services/friends_service.dart';
 
 enum FeedLayout { base, schedule, updates }
 
@@ -21,19 +23,8 @@ class _FeedPageState extends State<FeedPage> {
   final ScrollController _scheduleScrollController = ScrollController();
   double _scheduleHourHeight = 60.0; // Default height between hours
 
-  static const List<String> _dummyFriends = [
-    'Alex',
-    'Jordan',
-    'Sam',
-    'Taylor',
-    'Riley',
-  ];
-
-  static const List<Map<String, dynamic>> _dummyGoals = [
-    {'label': 'Workouts', 'current': 4, 'target': 5},
-    {'label': 'Meals', 'current': 2, 'target': 3},
-    {'label': 'Runs', 'current': 3, 'target': 4},
-  ];
+  late Future<Map<String, dynamic>?> _nextWorkoutFuture;
+  late Future<List<Map<String, String>>> _friendsFuture;
 
   static const String _dummyUpdatesText = '4 Updates – BYU-I + 4 others';
 
@@ -76,6 +67,13 @@ class _FeedPageState extends State<FeedPage> {
       'hasImage': false,
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _nextWorkoutFuture = getNextWorkoutEventForUser();
+    _friendsFuture = getFriendIdsWithNames();
+  }
 
   @override
   void dispose() {
@@ -291,22 +289,8 @@ class _FeedPageState extends State<FeedPage> {
             Expanded(
               flex: 3,
               child: _FeedSectionCard(
-                title: 'Cardio',
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.directions_run,
-                      size: 64,
-                      color: Colors.orangeAccent,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Workout of the day',
-                      style: AppTextStyles.bodySmallWithColor(Colors.white),
-                    ),
-                  ],
-                ),
+                title: 'Next Workout',
+                child: _buildNextWorkoutContent(),
               ),
             ),
             const SizedBox(width: 12),
@@ -314,35 +298,7 @@ class _FeedPageState extends State<FeedPage> {
               flex: 2,
               child: _FeedSectionCard(
                 title: 'Friends',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: _dummyFriends.map((name) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        children: [
-                          const CircleAvatar(
-                            radius: 10,
-                            backgroundColor: Colors.white24,
-                            child: Icon(
-                              Icons.person,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Text(
-                              name,
-                              overflow: TextOverflow.ellipsis,
-                              style: AppTextStyles.bodySmallWithColor(Colors.white),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
+                child: _buildFriendsContent(),
               ),
             ),
           ],
@@ -356,21 +312,12 @@ class _FeedPageState extends State<FeedPage> {
               flex: 3,
               child: _FeedSectionCard(
                 title: 'Goals',
-                child: Column(
-                  children: _dummyGoals.map((goal) {
-                    final String label = goal['label'] as String;
-                    final int current = goal['current'] as int;
-                    final int target = goal['target'] as int;
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: _GoalRow(
-                        label: label,
-                        current: current,
-                        target: target,
-                      ),
-                    );
-                  }).toList(),
+                child: Center(
+                  child: Text(
+                    'This feature coming soon',
+                    style: AppTextStyles.bodySmallWithColor(Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
             ),
@@ -383,6 +330,141 @@ class _FeedPageState extends State<FeedPage> {
         ),
       ],
     );
+  }
+
+  Widget _buildNextWorkoutContent() {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: _nextWorkoutFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Text(
+            'Unable to load workout',
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          );
+        }
+        final event = snapshot.data;
+        if (event == null || event['startAt'] == null) {
+          return Text(
+            'No workout scheduled',
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          );
+        }
+
+        final DateTime start = event['startAt'] as DateTime;
+        final DateTime? end = event['endAt'] as DateTime?;
+        final timeText = _formatTimeRange(start, end);
+        final dayText = _formatDay(start);
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              event['title'] as String? ?? '',
+              style: AppTextStyles.subtitleWithColor(Colors.white),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$dayText • $timeText',
+              style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFriendsContent() {
+    return FutureBuilder<List<Map<String, String>>>(
+      future: _friendsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+          );
+        }
+        if (snapshot.hasError) {
+          return Text(
+            'Unable to load friends',
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          );
+        }
+        final friends = (snapshot.data ?? []).take(5).toList();
+        if (friends.isEmpty) {
+          return Text(
+            'No friends yet',
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: friends.map((friend) {
+            final name = friend['name'] ?? 'Unknown';
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 10,
+                    backgroundColor: Colors.white24,
+                    child: Icon(
+                      Icons.person,
+                      size: 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      name,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodySmallWithColor(Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  String _formatTimeRange(DateTime start, DateTime? end) {
+    final startTime = _formatTime(start);
+    if (end == null) return startTime;
+    final endTime = _formatTime(end);
+    return '$startTime - $endTime';
+  }
+
+  String _formatDay(DateTime time) {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    return weekdays[time.weekday - 1];
+  }
+
+  String _formatTime(DateTime time) {
+    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
+    final minute = time.minute.toString().padLeft(2, '0');
+    final period = time.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
   }
 
   Widget _buildCollapsedCards({Key? key}) {
@@ -944,93 +1026,6 @@ class _FeedSectionCard extends StatelessWidget {
               ),
             ),
             child: child,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ------------ GOAL ROW + RING ------------
-class _GoalRow extends StatelessWidget {
-  final String label;
-  final int current;
-  final int target;
-
-  const _GoalRow({
-    required this.label,
-    required this.current,
-    required this.target,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final double progress =
-        target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            '$label $current/$target',
-            style: AppTextStyles.bodySmallWithColor(Colors.white),
-          ),
-        ),
-        const SizedBox(width: 12),
-        _GoalProgressRing(
-          progress: progress,
-          current: current,
-          target: target,
-        ),
-      ],
-    );
-  }
-}
-
-class _GoalProgressRing extends StatelessWidget {
-  final double progress;
-  final int current;
-  final int target;
-
-  const _GoalProgressRing({
-    required this.progress,
-    required this.current,
-    required this.target,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 40,
-      height: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          // base ring
-          CircularProgressIndicator(
-            value: 1.0,
-            strokeWidth: 4,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Colors.white.withValues(alpha: 0.25),
-            ),
-            backgroundColor: Colors.transparent,
-          ),
-          // progress ring
-          CircularProgressIndicator(
-            value: progress,
-            strokeWidth: 4,
-            valueColor: const AlwaysStoppedAnimation<Color>(
-              Colors.orangeAccent,
-            ),
-            backgroundColor: Colors.transparent,
-          ),
-          // number in center
-          Text(
-            '$current',
-            style: AppTextStyles.bodySmall.copyWith(
-              fontWeight: AppTextStyles.semiBoldWeight,
-              color: Colors.white,
-            ),
           ),
         ],
       ),

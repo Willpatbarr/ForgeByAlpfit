@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../app/app_header.dart';
 import '../../../../services/events_service.dart';
 import '../../../../core/firebase/firestore_refs.dart';
 
 enum EventType { basic, workout }
+
+enum RecurrenceFrequency { none, weekly, monthly, everyOtherDay, customWeekly }
+enum RecurrenceEndType { never, untilDate }
 
 class EventCreatorPage extends StatefulWidget {
   const EventCreatorPage({super.key, this.eventId, this.embedded = false});
@@ -43,6 +45,12 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   List<String> _selectedFriendIds = [];
   List<Map<String, dynamic>> _exercises = [];
   bool _isCreating = false;
+
+  // Recurrence
+  RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
+  RecurrenceEndType _recurrenceEndType = RecurrenceEndType.never;
+  DateTime? _recurrenceEndDate;
+  Set<int> _customWeekdays = {};
 
   // Location (gym) selection
   List<Map<String, String>> _joinedGyms = [];
@@ -135,7 +143,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
       _selectedFriends = List<String>.from(event['inviteeNames'] as List? ?? []);
       _selectedGymId = event['locationGymId'] as String?;
       _selectedGymName = event['locationGymName'] as String?;
-      _exercises = ((event['exercises'] as List? ?? []) as List)
+      _exercises = (event['exercises'] as List? ?? [])
           .map((e) {
             final m = Map<String, dynamic>.from(e as Map);
             final setDetails = m['setDetails'];
@@ -157,6 +165,41 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
       if (endAt != null) {
         _endDate = endAt;
         _endTime = TimeOfDay(hour: endAt.hour, minute: endAt.minute);
+      }
+      final recurrence = event['recurrence'] as Map<String, dynamic>?;
+      if (recurrence != null) {
+        final freq = recurrence['frequency'] as String? ?? 'none';
+        switch (freq) {
+          case 'weekly':
+            _recurrenceFrequency = RecurrenceFrequency.weekly;
+            break;
+          case 'monthly':
+            _recurrenceFrequency = RecurrenceFrequency.monthly;
+            break;
+          case 'every_other_day':
+            _recurrenceFrequency = RecurrenceFrequency.everyOtherDay;
+            break;
+          case 'custom_weekly':
+            _recurrenceFrequency = RecurrenceFrequency.customWeekly;
+            break;
+          default:
+            _recurrenceFrequency = RecurrenceFrequency.none;
+        }
+        final endType = recurrence['endType'] as String? ?? 'never';
+        _recurrenceEndType = endType == 'until_date'
+            ? RecurrenceEndType.untilDate
+            : RecurrenceEndType.never;
+        _recurrenceEndDate = recurrence['untilDate'] as DateTime?;
+        final days = recurrence['daysOfWeek'] as List<dynamic>?;
+        if (days != null) {
+          _customWeekdays =
+              days.map((e) => e as int).toSet();
+        }
+      } else {
+        _recurrenceFrequency = RecurrenceFrequency.none;
+        _recurrenceEndType = RecurrenceEndType.never;
+        _recurrenceEndDate = null;
+        _customWeekdays = {};
       }
       if (widget.embedded) _isLoadingEventForEdit = false;
     });
@@ -299,6 +342,8 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                           onDateTap: () => _selectDate(false, onUpdated: () => setModalState(() {})),
                           onTimeTap: () => _selectTime(false, onUpdated: () => setModalState(() {})),
                         ),
+                        const SizedBox(height: 16),
+                        _buildRecurrenceSection(onUpdated: () => setModalState(() {})),
                         const SizedBox(height: 16),
                         if (_selectedEventType == EventType.workout) ...[
                           _buildExercisesSection(onUpdated: () => setModalState(() {})),
@@ -848,6 +893,10 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                           ),
                       const SizedBox(height: 16),
 
+                      _buildRecurrenceSection(onUpdated: () => setModalState(() {})),
+
+                      const SizedBox(height: 16),
+
                       // Exercises section (only for workout events)
                       if (_selectedEventType == EventType.workout) ...[
                         _buildExercisesSection(onUpdated: () => setModalState(() {})),
@@ -950,6 +999,198 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
             color: Colors.black87,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildRecurrenceSection({VoidCallback? onUpdated}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            Icon(Icons.repeat, size: 20, color: Colors.black54),
+            SizedBox(width: 8),
+            Text(
+              'Repeat',
+              style: TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<RecurrenceFrequency>(
+          value: _recurrenceFrequency,
+          items: const [
+            DropdownMenuItem(
+              value: RecurrenceFrequency.none,
+              child: Text('Does not repeat'),
+            ),
+            DropdownMenuItem(
+              value: RecurrenceFrequency.weekly,
+              child: Text('Weekly'),
+            ),
+            DropdownMenuItem(
+              value: RecurrenceFrequency.monthly,
+              child: Text('Monthly'),
+            ),
+            DropdownMenuItem(
+              value: RecurrenceFrequency.everyOtherDay,
+              child: Text('Every other day'),
+            ),
+            DropdownMenuItem(
+              value: RecurrenceFrequency.customWeekly,
+              child: Text('Custom (days of week)'),
+            ),
+          ],
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() {
+              _recurrenceFrequency = value;
+              if (value == RecurrenceFrequency.none) {
+                _recurrenceEndType = RecurrenceEndType.never;
+                _recurrenceEndDate = null;
+                _customWeekdays = {};
+              } else if (value != RecurrenceFrequency.customWeekly) {
+                _customWeekdays = {};
+              } else {
+                if (_customWeekdays.isEmpty && _startDate != null) {
+                  _customWeekdays = {_startDate!.weekday};
+                }
+              }
+            });
+            onUpdated?.call();
+          },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue.withValues(alpha: 0.3),
+              ),
+            ),
+            focusedBorder: const OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+              borderSide: BorderSide(
+                color: EventCreatorPage.forgeBlue,
+                width: 2,
+              ),
+            ),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          ),
+        ),
+        if (_recurrenceFrequency != RecurrenceFrequency.none) ...[
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: RadioListTile<RecurrenceEndType>(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: RecurrenceEndType.never,
+                  groupValue: _recurrenceEndType,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      _recurrenceEndType = value;
+                      _recurrenceEndDate = null;
+                    });
+                    onUpdated?.call();
+                  },
+                  title: const Text(
+                    'Repeat forever',
+                    style: TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RadioListTile<RecurrenceEndType>(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: RecurrenceEndType.untilDate,
+                  groupValue: _recurrenceEndType,
+                  onChanged: (value) async {
+                    if (value == null) return;
+                    DateTime? picked = _recurrenceEndDate;
+                    if (picked == null) {
+                      picked = await showDatePicker(
+                        context: context,
+                        initialDate: _endDate ?? _startDate ?? DateTime.now(),
+                        firstDate: _startDate ?? DateTime.now(),
+                        lastDate:
+                            DateTime.now().add(const Duration(days: 365 * 5)),
+                      );
+                    }
+                    if (!mounted) return;
+                    setState(() {
+                      _recurrenceEndType = RecurrenceEndType.untilDate;
+                      _recurrenceEndDate = picked;
+                    });
+                    onUpdated?.call();
+                  },
+                  title: Text(
+                    _recurrenceEndDate != null
+                        ? 'Until ${_recurrenceEndDate!.month}/${_recurrenceEndDate!.day}/${_recurrenceEndDate!.year}'
+                        : 'Until date',
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (_recurrenceFrequency == RecurrenceFrequency.customWeekly) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: List.generate(7, (index) {
+                final weekday = index + 1; // 1 = Monday
+                const labels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                final selected = _customWeekdays.contains(weekday);
+                return ChoiceChip(
+                  label: Text(
+                    labels[index],
+                    style: const TextStyle(
+                      fontFamily: 'Poppins',
+                    ),
+                  ),
+                  selected: selected,
+                  onSelected: (isSelected) {
+                    setState(() {
+                      if (isSelected) {
+                        _customWeekdays.add(weekday);
+                      } else {
+                        _customWeekdays.remove(weekday);
+                      }
+                    });
+                    onUpdated?.call();
+                  },
+                  selectedColor: EventCreatorPage.forgeBlue,
+                  labelStyle: TextStyle(
+                    color: selected ? Colors.white : Colors.black87,
+                  ),
+                );
+              }),
+            ),
+          ],
+        ],
       ],
     );
   }
@@ -1661,6 +1902,39 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     final startAt = _combineDateAndTime(_startDate, _startTime);
     final endAt = _combineDateAndTime(_endDate, _endTime);
 
+    Map<String, dynamic>? recurrence;
+    if (_recurrenceFrequency != RecurrenceFrequency.none) {
+      String frequency;
+      switch (_recurrenceFrequency) {
+        case RecurrenceFrequency.weekly:
+          frequency = 'weekly';
+          break;
+        case RecurrenceFrequency.monthly:
+          frequency = 'monthly';
+          break;
+        case RecurrenceFrequency.everyOtherDay:
+          frequency = 'every_other_day';
+          break;
+        case RecurrenceFrequency.customWeekly:
+          frequency = 'custom_weekly';
+          break;
+        case RecurrenceFrequency.none:
+          frequency = 'none';
+      }
+      final daysOfWeek =
+          _recurrenceFrequency == RecurrenceFrequency.customWeekly
+              ? (List<int>.from(_customWeekdays)..sort())
+              : null;
+      recurrence = {
+        'frequency': frequency,
+        'endType':
+            _recurrenceEndType == RecurrenceEndType.untilDate ? 'until_date' : 'never',
+        'untilDate':
+            _recurrenceEndType == RecurrenceEndType.untilDate ? _recurrenceEndDate : null,
+        'daysOfWeek': daysOfWeek,
+      };
+    }
+
     try {
       final eventId = widget.eventId;
       if (eventId != null) {
@@ -1677,6 +1951,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           exercises: List.from(_exercises),
           locationGymId: _selectedGymId,
           locationGymName: _selectedGymName,
+          recurrence: recurrence,
         );
         if (!mounted) return;
         messenger.showSnackBar(
@@ -1697,6 +1972,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           exercises: List.from(_exercises),
           locationGymId: _selectedGymId,
           locationGymName: _selectedGymName,
+          recurrence: recurrence,
         );
         if (!mounted) return;
         messenger.showSnackBar(
@@ -1715,6 +1991,10 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
       _endDate = null;
       _endTime = null;
       _isPublic = true;
+      _recurrenceFrequency = RecurrenceFrequency.none;
+      _recurrenceEndType = RecurrenceEndType.never;
+      _recurrenceEndDate = null;
+      _customWeekdays = {};
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(
