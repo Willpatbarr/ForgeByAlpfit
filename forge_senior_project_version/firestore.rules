@@ -30,6 +30,44 @@ service cloud.firestore {
       );
       allow write: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Gym channel posts live under the gym user's doc.
+    // - Gym owner can read/write
+    // - Joined members can read posts/comments, create posts/comments, and like posts
+    match /users/{gymUid}/channelPosts/{postId} {
+      allow read: if request.auth != null && (
+        request.auth.uid == gymUid
+        || gymUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('joinedGymIds', [])
+      );
+      allow create: if request.auth != null && (
+        request.auth.uid == gymUid
+        || gymUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('joinedGymIds', [])
+      );
+      allow update: if request.auth != null && (
+        request.auth.uid == gymUid
+        || gymUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('joinedGymIds', [])
+      );
+      allow delete: if request.auth != null && (
+        request.auth.uid == gymUid
+        || request.auth.uid == resource.data.authorUid
+      );
+
+      match /comments/{commentId} {
+        allow read: if request.auth != null && (
+          request.auth.uid == gymUid
+          || gymUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('joinedGymIds', [])
+        );
+        allow create: if request.auth != null && (
+          request.auth.uid == gymUid
+          || gymUid in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('joinedGymIds', [])
+        );
+        allow delete: if request.auth != null && (
+          request.auth.uid == gymUid
+          || request.auth.uid == resource.data.authorUid
+        );
+        allow update: if false;
+      }
+    }
     
     // User preferences collection: Users can only read/write their own preferences
     match /user_preferences/{userId} {

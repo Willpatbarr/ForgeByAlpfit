@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
@@ -23,47 +24,13 @@ class SocialPage extends StatefulWidget {
 class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // Dummy data
-  final List<Map<String, dynamic>> _messages = [
-    {
-      'name': 'Alex Smith',
-      'lastMessage': 'Hey, are we still on for the workout?',
-      'time': '2m ago',
-      'unread': true,
-      'avatar': null,
-    },
-    {
-      'name': 'Jordan Taylor',
-      'lastMessage': 'Thanks for the invite!',
-      'time': '1h ago',
-      'unread': false,
-      'avatar': null,
-    },
-    {
-      'name': 'Workout Group',
-      'lastMessage': 'Sam: See you all at 9am!',
-      'time': '3h ago',
-      'unread': true,
-      'avatar': null,
-      'isGroup': true,
-    },
-    {
-      'name': 'BYU-I Fitness Center',
-      'lastMessage': 'New class starting next week!',
-      'time': '1d ago',
-      'unread': false,
-      'avatar': null,
-      'isGym': true,
-    },
-  ];
+  // Messages: derived from your joined gyms' latest channel posts.
+  List<Map<String, dynamic>> _messages = [];
+  bool _messagesLoading = true;
 
-  final List<Map<String, dynamic>> _friends = [
-    {'name': 'Alex Smith', 'avatar': null, 'mutualFriends': 5},
-    {'name': 'Jordan Taylor', 'avatar': null, 'mutualFriends': 3},
-    {'name': 'Sam Johnson', 'avatar': null, 'mutualFriends': 8},
-    {'name': 'Riley Brown', 'avatar': null, 'mutualFriends': 2},
-    {'name': 'Taylor Davis', 'avatar': null, 'mutualFriends': 4},
-  ];
+  // Friends: derived from your user's `friendIds`.
+  List<Map<String, dynamic>> _friends = [];
+  bool _friendsLoading = true;
 
   // Joined gyms loaded from Firestore (uid, name, avatar, channels, members)
   List<Map<String, dynamic>> _joinedGyms = [];
@@ -84,9 +51,26 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    // Default to 4 tabs (no Channels) until we know if the account is a gym.
+    // Without Messages tab:
+    // - non-gym: Gyms, Friends, Search = 3
+    // - gym: Gyms, Friends, Channels, Search = 4
+    _tabController = TabController(length: 3, vsync: this);
     _searchController.addListener(_onSearchChanged);
     _loadAccountTypeAndChannels();
+  }
+
+  void _recreateTabControllerIfNeeded() {
+    final desiredLength = _isGym == true ? 4 : 3;
+    if (_tabController.length == desiredLength) return;
+
+    _tabController.dispose();
+    _tabController = TabController(
+      length: desiredLength,
+      vsync: this,
+      // Reset to the first tab to avoid index-mapping issues when removing Messages.
+      initialIndex: 0,
+    );
   }
 
   Future<void> _loadAccountTypeAndChannels() async {
@@ -99,12 +83,20 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
       final doc = await FirestoreRefs.userDoc(uid).get();
       final accountType = doc.data()?['accountType'] as String?;
       final isGym = accountType == 'gym';
-      if (mounted) setState(() => _isGym = isGym);
+      if (mounted) {
+        setState(() => _isGym = isGym);
+        _recreateTabControllerIfNeeded();
+      }
       if (isGym) await _loadChannels();
     } catch (_) {
-      if (mounted) setState(() => _isGym = false);
+      if (mounted) {
+        setState(() => _isGym = false);
+        _recreateTabControllerIfNeeded();
+      }
     }
     await _loadJoinedGyms();
+    await _loadFriendsList();
+    await _loadMessagesList();
   }
 
   Future<void> _loadJoinedGyms() async {
@@ -155,6 +147,127 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
         _joinedGyms = [];
         _joinedGymsLoading = false;
       });
+    }
+  }
+
+  String _formatTimeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 60) return '${diff.inSeconds}s ago';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  Future<void> _loadFriendsList() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) {
+        setState(() {
+          _friends = [];
+          _friendsLoading = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted) setState(() => _friendsLoading = true);
+    try {
+      final currentDoc = await FirestoreRefs.userDoc(uid).get();
+      final raw = currentDoc.data()?['friendIds'] as List<dynamic>?;
+      final friendIds = (raw ?? []).whereType<String>().toList();
+      if (friendIds.isEmpty) {
+        if (mounted) setState(() => _friends = []);
+        return;
+      }
+
+      final currentFriendIdSet = friendIds.toSet();
+
+      final list = <Map<String, dynamic>>[];
+      for (final friendUid in friendIds) {
+        try {
+          final friendDoc = await FirestoreRefs.userDoc(friendUid).get();
+          if (!friendDoc.exists || friendDoc.data() == null) continue;
+          final d = friendDoc.data()!;
+          final friendFriendIds =
+              (d['friendIds'] as List<dynamic>?)?.whereType<String>().toList() ??
+                  [];
+          final mutualCount = friendFriendIds
+              .toSet()
+              .intersection(currentFriendIdSet)
+              .length;
+
+          list.add({
+            'uid': friendUid,
+            'name': (d['displayName'] as String?) ?? 'Unknown',
+            'avatar': d['avatarUrl'] as String?,
+            'mutualFriends': mutualCount,
+          });
+        } catch (_) {
+          // Ignore individual load failures
+        }
+      }
+
+      list.sort((a, b) =>
+          (a['name'] as String).compareTo((b['name'] as String)));
+
+      if (mounted) setState(() => _friends = list);
+    } catch (_) {
+      if (mounted) setState(() => _friends = []);
+    } finally {
+      if (mounted) setState(() => _friendsLoading = false);
+    }
+  }
+
+  Future<void> _loadMessagesList() async {
+    if (mounted) setState(() => _messagesLoading = true);
+    try {
+      if (_joinedGymsLoading || _joinedGyms.isEmpty) {
+        if (mounted) setState(() => _messages = []);
+        return;
+      }
+
+      final items = <Map<String, dynamic>>[];
+
+      for (final gym in _joinedGyms) {
+        final gymUid = gym['uid'] as String?;
+        if (gymUid == null || gymUid.isEmpty) continue;
+
+        final gymSnap = await FirestoreRefs.channelPosts(gymUid)
+            .orderBy('createdAt', descending: true)
+            .limit(10)
+            .get();
+
+        for (final doc in gymSnap.docs) {
+          final data = doc.data();
+          final channelName = data['channelName']?.toString() ?? 'general';
+          final authorName = data['authorName']?.toString() ?? 'User';
+          final content = data['content']?.toString() ?? '';
+          final ts = data['createdAt'] as Timestamp?;
+          final createdAt =
+              ts?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+          items.add({
+            'gymUid': gymUid,
+            'channelName': channelName,
+            'name': authorName,
+            'lastMessage': content,
+            'createdAt': createdAt,
+            'time': _formatTimeAgo(createdAt),
+            'unread': false,
+            'avatar': null,
+            'isGym': true,
+            'postId': doc.id,
+          });
+        }
+      }
+
+      items.sort((a, b) =>
+          (b['createdAt'] as DateTime).compareTo(a['createdAt'] as DateTime));
+      if (mounted) setState(() => _messages = items);
+    } catch (_) {
+      if (mounted) setState(() => _messages = []);
+    } finally {
+      if (mounted) setState(() => _messagesLoading = false);
     }
   }
 
@@ -235,13 +348,18 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildMessagesTab(),
-                  _buildFriendsTab(),
-                  _buildGymsTab(),
-                  _buildChannelsTab(),
-                  _buildSearchTab(),
-                ],
+                children: _isGym == true
+                    ? [
+                        _buildGymsTab(),
+                        _buildFriendsTab(),
+                        _buildChannelsTab(),
+                        _buildSearchTab(),
+                      ]
+                    : [
+                        _buildGymsTab(),
+                        _buildFriendsTab(),
+                        _buildSearchTab(),
+                      ],
               ),
             ),
           ],
@@ -268,18 +386,34 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
           fontSize: 14,
           fontWeight: FontWeight.normal,
         ),
-        tabs: const [
-          Tab(text: 'Messages'),
-          Tab(text: 'Friends'),
-          Tab(text: 'Gyms'),
-          Tab(text: 'Channels'),
-          Tab(text: 'Search'),
-        ],
+        tabs: _isGym == true
+            ? const [
+                Tab(text: 'Gyms'),
+                Tab(text: 'Friends'),
+                Tab(text: 'Channels'),
+                Tab(text: 'Search'),
+              ]
+            : const [
+                Tab(text: 'Gyms'),
+                Tab(text: 'Friends'),
+                Tab(text: 'Search'),
+              ],
       ),
     );
   }
 
   Widget _buildMessagesTab() {
+    if (_messagesLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_messages.isEmpty) {
+      return const Center(
+        child: Text(
+          'No messages yet',
+          style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _messages.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -293,7 +427,18 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   Widget _buildMessageItem(Map<String, dynamic> message) {
     return InkWell(
       onTap: () {
-        // TODO: Navigate to chat
+        final gymUid = message['gymUid']?.toString();
+        final channelName = message['channelName']?.toString();
+        if (gymUid == null || gymUid.isEmpty || channelName == null) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute<void>(
+            builder: (context) => ChannelPage(
+              gymUid: gymUid,
+              channelName: channelName,
+            ),
+          ),
+        );
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -398,6 +543,17 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   }
 
   Widget _buildFriendsTab() {
+    if (_friendsLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_friends.isEmpty) {
+      return const Center(
+        child: Text(
+          'No friends yet',
+          style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: _friends.length,
       padding: const EdgeInsets.symmetric(vertical: 8),

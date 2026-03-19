@@ -1,11 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:forge_senior_project_version/core/constants/app_text_styles.dart';
+import 'package:forge_senior_project_version/services/events_service.dart';
+import 'package:forge_senior_project_version/services/friends_service.dart';
+import 'package:forge_senior_project_version/services/updates_service.dart';
+import 'package:forge_senior_project_version/services/channel_posts_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:forge_senior_project_version/features/social/presentation/view/channel_page.dart';
 import '../../../../app/app_header.dart';
-import '../../../../services/events_service.dart';
-import '../../../../services/friends_service.dart';
 
-enum FeedLayout { base, schedule, updates }
+enum FeedLayout { base, updates }
+
+// ------------ GRID SYSTEM ------------
+/// Describes one widget placed on the feed grid (position + size in grid cells).
+class FeedGridItem {
+  const FeedGridItem({
+    required this.col,
+    required this.row,
+    required this.width,
+    required this.height,
+    required this.child,
+  });
+  final int col;
+  final int row;
+  final int width;
+  final int height;
+  final Widget child;
+}
+
+/// Renders a grid of [gridWidth] x [gridHeight] and places [children] by their (col, row, width, height).
+class FeedGrid extends StatelessWidget {
+  const FeedGrid({
+    super.key,
+    required this.gridWidth,
+    required this.gridHeight,
+    required this.children,
+    this.cellGap = 8.0,
+  });
+
+  final int gridWidth;
+  final int gridHeight;
+  final List<FeedGridItem> children;
+  final double cellGap;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth;
+        final availableHeight = constraints.maxHeight;
+        final cellWidth = (availableWidth - (gridWidth - 1) * cellGap) / gridWidth;
+        final cellHeight = (availableHeight - (gridHeight - 1) * cellGap) / gridHeight;
+
+        return Stack(
+          children: children.map((item) {
+            final left = item.col * (cellWidth + cellGap);
+            final top = item.row * (cellHeight + cellGap);
+            final w = item.width * cellWidth + (item.width - 1) * cellGap;
+            final h = item.height * cellHeight + (item.height - 1) * cellGap;
+            return Positioned(
+              left: left,
+              top: top,
+              width: w,
+              height: h,
+              child: SizedBox.expand(child: item.child),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+/// Builds a basic feed card: title bar + body. Use for static content.
+Widget buildBasicFeedWidget({
+  required String title,
+  required int col,
+  required int row,
+  required int width,
+  required int height,
+  required Widget body,
+  bool fillHeight = true,
+}) {
+  return _FeedSectionCard(title: title, child: body, fillHeight: fillHeight);
+}
+
+/// Builds a data-driven feed card: title bar + body from [bodyBuilder].
+/// [bodyBuilder] is responsible for loading data and building the body (e.g. FutureBuilder/StreamBuilder).
+Widget buildDataDrivenFeedWidget({
+  required String name,
+  required int col,
+  required int row,
+  required int width,
+  required int height,
+  required Widget Function(BuildContext context) bodyBuilder,
+  bool fillHeight = true,
+}) {
+  return _FeedSectionCard(
+    title: name,
+    child: Builder(builder: bodyBuilder),
+    fillHeight: fillHeight,
+  );
+}
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -20,65 +116,11 @@ class FeedPage extends StatefulWidget {
 class _FeedPageState extends State<FeedPage> {
   FeedLayout _currentLayout = FeedLayout.base;
   final ScrollController _updatesScrollController = ScrollController();
-  final ScrollController _scheduleScrollController = ScrollController();
-  double _scheduleHourHeight = 60.0; // Default height between hours
-
-  late Future<Map<String, dynamic>?> _nextWorkoutFuture;
-  late Future<List<Map<String, String>>> _friendsFuture;
-
-  static const String _dummyUpdatesText = '4 Updates – BYU-I + 4 others';
-
-  // Dummy schedule events
-  static const List<Map<String, dynamic>> _dummyEvents = [
-    {
-      'title': 'Your Workout',
-      'start': '9:00 AM',
-      'end': '10:30 AM',
-      'color': Colors.orange,
-      'hasInvite': true,
-    },
-    {
-      'title': 'Lunch',
-      'start': '11:00 AM',
-      'end': '12:00 PM',
-      'color': Colors.yellow,
-      'hasInvite': false,
-    },
-    {
-      'title': "Ethan's Workout",
-      'start': '9:00 AM',
-      'end': '10:30 AM',
-      'color': Colors.blue,
-      'hasAttend': true,
-    },
-  ];
-
-  // Dummy updates
-  static const List<Map<String, dynamic>> _dummyUpdates = [
-    {
-      'source': 'BYU-I',
-      'text':
-          'Lorem ipsum dolor itset lorem ipsum dolor itset lorem ipsum dolor itset',
-      'hasImage': true,
-    },
-    {
-      'source': 'Ethan',
-      'text': 'Completed a goal or sum type beat',
-      'hasImage': false,
-    },
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _nextWorkoutFuture = getNextWorkoutEventForUser();
-    _friendsFuture = getFriendIdsWithNames();
-  }
+  // (mini schedule removed)
 
   @override
   void dispose() {
     _updatesScrollController.dispose();
-    _scheduleScrollController.dispose();
     super.dispose();
   }
 
@@ -122,25 +164,17 @@ class _FeedPageState extends State<FeedPage> {
 
   // ---------- LAYOUT 1: BASE FEED (Non-scrollable) ----------
   Widget _buildBaseLayout() {
-    final bool isScheduleExpanded = _currentLayout == FeedLayout.schedule;
     final bool isUpdatesExpanded = _currentLayout == FeedLayout.updates;
 
     return Column(
       children: [
         const SizedBox(height: 12),
-        // Day selector
+        // Day selector (opens calendar)
         Center(
           child: GestureDetector(
-            onTap: () {
-              if (isScheduleExpanded) {
-                _switchToLayout(FeedLayout.base);
-              } else {
-                _switchToLayout(FeedLayout.schedule);
-              }
-            },
+            onTap: _navigateToCalendar,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
               decoration: BoxDecoration(
                 color: FeedPage.forgeBlue,
                 borderRadius: BorderRadius.circular(30),
@@ -152,37 +186,31 @@ class _FeedPageState extends State<FeedPage> {
                   ),
                 ],
               ),
-              child: Text(
-                'Wednesday',
-                style: AppTextStyles.title
-                    .copyWith(fontSize: 24, fontWeight: AppTextStyles.lightWeight, color: Colors.white),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Wednesday',
+                    style: AppTextStyles.title.copyWith(
+                      fontSize: 24,
+                      fontWeight: AppTextStyles.lightWeight,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Icon(
+                    Icons.chevron_right,
+                    size: 26,
+                    color: Colors.white,
+                  ),
+                ],
               ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        // Arrow - rotates based on state
-        GestureDetector(
-          onTap: () {
-            if (isScheduleExpanded) {
-              _switchToLayout(FeedLayout.base);
-            } else {
-              _switchToLayout(FeedLayout.schedule);
-            }
-          },
-          child: AnimatedRotation(
-            duration: const Duration(milliseconds: 300),
-            turns: isScheduleExpanded ? 0.5 : 0.0,
-            child: const Icon(
-              Icons.expand_more,
-              size: 28,
-              color: Colors.black54,
             ),
           ),
         ),
         const SizedBox(height: 24),
 
-        // Main content area - handles schedule, cards, and updates
+        // Main content area - handles cards and updates
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -190,31 +218,6 @@ class _FeedPageState extends State<FeedPage> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Column(
                   children: [
-                    // Schedule section - expands/collapses with slide animation
-                    if (isScheduleExpanded)
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          transitionBuilder: (Widget child, Animation<double> animation) {
-                            return SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0.0, -0.3),
-                                end: Offset.zero,
-                              ).animate(CurvedAnimation(
-                                parent: animation,
-                                curve: Curves.easeInOutCubic,
-                              )),
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: _buildExpandedSchedule(key: const ValueKey('schedule')),
-                        ),
-                      ),
-
                     // Cards section - only show when updates are NOT expanded
                     if (!isUpdatesExpanded) ...[
                       Expanded(
@@ -236,9 +239,7 @@ class _FeedPageState extends State<FeedPage> {
                                 ),
                               );
                             },
-                            child: isScheduleExpanded
-                                ? _buildCollapsedCards(key: const ValueKey('collapsed'))
-                                : _buildFullCards(key: const ValueKey('full')),
+                            child: _buildFullCards(key: const ValueKey('full')),
                           ),
                         ),
                       ),
@@ -279,102 +280,131 @@ class _FeedPageState extends State<FeedPage> {
 
   // Helper methods for expandable sections
   Widget _buildFullCards({Key? key}) {
-    return Column(
+    // AspectRatio gives FeedGrid bounded height (SingleChildScrollView provides unbounded height
+    // by default, which causes layout assertions)
+    return AspectRatio(
       key: key,
-      children: [
-        // First row: Cardio + Friends
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: _FeedSectionCard(
-                title: 'Next Workout',
-                child: _buildNextWorkoutContent(),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: _FeedSectionCard(
-                title: 'Friends',
-                child: _buildFriendsContent(),
-              ),
-            ),
-          ],
+      aspectRatio: 5 / 6, // grid is 5 wide x 6 tall
+      child: FeedGrid(
+        gridWidth: 5,
+        gridHeight: 6,
+        children: [
+        // Next Workout: (0,0), 4 wide, 3 tall — data-driven
+        FeedGridItem(
+          col: 0,
+          row: 0,
+          width: 3,
+          height: 3,
+          child: buildDataDrivenFeedWidget(
+            name: 'Next Workout',
+            col: 0,
+            row: 0,
+            width: 3,
+            height: 3,
+            bodyBuilder: _buildNextWorkoutBody,
+          ),
         ),
-        const SizedBox(height: 24),
-        // Second row: Goals
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: _FeedSectionCard(
-                title: 'Goals',
-                child: Center(
-                  child: Text(
-                    'This feature coming soon',
-                    style: AppTextStyles.bodySmallWithColor(Colors.white),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              flex: 2,
-              child: SizedBox.shrink(),
-            ),
-          ],
+        // Goals: (0,3), 3 wide, 2 tall — basic
+        FeedGridItem(
+          col: 0,
+          row: 3,
+          width: 3,
+          height: 2,
+          child: buildBasicFeedWidget(
+            title: 'Goals',
+            col: 0,
+            row: 3,
+            width: 3,
+            height: 2,
+            body: _buildGoalsBody(),
+          ),
+        ),
+        // Friends: (3,0), 2 wide, 4 tall — data-driven
+        FeedGridItem(
+          col: 3,
+          row: 0,
+          width: 2,
+          height: 4,
+          child: buildDataDrivenFeedWidget(
+            name: 'Friends',
+            col: 3,
+            row: 0,
+            width: 2,
+            height: 4,
+            bodyBuilder: _buildFriendsBody,
+          ),
         ),
       ],
+    ),
     );
   }
 
-  Widget _buildNextWorkoutContent() {
+  /// Data-driven body: fetches next workout event and displays it.
+  Widget _buildNextWorkoutBody(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>?>(
-      future: _nextWorkoutFuture,
+      future: getNextWorkoutEventForUser(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(color: Colors.white70),
             ),
           );
         }
-        if (snapshot.hasError) {
-          return Text(
-            'Unable to load workout',
-            style: AppTextStyles.bodySmallWithColor(Colors.white),
-          );
-        }
         final event = snapshot.data;
-        if (event == null || event['startAt'] == null) {
-          return Text(
-            'No workout scheduled',
-            style: AppTextStyles.bodySmallWithColor(Colors.white),
+        if (event == null) {
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.directions_run,
+                size: 64,
+                color: Colors.orangeAccent,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'No upcoming workout',
+                style: AppTextStyles.bodySmallWithColor(Colors.white),
+              ),
+            ],
           );
         }
-
-        final DateTime start = event['startAt'] as DateTime;
-        final DateTime? end = event['endAt'] as DateTime?;
-        final timeText = _formatTimeRange(start, end);
-        final dayText = _formatDay(start);
-
+        final title = event['title'] as String? ?? 'Workout';
+        final startAt = event['startAt'] as DateTime?;
+        final endAt = event['endAt'] as DateTime?;
+        final timeStr = (startAt != null && endAt != null)
+            ? '${_formatTime(startAt)} – ${_formatTime(endAt)}'
+            : '';
         return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              event['title'] as String? ?? '',
+              title,
               style: AppTextStyles.subtitleWithColor(Colors.white),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 8),
-            Text(
-              '$dayText • $timeText',
-              style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            if (timeStr.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                timeStr,
+                style: AppTextStyles.bodySmallWithColor(Colors.white70),
+              ),
+            ],
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: () => context.go('/calendar'),
+              icon: const Icon(Icons.calendar_today, color: Colors.white, size: 18),
+              label: Text(
+                'View calendar',
+                style: AppTextStyles.bodySmallWithColor(Colors.white),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: FeedPage.forgeBlue,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
             ),
           ],
         );
@@ -382,34 +412,47 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  Widget _buildFriendsContent() {
+  static String _formatTime(DateTime d) {
+    final hour = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
+    final period = d.hour < 12 ? 'AM' : 'PM';
+    final min = d.minute == 0 ? '' : ':${d.minute.toString().padLeft(2, '0')}';
+    return '$hour$min $period';
+  }
+
+  Widget _buildGoalsBody() {
+    return Center(
+      child: Text(
+        'No goals yet',
+        style: AppTextStyles.bodySmallWithColor(Colors.white70),
+      ),
+    );
+  }
+
+  Widget _buildFriendsBody(BuildContext context) {
     return FutureBuilder<List<Map<String, String>>>(
-      future: _friendsFuture,
+      future: getFriendIdsWithNames(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(color: Colors.white70),
             ),
           );
         }
-        if (snapshot.hasError) {
-          return Text(
-            'Unable to load friends',
-            style: AppTextStyles.bodySmallWithColor(Colors.white),
-          );
-        }
-        final friends = (snapshot.data ?? []).take(5).toList();
+        final friends = snapshot.data ?? [];
         if (friends.isEmpty) {
-          return Text(
-            'No friends yet',
-            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          return Center(
+            child: Text(
+              'No friends yet',
+              style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            ),
           );
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: friends.map((friend) {
-            final name = friend['name'] ?? 'Unknown';
+          children: friends.map((f) {
+            final name = f['name'] ?? 'Unknown';
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
               child: Row(
@@ -417,11 +460,7 @@ class _FeedPageState extends State<FeedPage> {
                   const CircleAvatar(
                     radius: 10,
                     backgroundColor: Colors.white24,
-                    child: Icon(
-                      Icons.person,
-                      size: 14,
-                      color: Colors.white,
-                    ),
+                    child: Icon(Icons.person, size: 14, color: Colors.white),
                   ),
                   const SizedBox(width: 8),
                   Flexible(
@@ -440,97 +479,44 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  String _formatTimeRange(DateTime start, DateTime? end) {
-    final startTime = _formatTime(start);
-    if (end == null) return startTime;
-    final endTime = _formatTime(end);
-    return '$startTime - $endTime';
-  }
-
-  String _formatDay(DateTime time) {
-    const weekdays = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return weekdays[time.weekday - 1];
-  }
-
-  String _formatTime(DateTime time) {
-    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.hour >= 12 ? 'PM' : 'AM';
-    return '$hour:$minute $period';
-  }
-
-  Widget _buildCollapsedCards({Key? key}) {
-    return Column(
-      key: key,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 12),
-        _CollapsedCard(title: 'Cardio', onTap: () => _switchToLayout(FeedLayout.base)),
-        const SizedBox(height: 6),
-        _CollapsedCard(title: 'Friends', onTap: () => _switchToLayout(FeedLayout.base)),
-        const SizedBox(height: 6),
-        _CollapsedCard(title: 'Goals', onTap: () => _switchToLayout(FeedLayout.base)),
-      ],
-    );
-  }
-
-  Widget _buildExpandedSchedule({Key? key}) {
-    return Padding(
-      key: key,
-      padding: const EdgeInsets.only(bottom: 12),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 350),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return _ScheduleTimeline(
-              events: _dummyEvents,
-              hourHeight: _scheduleHourHeight,
-              scrollController: _scheduleScrollController,
-              availableWidth: constraints.maxWidth,
-              onEventTap: (event) => _navigateToCalendar(
-                eventId: event['title'] as String,
-              ),
-              onTimeSlotTap: (time) => _navigateToCalendar(
-                timeSlot: time,
-              ),
-              onScaleUpdate: (scale) {
-                setState(() {
-                  _scheduleHourHeight =
-                      (_scheduleHourHeight * scale).clamp(40.0, 120.0);
-                });
-              },
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   Widget _buildUpdatesBar({Key? key}) {
     final bool isUpdatesExpanded = _currentLayout == FeedLayout.updates;
     return Padding(
       key: key,
       padding: const EdgeInsets.only(bottom: 16),
-      child: GestureDetector(
-        onTap: () {
-          if (isUpdatesExpanded) {
-            _switchToLayout(FeedLayout.base);
+      child: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: getFeedUpdatesStream(),
+        builder: (context, snapshot) {
+          String label;
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            label = 'Loading updates…';
+          } else if (snapshot.hasError) {
+            label = 'Updates unavailable';
           } else {
-            _switchToLayout(FeedLayout.updates);
+            final count = snapshot.data?.length ?? 0;
+            if (count == 0) {
+              label = 'No updates yet';
+            } else if (count == 1) {
+              label = '1 update';
+            } else {
+              label = '$count updates';
+            }
           }
+
+          return GestureDetector(
+            onTap: () {
+              if (isUpdatesExpanded) {
+                _switchToLayout(FeedLayout.base);
+              } else {
+                _switchToLayout(FeedLayout.updates);
+              }
+            },
+            child: _UpdatesBar(
+              text: label,
+              isExpanded: isUpdatesExpanded,
+            ),
+          );
         },
-        child: _UpdatesBar(
-          text: _dummyUpdatesText,
-          isExpanded: isUpdatesExpanded,
-        ),
       ),
     );
   }
@@ -540,19 +526,54 @@ class _FeedPageState extends State<FeedPage> {
       key: key,
       children: [
         // Scrollable updates feed
-        ListView.builder(
-          controller: _updatesScrollController,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: _dummyUpdates.length,
-          itemBuilder: (context, index) {
-            final update = _dummyUpdates[index];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _UpdateCard(
-                source: update['source'] as String,
-                text: update['text'] as String,
-                hasImage: update['hasImage'] as bool,
-              ),
+        StreamBuilder<List<Map<String, dynamic>>>(
+          stream: getFeedUpdatesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            if (snapshot.hasError) {
+              return Center(
+                child: Text(
+                  'Could not load updates',
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.black87),
+                ),
+              );
+            }
+            final updates = snapshot.data ?? [];
+            if (updates.isEmpty) {
+              return Center(
+                child: Text(
+                  'No updates yet',
+                  style: AppTextStyles.bodySmall.copyWith(color: Colors.black87),
+                ),
+              );
+            }
+
+            return ListView.builder(
+              controller: _updatesScrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: updates.length,
+              itemBuilder: (context, index) {
+                final update = updates[index];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: buildDataDrivenFeedWidget(
+                    name: _updateTitle(update),
+                    col: 0,
+                    row: 0,
+                    width: 1,
+                    height: 1,
+                    fillHeight: false,
+                    bodyBuilder: (ctx) => _buildUpdateBody(ctx, update),
+                  ),
+                );
+              },
             );
           },
         ),
@@ -574,271 +595,110 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
+  static String _updateTitle(Map<String, dynamic> update) {
+    final type = update['type'] as String? ?? 'post';
+    if (type == 'event') return 'Upcoming Event';
+    final channel = update['channelName'] as String?;
+    if (channel != null && channel.isNotEmpty) return '#$channel';
+    return 'Update';
+  }
 
-}
-
-// ------------ SCHEDULE TIMELINE WIDGET ------------
-class _ScheduleTimeline extends StatelessWidget {
-  final List<Map<String, dynamic>> events;
-  final double hourHeight;
-  final ScrollController scrollController;
-  final double availableWidth;
-  final Function(Map<String, dynamic>) onEventTap;
-  final Function(String) onTimeSlotTap;
-  final Function(double) onScaleUpdate;
-
-  const _ScheduleTimeline({
-    required this.events,
-    required this.hourHeight,
-    required this.scrollController,
-    required this.availableWidth,
-    required this.onEventTap,
-    required this.onTimeSlotTap,
-    required this.onScaleUpdate,
-  });
-
-  // Generate hours from 4am to 12am (midnight)
-  List<String> _generateHours() {
-    final hours = <String>[];
-    for (int i = 4; i <= 24; i++) {
-      final hour = i == 24 ? 12 : (i > 12 ? i - 12 : i);
-      final period = i < 12 ? 'AM' : (i == 24 ? 'AM' : 'PM');
-      hours.add('$hour:00 $period');
+  Widget _buildUpdateBody(BuildContext context, Map<String, dynamic> update) {
+    final type = update['type'] as String? ?? 'post';
+    if (type == 'event') {
+      return _EventUpdateBody(update: update);
     }
-    return hours;
-  }
-
-  // Parse time string to minutes from 4am
-  int _timeToMinutes(String time) {
-    final parts = time.split(' ');
-    final timePart = parts[0];
-    final period = parts[1];
-    final hourMin = timePart.split(':');
-    int hour = int.parse(hourMin[0]);
-    int minute = hourMin.length > 1 ? int.parse(hourMin[1]) : 0;
-
-    if (period == 'PM' && hour != 12) hour += 12;
-    if (period == 'AM' && hour == 12) hour = 0;
-
-    // Convert to minutes from 4am (240 minutes)
-    int totalMinutes = (hour * 60) + minute;
-    return totalMinutes - 240; // Offset from 4am
-  }
-
-  // Check if two events overlap
-  bool _eventsOverlap(Map<String, dynamic> event1, Map<String, dynamic> event2) {
-    final start1 = _timeToMinutes(event1['start'] as String);
-    final end1 = _timeToMinutes(event1['end'] as String);
-    final start2 = _timeToMinutes(event2['start'] as String);
-    final end2 = _timeToMinutes(event2['end'] as String);
-
-    return !(end1 <= start2 || end2 <= start1);
-  }
-
-  // Calculate column position for overlapping events
-  List<Map<String, dynamic>> _calculateEventPositions(
-      List<Map<String, dynamic>> events) {
-    final positionedEvents = <Map<String, dynamic>>[];
-
-    for (int i = 0; i < events.length; i++) {
-      final event = Map<String, dynamic>.from(events[i]);
-      int column = 0;
-      int maxColumns = 1;
-
-      // Find all overlapping events
-      final overlapping = <int>[];
-      for (int j = 0; j < i; j++) {
-        if (_eventsOverlap(events[j], events[i])) {
-          overlapping.add(j);
-        }
-      }
-
-      // Find the rightmost column used by overlapping events
-      for (final idx in overlapping) {
-        final overlappedEvent = positionedEvents.firstWhere(
-          (e) => e['index'] == idx,
-        );
-        final overlappedColumn = overlappedEvent['column'] as int;
-        column = column > overlappedColumn ? column : overlappedColumn + 1;
-      }
-
-      // Calculate how many columns this group needs
-      for (final idx in overlapping) {
-        final overlappedEvent = positionedEvents.firstWhere(
-          (e) => e['index'] == idx,
-        );
-        final overlappedColumns = overlappedEvent['maxColumns'] as int;
-        maxColumns = maxColumns > overlappedColumns
-            ? maxColumns
-            : overlappedColumns;
-      }
-
-      // Update maxColumns for all overlapping events
-      for (final idx in overlapping) {
-        final overlappedEvent = positionedEvents.firstWhere(
-          (e) => e['index'] == idx,
-        );
-        overlappedEvent['maxColumns'] = maxColumns + 1;
-      }
-
-      event['column'] = column;
-      event['maxColumns'] = maxColumns + 1;
-      event['index'] = i;
-      positionedEvents.add(event);
-    }
-
-    return positionedEvents;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hours = _generateHours();
-    final totalHeight = hours.length * hourHeight;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFF333333),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: GestureDetector(
-        onScaleUpdate: (details) {
-          onScaleUpdate(details.scale);
-        },
-        child: SingleChildScrollView(
-          controller: scrollController,
-          child: Stack(
-            children: [
-              // Time markers
-              SizedBox(
-                height: totalHeight,
-                child: Column(
-                  children: hours.map((hour) {
-                    return Container(
-                      height: hourHeight,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 60,
-                            child: Text(
-                              hour,
-                              style: AppTextStyles.captionWithColor(Colors.white70),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              // Events - calculate positions with stacking
-              ..._calculateEventPositions(events).map((event) {
-                final startMinutes = _timeToMinutes(event['start'] as String);
-                final endMinutes = _timeToMinutes(event['end'] as String);
-                final duration = endMinutes - startMinutes;
-                final top = startMinutes * (hourHeight / 60);
-                final height = duration * (hourHeight / 60);
-                final column = event['column'] as int;
-                final maxColumns = event['maxColumns'] as int;
-                final eventWidth = availableWidth / maxColumns;
-                final left = 80 + (column * eventWidth);
-
-                return Positioned(
-                  left: left,
-                  width: eventWidth - 4, // Small gap between events
-                  top: top,
-                  height: height,
-                  child: GestureDetector(
-                    onTap: () => onEventTap(event),
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: event['color'] as Color,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      clipBehavior: Clip.hardEdge,
-                      child: SizedBox(
-                        height: height,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    event['title'] as String,
-                                    style: AppTextStyles.bodySmall.copyWith(
-                                      fontWeight: AppTextStyles.semiBoldWeight,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  Text(
-                                    '${event['start']} - ${event['end']}',
-                                    style: AppTextStyles.captionWithColor(Colors.white70),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            if (event['hasInvite'] == true ||
-                                event['hasAttend'] == true)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      event['hasInvite'] == true
-                                          ? '+ Invite'
-                                          : '+ Attend',
-                                      style: AppTextStyles.caption.copyWith(
-                                        fontSize: AppTextStyles.labelSmallSize,
-                                        fontWeight: AppTextStyles.semiBoldWeight,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
+    return _PostUpdateBody(
+      update: update,
+      onComment: () => _showCommentSheet(
+        gymUid: update['gymUid'] as String,
+        postId: update['postId'] as String,
       ),
     );
   }
+
+  void _showCommentSheet({required String gymUid, required String postId}) {
+    final controller = TextEditingController();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 16,
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Comments',
+                style: AppTextStyles.subtitle.copyWith(color: Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 260,
+                child: StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: getCommentsStream(gymUid, postId),
+                  builder: (context, snapshot) {
+                    final comments = snapshot.data ?? [];
+                    if (comments.isEmpty) {
+                      return const Center(child: Text('No comments yet'));
+                    }
+                    return ListView.separated(
+                      itemCount: comments.length,
+                      separatorBuilder: (_, __) => const Divider(height: 16),
+                      itemBuilder: (context, i) {
+                        final c = comments[i];
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              c['authorName']?.toString() ?? 'User',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: AppTextStyles.semiBoldWeight,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(c['content']?.toString() ?? ''),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                decoration: const InputDecoration(
+                  hintText: 'Add a comment…',
+                  border: OutlineInputBorder(),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                onSubmitted: (_) async {
+                  final text = controller.text.trim();
+                  if (text.isEmpty) return;
+                  controller.clear();
+                  await addComment(gymUid, postId, text);
+                },
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Done'),
+              ),
+            ],
+          ),
+        );
+      },
+    ).whenComplete(controller.dispose);
+  }
+
+
 }
 
 // ------------ COLLAPSED CARD WIDGET ------------
@@ -977,10 +837,12 @@ class _UpdateCard extends StatelessWidget {
 class _FeedSectionCard extends StatelessWidget {
   final String title;
   final Widget child;
+  final bool fillHeight;
 
   const _FeedSectionCard({
     required this.title,
     required this.child,
+    this.fillHeight = true,
   });
 
   @override
@@ -997,6 +859,7 @@ class _FeedSectionCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: fillHeight ? MainAxisSize.max : MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // header strip
@@ -1015,17 +878,119 @@ class _FeedSectionCard extends StatelessWidget {
             ),
           ),
 
-          // body
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF333333),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(24),
-                bottomRight: Radius.circular(24),
+          // body (either fills remaining height or shrink-wraps)
+          if (fillHeight)
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF333333),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(24),
+                    bottomRight: Radius.circular(24),
+                  ),
+                ),
+                child: child,
               ),
+            )
+          else
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFF333333),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                ),
+              ),
+              child: child,
             ),
-            child: child,
+        ],
+      ),
+    );
+  }
+}
+
+// ------------ GOAL ROW + RING ------------
+class _GoalRow extends StatelessWidget {
+  final String label;
+  final int current;
+  final int target;
+
+  const _GoalRow({
+    required this.label,
+    required this.current,
+    required this.target,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final double progress =
+        target > 0 ? (current / target).clamp(0.0, 1.0) : 0.0;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            '$label $current/$target',
+            style: AppTextStyles.bodySmallWithColor(Colors.white),
+          ),
+        ),
+        const SizedBox(width: 12),
+        _GoalProgressRing(
+          progress: progress,
+          current: current,
+          target: target,
+        ),
+      ],
+    );
+  }
+}
+
+class _GoalProgressRing extends StatelessWidget {
+  final double progress;
+  final int current;
+  final int target;
+
+  const _GoalProgressRing({
+    required this.progress,
+    required this.current,
+    required this.target,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // base ring
+          CircularProgressIndicator(
+            value: 1.0,
+            strokeWidth: 4,
+            valueColor: AlwaysStoppedAnimation<Color>(
+              Colors.white.withValues(alpha: 0.25),
+            ),
+            backgroundColor: Colors.transparent,
+          ),
+          // progress ring
+          CircularProgressIndicator(
+            value: progress,
+            strokeWidth: 4,
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              Colors.orangeAccent,
+            ),
+            backgroundColor: Colors.transparent,
+          ),
+          // number in center
+          Text(
+            '$current',
+            style: AppTextStyles.bodySmall.copyWith(
+              fontWeight: AppTextStyles.semiBoldWeight,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
@@ -1086,6 +1051,172 @@ class _UpdatesBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ------------ UPDATE BODIES (DATA DRIVEN) ------------
+class _EventUpdateBody extends StatelessWidget {
+  final Map<String, dynamic> update;
+  const _EventUpdateBody({required this.update});
+
+  static String _formatTime(DateTime d) {
+    final hour = d.hour > 12 ? d.hour - 12 : (d.hour == 0 ? 12 : d.hour);
+    final period = d.hour < 12 ? 'AM' : 'PM';
+    final min = d.minute == 0 ? '' : ':${d.minute.toString().padLeft(2, '0')}';
+    return '$hour$min $period';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final owner = update['owner']?.toString() ?? 'Friend';
+    final title = update['title']?.toString() ?? 'Event';
+    final start = update['start'] as DateTime?;
+    final end = update['end'] as DateTime?;
+    final when = (start != null && end != null)
+        ? '${_formatTime(start)} – ${_formatTime(end)}'
+        : '';
+    final location = update['location']?.toString();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          owner,
+          style: AppTextStyles.bodySmallWithColor(Colors.white70),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          title,
+          style: AppTextStyles.subtitleWithColor(Colors.white),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (when.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(when, style: AppTextStyles.bodySmallWithColor(Colors.white70)),
+        ],
+        if (location != null && location.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Text(
+            location,
+            style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () => context.go('/calendar'),
+            icon: const Icon(Icons.calendar_today, color: Colors.white, size: 18),
+            label: Text(
+              'Open calendar',
+              style: AppTextStyles.bodySmallWithColor(Colors.white),
+            ),
+            style: TextButton.styleFrom(
+              backgroundColor: FeedPage.forgeBlue,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PostUpdateBody extends StatelessWidget {
+  final Map<String, dynamic> update;
+  final VoidCallback onComment;
+  const _PostUpdateBody({required this.update, required this.onComment});
+
+  @override
+  Widget build(BuildContext context) {
+    final gymUid = update['gymUid'] as String;
+    final postId = update['postId'] as String;
+    final channelName = update['channelName']?.toString() ?? 'general';
+    final author = update['authorName']?.toString() ?? 'User';
+    final content = update['content']?.toString() ?? '';
+    final likeIds = (update['likeIds'] as List<dynamic>? ?? []).map((e) => e.toString()).toList();
+    final myUid = FirebaseAuth.instance.currentUser?.uid;
+    final isLiked = myUid != null && likeIds.contains(myUid);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          author,
+          style: AppTextStyles.bodySmallWithColor(Colors.white70),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        Text(
+          content,
+          style: AppTextStyles.bodySmallWithColor(Colors.white),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            TextButton.icon(
+              onPressed: () => togglePostLike(gymUid, postId),
+              icon: Icon(
+                isLiked ? Icons.favorite : Icons.favorite_border,
+                color: isLiked ? Colors.redAccent : Colors.white,
+                size: 18,
+              ),
+              label: Text(
+                '${likeIds.length}',
+                style: AppTextStyles.bodySmallWithColor(Colors.white),
+              ),
+            ),
+            const SizedBox(width: 8),
+            StreamBuilder<List<Map<String, dynamic>>>(
+              stream: getCommentsStream(gymUid, postId),
+              builder: (context, snapshot) {
+                final count = snapshot.data?.length ?? 0;
+                return TextButton.icon(
+                  onPressed: onComment,
+                  icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
+                  label: Text(
+                    '$count',
+                    style: AppTextStyles.bodySmallWithColor(Colors.white),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (ctx) => ChannelPage(
+                    gymUid: gymUid,
+                    channelName: channelName,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(
+              Icons.open_in_new,
+              size: 18,
+              color: Colors.white,
+            ),
+            label: Text(
+              'View in channel',
+              style: AppTextStyles.bodySmallWithColor(Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -41,6 +42,62 @@ class _CalendarPageState extends State<CalendarPage> {
     'Ethan': Colors.blue,
     'Gym 1': Colors.green,
   };
+
+  final ScrollController _dayScrollController = ScrollController();
+  Timer? _nowTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollDayViewToNow(jump: true);
+    });
+    _nowTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted && _currentView == CalendarView.day) {
+        setState(() {
+          // just trigger rebuild so now-line moves
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _nowTimer?.cancel();
+    _dayScrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollDayViewToNow({required bool jump}) {
+    if (_currentView != CalendarView.day) return;
+    if (!_dayScrollController.hasClients) return;
+
+    final now = DateTime.now();
+    final hourHeight = 80.0;
+    final startHour = now.hour + now.minute / 60.0;
+
+    // Timeline starts at 4am in the UI.
+    final rawTop = (startHour - 4) * hourHeight;
+
+    // Place "now" roughly one third down from the top of the viewport.
+    final viewport = _dayScrollController.position.viewportDimension;
+    final target = rawTop - (viewport / 3);
+
+    final clamped = target.clamp(
+      0.0,
+      _dayScrollController.position.maxScrollExtent,
+    );
+
+    if (jump) {
+      _dayScrollController.jumpTo(clamped);
+    } else {
+      _dayScrollController.animateTo(
+        clamped,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOutCubic,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +164,11 @@ class _CalendarPageState extends State<CalendarPage> {
         setState(() {
           _currentView = view;
         });
+        if (view == CalendarView.day) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollDayViewToNow(jump: false);
+          });
+        }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -220,6 +282,10 @@ class _CalendarPageState extends State<CalendarPage> {
     return result;
   }
 
+  bool _isSameDay(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
   Widget _buildDayTimeline(List<Map<String, dynamic>> events) {
     final hours = _generateHours();
     final hourHeight = 80.0;
@@ -244,6 +310,7 @@ class _CalendarPageState extends State<CalendarPage> {
         builder: (context, constraints) {
           final availableWidth = constraints.maxWidth - timeLabelWidth - rightMargin;
           return SingleChildScrollView(
+            controller: _dayScrollController,
             child: Stack(
               children: [
                 // Time markers
@@ -276,6 +343,50 @@ class _CalendarPageState extends State<CalendarPage> {
                     );
                   }).toList(),
                 ),
+                // Current time line (only for today, between 4am and midnight)
+                if (_isSameDay(_currentDate, DateTime.now()))
+                  Builder(
+                    builder: (context) {
+                      final now = DateTime.now();
+                      final nowHour = now.hour + now.minute / 60.0;
+                      final top = (nowHour - 4) * hourHeight;
+                      if (top < 0 || top > hours.length * hourHeight) {
+                        return const SizedBox.shrink();
+                      }
+                      return Positioned(
+                        top: top,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 80),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: CalendarPage.forgeBlue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Container(
+                                      height: 2,
+                                      color: CalendarPage.forgeBlue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: rightMargin),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 // Events (side by side when overlapping)
                 ...events.asMap().entries.map((entry) {
                   final index = entry.key;
