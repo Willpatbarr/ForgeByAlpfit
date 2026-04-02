@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../../app/app_header.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../features/event_creator/presentation/view/event_creator_page.dart';
@@ -8,16 +10,26 @@ import '../../../../services/events_service.dart';
 enum CalendarView { day, multi, month }
 
 class CalendarPage extends StatefulWidget {
-  const CalendarPage({super.key});
+  const CalendarPage({super.key, this.focusOwnerUid, this.focusEventId});
+
+  /// Deep link from chat invite: Firestore owner uid and event id under `users/{owner}/events/{id}`.
+  final String? focusOwnerUid;
+  final String? focusEventId;
 
   static const Color background = Color(0xFFF5F5F7);
   static const Color forgeBlue = Color(0xFF4D7CFF);
+
+  /// Default vertical space per hour in day view (logical px).
+  static const double dayViewHourHeightDefault = 80;
 
   @override
   State<CalendarPage> createState() => _CalendarPageState();
 }
 
 class _CalendarPageState extends State<CalendarPage> {
+  static const double _kDayHourHeightMin = 32;
+  static const double _kDayHourHeightMax = 200;
+
   CalendarView _currentView = CalendarView.day;
   bool _showFilterPopup = false;
   Map<String, dynamic>? _selectedEvent;
@@ -46,11 +58,16 @@ class _CalendarPageState extends State<CalendarPage> {
   final ScrollController _dayScrollController = ScrollController();
   Timer? _nowTimer;
 
+  /// Pinch / trackpad zoom for day timeline hour spacing.
+  double _dayViewHourHeight = CalendarPage.dayViewHourHeightDefault;
+  double _dayViewPinchBaseHourHeight = CalendarPage.dayViewHourHeightDefault;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollDayViewToNow(jump: true);
+      _applyCalendarDeepLink();
     });
     _nowTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted && _currentView == CalendarView.day) {
@@ -58,6 +75,44 @@ class _CalendarPageState extends State<CalendarPage> {
           // just trigger rebuild so now-line moves
         });
       }
+    });
+  }
+
+  @override
+  void didUpdateWidget(CalendarPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusOwnerUid != oldWidget.focusOwnerUid ||
+        widget.focusEventId != oldWidget.focusEventId) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _applyCalendarDeepLink();
+      });
+    }
+  }
+
+  Future<void> _applyCalendarDeepLink() async {
+    final owner = widget.focusOwnerUid?.trim();
+    final eid = widget.focusEventId?.trim();
+    if (owner == null ||
+        owner.isEmpty ||
+        eid == null ||
+        eid.isEmpty ||
+        !mounted) {
+      return;
+    }
+
+    final ev = await getCalendarEventForDeepLink(ownerUid: owner, eventId: eid);
+    if (!mounted) return;
+    if (ev == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open that event.')),
+      );
+      return;
+    }
+    final start = ev['start'] as DateTime;
+    setState(() {
+      _currentView = CalendarView.day;
+      _currentDate = DateTime(start.year, start.month, start.day);
+      _selectedEvent = ev;
     });
   }
 
@@ -73,7 +128,7 @@ class _CalendarPageState extends State<CalendarPage> {
     if (!_dayScrollController.hasClients) return;
 
     final now = DateTime.now();
-    final hourHeight = 80.0;
+    final hourHeight = _dayViewHourHeight;
     final startHour = now.hour + now.minute / 60.0;
 
     // Timeline starts at 4am in the UI.
@@ -99,11 +154,41 @@ class _CalendarPageState extends State<CalendarPage> {
     }
   }
 
+  /// Pinch and Ctrl/Cmd + scroll both adjust this; keeps scroll position on the same rough time.
+  void _updateDayViewHourHeight(double rawHeight) {
+    final newH = rawHeight.clamp(_kDayHourHeightMin, _kDayHourHeightMax);
+    if ((newH - _dayViewHourHeight).abs() < 0.3) return;
+    final oldH = _dayViewHourHeight;
+    final sc = _dayScrollController;
+    final preserveOffset = sc.hasClients ? sc.offset * (newH / oldH) : null;
+    setState(() => _dayViewHourHeight = newH);
+    if (preserveOffset != null) {
+      final targetOffset = preserveOffset;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!sc.hasClients || !mounted) return;
+        sc.jumpTo(targetOffset.clamp(0.0, sc.position.maxScrollExtent));
+      });
+    }
+  }
+
+  /// Trackpad/wheel zoom on web/desktop (Ctrl or ⌘ + vertical scroll).
+  void _onDayViewPointerScroll(PointerScrollEvent event) {
+    final k = HardwareKeyboard.instance;
+    if (!k.isControlPressed && !k.isMetaPressed) {
+      return;
+    }
+    final oldH = _dayViewHourHeight;
+    // Positive dy: scroll down → zoom out (shorter hours). Up → zoom in.
+    final delta = -event.scrollDelta.dy * 0.1;
+    _updateDayViewHourHeight(oldH + delta);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: CalendarPage.background,
       body: SafeArea(
+        top: false,
         child: Stack(
           children: [
             Column(
@@ -140,9 +225,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 ),
 
                 // Main content
-                Expanded(
-                  child: _buildMainContent(),
-                ),
+                Expanded(child: _buildMainContent()),
               ],
             ),
 
@@ -180,9 +263,7 @@ class _CalendarPageState extends State<CalendarPage> {
           label,
           style: AppTextStyles.bodyWithColor(
             isSelected ? CalendarPage.forgeBlue : Colors.black87,
-          ).copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+          ).copyWith(fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -215,7 +296,9 @@ class _CalendarPageState extends State<CalendarPage> {
                 color: Colors.black87,
                 onPressed: () {
                   setState(() {
-                    _currentDate = _currentDate.subtract(const Duration(days: 1));
+                    _currentDate = _currentDate.subtract(
+                      const Duration(days: 1),
+                    );
                   });
                 },
               ),
@@ -267,8 +350,12 @@ class _CalendarPageState extends State<CalendarPage> {
   /// are placed side by side. Events overlap when startA < endB && endA > startB.
   List<(int, int)> _eventColumns(List<Map<String, dynamic>> events) {
     if (events.isEmpty) return [];
-    final starts = events.map((e) => (e['start'] as DateTime).millisecondsSinceEpoch).toList();
-    final ends = events.map((e) => (e['end'] as DateTime).millisecondsSinceEpoch).toList();
+    final starts = events
+        .map((e) => (e['start'] as DateTime).millisecondsSinceEpoch)
+        .toList();
+    final ends = events
+        .map((e) => (e['end'] as DateTime).millisecondsSinceEpoch)
+        .toList();
     final result = <(int, int)>[];
     for (int i = 0; i < events.length; i++) {
       final overlapping = <int>[];
@@ -288,7 +375,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Widget _buildDayTimeline(List<Map<String, dynamic>> events) {
     final hours = _generateHours();
-    final hourHeight = 80.0;
+    final hourHeight = _dayViewHourHeight;
     final columns = _eventColumns(events);
     const timeLabelWidth = 100.0;
     const rightMargin = 16.0;
@@ -299,190 +386,187 @@ class _CalendarPageState extends State<CalendarPage> {
         color: const Color(0xFF333333),
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth - timeLabelWidth - rightMargin;
-          return SingleChildScrollView(
-            controller: _dayScrollController,
-            child: Stack(
-              children: [
-                // Time markers
-                Column(
-                  children: hours.map((hour) {
-                    return Container(
-                      height: hourHeight,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 80,
-                            child: Text(
-                              hour,
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: Colors.white70,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Container(
-                              height: 1,
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-                // Current time line (only for today, between 4am and midnight)
-                if (_isSameDay(_currentDate, DateTime.now()))
-                  Builder(
-                    builder: (context) {
-                      final now = DateTime.now();
-                      final nowHour = now.hour + now.minute / 60.0;
-                      final top = (nowHour - 4) * hourHeight;
-                      if (top < 0 || top > hours.length * hourHeight) {
-                        return const SizedBox.shrink();
-                      }
-                      return Positioned(
-                        top: top,
-                        left: 0,
-                        right: 0,
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 80),
-                            Expanded(
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: BoxDecoration(
-                                      color: CalendarPage.forgeBlue,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Container(
-                                      height: 2,
-                                      color: CalendarPage.forgeBlue,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: rightMargin),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                // Events (side by side when overlapping)
-                ...events.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final event = entry.value;
-                  final start = event['start'] as DateTime;
-                  final end = event['end'] as DateTime;
-                  final startHour = start.hour + start.minute / 60.0;
-                  final endHour = end.hour + end.minute / 60.0;
-                  final top = (startHour - 4) * hourHeight;
-                  final height = (endHour - startHour) * hourHeight;
-                  final (columnIndex, totalColumns) = columns[index];
-                  final eventWidth = availableWidth / totalColumns;
-                  final left = timeLabelWidth + columnIndex * eventWidth;
-
-                  return Positioned(
-                    left: left,
-                    width: eventWidth - 2,
-                    top: top,
-                    height: height,
-                    child: GestureDetector(
-                  onTap: () => _onEventTap(event),
-                  child: SizedBox(
-                    height: height,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: event['color'] as Color,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Title: full (2 lines) when card is tall enough; 1 line only on very short cards
-                            Text(
-                              event['title'] as String,
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                              maxLines: height >= 70 ? 2 : 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            // Time: only when there's space left under the title (don't sacrifice title space)
-                            if (height >= 90) ...[
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_formatTime(start)} – ${_formatTime(end)}',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 11,
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          const SizedBox(height: 4),
-                          if (event['hasInvite'] == true || event['hasAttend'] == true)
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+          final availableWidth =
+              constraints.maxWidth - timeLabelWidth - rightMargin;
+          return Listener(
+            onPointerSignal: (signal) {
+              if (signal is PointerScrollEvent) {
+                _onDayViewPointerScroll(signal);
+              }
+            },
+            child: GestureDetector(
+              onScaleStart: (_) {
+                _dayViewPinchBaseHourHeight = _dayViewHourHeight;
+              },
+              onScaleUpdate: (details) {
+                _updateDayViewHourHeight(
+                  _dayViewPinchBaseHourHeight * details.scale,
+                );
+              },
+              child: SingleChildScrollView(
+                controller: _dayScrollController,
+                child: Stack(
+                  children: [
+                    // Time markers
+                    Column(
+                      children: hours.map((hour) {
+                        return Container(
+                          height: hourHeight,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          // Top-align so the rule marks the start of this hour. Default
+                          // [CrossAxisAlignment.center] put the line mid-cell (= +30 min vs event math).
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                width: 80,
                                 child: Text(
-                                  event['hasInvite'] == true ? '+ Invite' : '+ Attend',
+                                  hour,
                                   style: const TextStyle(
                                     fontFamily: 'Poppins',
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.black87,
+                                    fontSize: 14,
+                                    color: Colors.white70,
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
+                              Expanded(
+                                child: Container(
+                                  height: 1,
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  ),
-                  ),
-                );
-            }).toList(),
-          ],
-        ),
-      );
+                    // Current time line (only for today, between 4am and midnight)
+                    if (_isSameDay(_currentDate, DateTime.now()))
+                      Builder(
+                        builder: (context) {
+                          final now = DateTime.now();
+                          final nowHour = now.hour + now.minute / 60.0;
+                          final top = (nowHour - 4) * hourHeight;
+                          if (top < 0 || top > hours.length * hourHeight) {
+                            return const SizedBox.shrink();
+                          }
+                          return Positioned(
+                            top: top,
+                            left: 0,
+                            right: 0,
+                            child: Row(
+                              children: [
+                                const SizedBox(width: 80),
+                                Expanded(
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: BoxDecoration(
+                                          color: CalendarPage.forgeBlue,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Expanded(
+                                        child: Container(
+                                          height: 2,
+                                          color: CalendarPage.forgeBlue,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: rightMargin),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    // Events (side by side when overlapping)
+                    ...events.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final event = entry.value;
+                      final start = event['start'] as DateTime;
+                      final end = event['end'] as DateTime;
+                      final startHour = start.hour + start.minute / 60.0;
+                      final endHour = end.hour + end.minute / 60.0;
+                      final top = (startHour - 4) * hourHeight;
+                      final height = (endHour - startHour) * hourHeight;
+                      final (columnIndex, totalColumns) = columns[index];
+                      final eventWidth = availableWidth / totalColumns;
+                      final left = timeLabelWidth + columnIndex * eventWidth;
+
+                      return Positioned(
+                        left: left,
+                        width: eventWidth - 2,
+                        top: top,
+                        height: height,
+                        child: GestureDetector(
+                          onTap: () => _onEventTap(event),
+                          child: SizedBox(
+                            height: height,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: event['color'] as Color,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Title: full (2 lines) when card is tall enough; 1 line only on very short cards
+                                    Text(
+                                      event['title'] as String,
+                                      style: const TextStyle(
+                                        fontFamily: 'Poppins',
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                      maxLines: height >= hourHeight * 0.875
+                                          ? 2
+                                          : 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    // Time: only when there's space left under the title (don't sacrifice title space)
+                                    if (height >= hourHeight * 1.125) ...[
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '${_formatTime(start)} – ${_formatTime(end)}',
+                                        style: TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 11,
+                                          color: Colors.white.withValues(
+                                            alpha: 0.9,
+                                          ),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),
+          );
         },
       ),
     );
@@ -494,10 +578,8 @@ class _CalendarPageState extends State<CalendarPage> {
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
-        builder: (ctx) => EventCreatorPage(
-          eventId: event['id'] as String,
-          embedded: true,
-        ),
+        builder: (ctx) =>
+            EventCreatorPage(eventId: event['id'] as String, embedded: true),
       );
     } else {
       setState(() => _selectedEvent = event);
@@ -505,19 +587,18 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   /// Events for the 4-day multi view: list of events, grouped by day index 0..3.
-  List<List<Map<String, dynamic>>> _eventsByDay(List<Map<String, dynamic>> rangeEvents) {
+  List<List<Map<String, dynamic>>> _eventsByDay(
+    List<Map<String, dynamic>> rangeEvents,
+  ) {
     final start = _currentDate;
-    final byDay = <List<Map<String, dynamic>>>[
-      [],
-      [],
-      [],
-      [],
-    ];
+    final byDay = <List<Map<String, dynamic>>>[[], [], [], []];
     for (final event in rangeEvents) {
       final d = event['start'] as DateTime;
       for (int i = 0; i < 4; i++) {
         final dayDate = start.add(Duration(days: i));
-        if (d.year == dayDate.year && d.month == dayDate.month && d.day == dayDate.day) {
+        if (d.year == dayDate.year &&
+            d.month == dayDate.month &&
+            d.day == dayDate.day) {
           byDay[i].add(event);
           break;
         }
@@ -536,24 +617,45 @@ class _CalendarPageState extends State<CalendarPage> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               IconButton(
                 icon: const Icon(Icons.chevron_left),
                 color: Colors.black87,
                 onPressed: () {
                   setState(() {
-                    _currentDate = _currentDate.subtract(const Duration(days: 1));
+                    _currentDate = _currentDate.subtract(
+                      const Duration(days: 1),
+                    );
                   });
                 },
               ),
-              Text(
-                '${_formatDate(_currentDate)} - ${_formatDate(rangeEnd)}',
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _formatDate(_currentDate),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(rangeEnd),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontFamily: 'Poppins',
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               IconButton(
@@ -643,7 +745,8 @@ class _CalendarPageState extends State<CalendarPage> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         Text(
@@ -663,7 +766,9 @@ class _CalendarPageState extends State<CalendarPage> {
                                           style: TextStyle(
                                             fontFamily: 'Poppins',
                                             fontSize: 10,
-                                            color: Colors.white.withValues(alpha: 0.9),
+                                            color: Colors.white.withValues(
+                                              alpha: 0.9,
+                                            ),
                                           ),
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -777,7 +882,8 @@ class _CalendarPageState extends State<CalendarPage> {
     final map = <int, List<Map<String, dynamic>>>{};
     for (final event in monthEvents) {
       final d = event['start'] as DateTime;
-      if (d.month != _monthViewDate.month || d.year != _monthViewDate.year) continue;
+      if (d.month != _monthViewDate.month || d.year != _monthViewDate.year)
+        continue;
       map.putIfAbsent(d.day, () => []).add(event);
     }
     return map;
@@ -797,19 +903,21 @@ class _CalendarPageState extends State<CalendarPage> {
           // Day labels
           Row(
             children: ['S', 'M', 'T', 'W', 'Th', 'F', 'S']
-                .map((label) => Expanded(
-                      child: Center(
-                        child: Text(
-                          label,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white70,
-                          ),
+                .map(
+                  (label) => Expanded(
+                    child: Center(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white70,
                         ),
                       ),
-                    ))
+                    ),
+                  ),
+                )
                 .toList(),
           ),
           const SizedBox(height: 8),
@@ -824,7 +932,11 @@ class _CalendarPageState extends State<CalendarPage> {
                     return Expanded(child: const SizedBox.shrink());
                   }
 
-                  final date = DateTime(_monthViewDate.year, _monthViewDate.month, day);
+                  final date = DateTime(
+                    _monthViewDate.year,
+                    _monthViewDate.month,
+                    day,
+                  );
                   final eventsForDay = eventsByDay[day] ?? [];
                   final isCurrentDay =
                       date.year == _currentDate.year &&
@@ -854,39 +966,39 @@ class _CalendarPageState extends State<CalendarPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                              Text(
-                                '$day',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isCurrentDay
-                                      ? CalendarPage.forgeBlue
-                                      : Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              // Event titles only (tap to edit)
-                              ...eventsForDay.take(3).map((event) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 2),
-                                  child: GestureDetector(
-                                    onTap: () => _onEventTap(event),
-                                    behavior: HitTestBehavior.opaque,
-                                    child: Text(
-                                      event['title'] as String? ?? '',
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        fontSize: 10,
-                                        color: Colors.white70,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                Text(
+                                  '$day',
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins',
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: isCurrentDay
+                                        ? CalendarPage.forgeBlue
+                                        : Colors.white,
                                   ),
-                                );
-                              }),
-                            ],
+                                ),
+                                const SizedBox(height: 4),
+                                // Event titles only (tap to edit)
+                                ...eventsForDay.take(3).map((event) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 2),
+                                    child: GestureDetector(
+                                      onTap: () => _onEventTap(event),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Text(
+                                        event['title'] as String? ?? '',
+                                        style: const TextStyle(
+                                          fontFamily: 'Poppins',
+                                          fontSize: 10,
+                                          color: Colors.white70,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
                             ),
                           ),
                         ),
@@ -1078,7 +1190,10 @@ class _CalendarPageState extends State<CalendarPage> {
                                 color: Colors.grey,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(Icons.person, color: Colors.white),
+                              child: const Icon(
+                                Icons.person,
+                                color: Colors.white,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -1173,7 +1288,9 @@ class _CalendarPageState extends State<CalendarPage> {
                           ),
                         ),
                         const SizedBox(height: 8),
-                        ...(event['exercises'] as List<Map<String, String>>).map((exercise) {
+                        ...(event['exercises'] as List<Map<String, String>>).map((
+                          exercise,
+                        ) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Text(
@@ -1271,7 +1388,6 @@ class _CalendarPageState extends State<CalendarPage> {
     );
   }
 
-
   // Helper methods
   List<String> _generateHours() {
     return List.generate(21, (i) {
@@ -1288,23 +1404,12 @@ class _CalendarPageState extends State<CalendarPage> {
 
   List<Map<String, dynamic>> _getMultiViewDays() {
     final start = _currentDate;
-    const shortWeekdays = [
-      'Mon',
-      'Tue',
-      'Wed',
-      'Thu',
-      'Fri',
-      'Sat',
-      'Sun',
-    ];
+    const shortWeekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return List.generate(4, (index) {
       final date = start.add(Duration(days: index));
       final weekdayLabel = shortWeekdays[date.weekday - 1];
-      return {
-        'label': '$weekdayLabel ${date.day}',
-        'date': date,
-      };
+      return {'label': '$weekdayLabel ${date.day}', 'date': date};
     });
   }
 
@@ -1313,8 +1418,29 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   String _formatDate(DateTime date) {
-    final weekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    final weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    final months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}${_getDaySuffix(date.day)}';
   }
 

@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../app/app_header.dart';
 import '../../../../services/events_service.dart';
+import '../../../../services/direct_messages_service.dart';
 import '../../../../core/firebase/firestore_refs.dart';
+import 'create_page_hub.dart';
+import 'goal_creator_sheet.dart';
+import 'plan_creator_sheet.dart';
 
 enum EventType { basic, workout }
 
@@ -60,56 +64,270 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   // Friends selection
   List<Map<String, String>> _friends = [];
 
+  /// Gym-only: members for bulk invite (from `memberUserIds`).
+  List<Map<String, String>> _gymMembers = [];
+
+  /// Gym-only create flow: notify all members via DM + add to [inviteeIds].
+  bool _inviteMembersToEvent = false;
+
+  /// Create hub: gym accounts get an Events tab.
+  bool? _isGymAccount;
+
+  /// Tracks the visible hub tab for FAB behavior.
+  CreateHubTab _hubTab = CreateHubTab.workouts;
+
   bool _isLoadingEventForEdit = false;
   bool _loadEventError = false;
-
-  final List<Map<String, dynamic>> _premadeWorkouts = [
-    {
-      'name': 'Push Day',
-      'exercises': ['Bench Press', 'Shoulder Press', 'Tricep Dips'],
-    },
-    {
-      'name': 'Pull Day',
-      'exercises': ['Deadlift', 'Rows', 'Bicep Curls'],
-    },
-    {
-      'name': 'Leg Day',
-      'exercises': ['Squats', 'Leg Press', 'Calf Raises'],
-    },
-    {
-      'name': 'Full Body',
-      'exercises': ['Squats', 'Bench Press', 'Rows'],
-    },
-  ];
-
-  final List<Map<String, dynamic>> _userEvents = [
-    {
-      'title': 'Push Day pt 1',
-      'date': 'Nov 11',
-      'time': '9:00 AM - 10:30 AM',
-      'type': 'workout',
-    },
-    {
-      'title': 'Lunch',
-      'date': 'Nov 11',
-      'time': '11:00 AM - 12:00 PM',
-      'type': 'basic',
-    },
-    {
-      'title': 'Push Day',
-      'date': 'Nov 11',
-      'time': '12:00 PM - 1:30 PM',
-      'type': 'workout',
-    },
-  ];
 
   @override
   void initState() {
     super.initState();
+    _loadAccountTypeForHub();
     _loadJoinedGyms();
     _loadFriends();
     if (widget.eventId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _loadEventForEdit());
+    }
+  }
+
+  Future<void> _loadAccountTypeForHub() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      if (mounted) setState(() => _isGymAccount = false);
+      return;
+    }
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final accountType = doc.data()?['accountType'] as String?;
+      final isGym =
+          accountType != null && accountType.toLowerCase() == 'gym';
+      if (mounted) {
+        setState(() => _isGymAccount = isGym);
+      }
+      if (isGym) {
+        await _loadGymMembers();
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isGymAccount = false);
+    }
+  }
+
+  Future<void> _loadGymMembers() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    try {
+      final doc = await FirestoreRefs.userDoc(uid).get();
+      final memberIds = doc.data()?['memberUserIds'] as List<dynamic>?;
+      if (memberIds == null || memberIds.isEmpty) {
+        if (mounted) setState(() => _gymMembers = []);
+        return;
+      }
+      final list = <Map<String, String>>[];
+      for (final id in memberIds) {
+        final memberUid = id is String ? id : id.toString();
+        if (memberUid.isEmpty) continue;
+        try {
+          final udoc = await FirestoreRefs.userDoc(memberUid).get();
+          final data = udoc.data();
+          if (udoc.exists && data != null) {
+            final dn = data['displayName'] as String?;
+            list.add({
+              'uid': memberUid,
+              'name': (dn != null && dn.trim().isNotEmpty)
+                  ? dn.trim()
+                  : 'Member',
+            });
+          }
+        } catch (_) {
+          // ignore per-member failures
+        }
+      }
+      if (mounted) setState(() => _gymMembers = list);
+    } catch (_) {
+      if (mounted) setState(() => _gymMembers = []);
+    }
+  }
+
+  /// Friends + optional gym members for Firestore + invite DMs (create only).
+  ({List<String> ids, List<String> names}) _inviteListsForEventSave() {
+    final ids = List<String>.from(_selectedFriendIds);
+    final names = List<String>.from(_selectedFriends);
+    if (widget.eventId == null &&
+        _isGymAccount == true &&
+        _inviteMembersToEvent) {
+      for (final m in _gymMembers) {
+        final uid = m['uid'] ?? '';
+        if (uid.isEmpty || ids.contains(uid)) continue;
+        ids.add(uid);
+        names.add(m['name'] ?? 'Member');
+      }
+    }
+    return (ids: ids, names: names);
+  }
+
+  void _onCreateHubFabPressed() {
+    switch (_hubTab) {
+      case CreateHubTab.goals:
+        _showGoalCreationSheet();
+        return;
+      case CreateHubTab.workouts:
+      case CreateHubTab.library:
+        _showEventTypeDialog();
+        break;
+      case CreateHubTab.plans:
+        _showPlanCreationSheet();
+        return;
+    }
+  }
+
+  void _showHubItemDetails(
+    String title,
+    CreateHubTab tab,
+    String sectionTitle,
+    String? itemId,
+    bool itemEditable,
+  ) {
+    if (itemId == null) return;
+
+    final isPlansKind = tab == CreateHubTab.plans || sectionTitle.contains('Plans');
+    final isGoalsKind = tab == CreateHubTab.goals || sectionTitle.contains('Goals');
+    final isWorkoutsKind =
+        tab == CreateHubTab.workouts || sectionTitle.contains('Workouts');
+
+    if (isPlansKind) {
+      _showPlanCreationSheet(planId: itemId, fallbackPlanName: title);
+      return;
+    }
+
+    if (!itemEditable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This item cannot be edited.')),
+      );
+      return;
+    }
+
+    if (isGoalsKind) {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => GoalCreatorSheet(goalId: itemId),
+      );
+      return;
+    }
+
+    if (isWorkoutsKind) {
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => EventCreatorPage(
+          eventId: itemId,
+          embedded: true,
+        ),
+      );
+      return;
+    }
+
+    // Fallback: show a simple details sheet.
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '$sectionTitle · ${_hubTabLabel(tab)}',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.black.withValues(alpha: 0.55),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Details for this item will open here when connected to your data.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  color: Colors.black.withValues(alpha: 0.7),
+                ),
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showGoalCreationSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => const GoalCreatorSheet(),
+    );
+  }
+
+  void _showPlanCreationSheet({String? planId, String? fallbackPlanName}) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => PlanCreatorSheet(
+        planId: planId,
+        fallbackPlanName: fallbackPlanName,
+      ),
+    );
+  }
+
+  String _hubTabLabel(CreateHubTab tab) {
+    switch (tab) {
+      case CreateHubTab.workouts:
+        return 'Workouts';
+      case CreateHubTab.plans:
+        return 'Plans';
+      case CreateHubTab.goals:
+        return 'Goals';
+      case CreateHubTab.library:
+        return 'Library';
     }
   }
 
@@ -324,6 +542,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                         _buildLocationField(setModalState),
                         const SizedBox(height: 16),
                         _buildInviteFriendsField(setModalState),
+                        _buildInviteMembersCheckbox(setModalState),
                         const SizedBox(height: 16),
                         _buildPrivacyToggle(),
                         const SizedBox(height: 16),
@@ -395,280 +614,33 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
 
     return Scaffold(
       backgroundColor: EventCreatorPage.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            const AppHeader(),
-
-            // Main content
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 24),
-                    // Premade workouts section
-                    _buildPremadeWorkoutsSection(),
-                    const SizedBox(height: 24),
-                    // User events section
-                    _buildUserEventsSection(),
-                    const SizedBox(height: 100), // Space for floating button
-                  ],
-                ),
-              ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: _isGymAccount == null
+          ? null
+          : FloatingActionButton(
+              onPressed: _onCreateHubFabPressed,
+              backgroundColor: EventCreatorPage.forgeBlue,
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
             ),
-          ],
-        ),
-      ),
-      // Floating create button
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showEventTypeDialog,
-        backgroundColor: EventCreatorPage.forgeBlue,
-        child: const Icon(Icons.add, color: Colors.white, size: 32),
-      ),
-    );
-  }
-
-  Widget _buildPremadeWorkoutsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text(
-            'Premade Workouts',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 180,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _premadeWorkouts.length,
-            itemBuilder: (context, index) {
-              final workout = _premadeWorkouts[index];
-              return _buildPremadeWorkoutCard(workout);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPremadeWorkoutCard(Map<String, dynamic> workout) {
-    return Container(
-      width: 200,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: EventCreatorPage.forgeBlue,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-            ),
-            child: Text(
-              workout['name'] as String,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          const AppHeader(),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ...(workout['exercises'] as List<String>).map((exercise) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: EventCreatorPage.forgeBlue,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              exercise,
-                              style: const TextStyle(
-                                fontFamily: 'Poppins',
-                                fontSize: 14,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ],
-              ),
+            child: SafeArea(
+              top: false,
+              child: _isGymAccount == null
+                  ? const Center(child: CircularProgressIndicator())
+                  : CreatePageHub(
+                      isGym: _isGymAccount!,
+                      onTabChanged: (t) => setState(() => _hubTab = t),
+                      onItemTap: _showHubItemDetails,
+                    ),
             ),
           ),
         ],
       ),
     );
   }
-
-  Widget _buildUserEventsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: const Text(
-            'Your Events',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 180,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _userEvents.length,
-            itemBuilder: (context, index) {
-              final event = _userEvents[index];
-              return _buildUserEventCard(event);
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUserEventCard(Map<String, dynamic> event) {
-    return Container(
-      width: 200,
-      margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: (event['type'] as String) == 'workout'
-                  ? Colors.orange
-                  : EventCreatorPage.forgeBlue,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(24),
-                topRight: Radius.circular(24),
-              ),
-            ),
-            child: Text(
-              event['title'] as String,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.calendar_today,
-                        size: 16,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        event['date'] as String,
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.black54,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          event['time'] as String,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            fontSize: 14,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
 
   void _showEventTypeDialog() {
     showDialog(
@@ -867,6 +839,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
 
                           // Invite friends
                           _buildInviteFriendsField(setModalState),
+                          _buildInviteMembersCheckbox(setModalState),
                           const SizedBox(height: 16),
 
                           // Public/Private toggle
@@ -1317,6 +1290,53 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                 .toList(),
           ),
       ],
+    );
+  }
+
+  Widget _buildInviteMembersCheckbox(
+    void Function(void Function()) setModalState,
+  ) {
+    if (widget.eventId != null || _isGymAccount != true) {
+      return const SizedBox.shrink();
+    }
+    final hasMembers = _gymMembers.isNotEmpty;
+    final effectiveChecked = _inviteMembersToEvent && hasMembers;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: CheckboxListTile(
+        value: effectiveChecked,
+        onChanged: hasMembers
+            ? (v) {
+                setState(() {
+                  _inviteMembersToEvent = v ?? false;
+                });
+                setModalState(() {});
+              }
+            : null,
+        contentPadding: EdgeInsets.zero,
+        controlAffinity: ListTileControlAffinity.leading,
+        activeColor: EventCreatorPage.forgeBlue,
+        title: const Text(
+          'Invite members to this event',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        subtitle: Text(
+          hasMembers
+              ? 'Sends the same invite message as friend invites to ${_gymMembers.length} member${_gymMembers.length == 1 ? '' : 's'}.'
+              : 'No members linked to this gym yet.',
+          style: TextStyle(
+            fontFamily: 'Poppins',
+            fontSize: 12,
+            color: Colors.black.withValues(alpha: 0.54),
+          ),
+        ),
+      ),
     );
   }
 
@@ -1960,13 +1980,14 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         navigator.pop(context);
         return;
       } else {
-        await createEvent(
+        final inviteSave = _inviteListsForEventSave();
+        final newEventId = await createEvent(
           title: title,
           notes: _notesController.text,
           eventType: eventType,
           isPublic: _isPublic,
-          inviteeIds: List.from(_selectedFriendIds),
-          inviteeNames: List.from(_selectedFriends),
+          inviteeIds: inviteSave.ids,
+          inviteeNames: inviteSave.names,
           startAt: startAt,
           endAt: endAt,
           exercises: List.from(_exercises),
@@ -1974,6 +1995,17 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
           locationGymName: _selectedGymName,
           recurrence: recurrence,
         );
+        if (!mounted) return;
+        final creatorUid = FirebaseAuth.instance.currentUser?.uid;
+        if (inviteSave.ids.isNotEmpty && creatorUid != null) {
+          await sendEventInviteDirectMessages(
+            inviteeIds: inviteSave.ids,
+            eventName: title,
+            eventStart: startAt,
+            eventId: newEventId,
+            eventOwnerUid: creatorUid,
+          );
+        }
         if (!mounted) return;
         messenger.showSnackBar(
           const SnackBar(content: Text('Event created successfully!')),
@@ -1985,6 +2017,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
       _notesController.clear();
       _selectedFriends.clear();
       _selectedFriendIds.clear();
+      _inviteMembersToEvent = false;
       _exercises.clear();
       _startDate = null;
       _startTime = null;

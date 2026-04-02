@@ -2,8 +2,55 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../core/firebase/firestore_refs.dart';
 
+/// Whether the current user and [otherUid] are friends (either has the other in `friendIds`).
+Future<bool> areFriendsWith(String otherUid) async {
+  final currentUid = FirebaseAuth.instance.currentUser?.uid;
+  if (currentUid == null || otherUid.isEmpty || otherUid == currentUid) {
+    return false;
+  }
+  final doc = await FirestoreRefs.userDoc(currentUid).get();
+  final friendIds = (doc.data()?['friendIds'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toSet() ??
+      <String>{};
+  return friendIds.contains(otherUid);
+}
+
+/// Adds each user to the other's `friendIds` (used when accepting a friend request).
+/// [accepterUid] must be the signed-in user.
+Future<void> acceptFriendBidirectional({
+  required String requesterUid,
+}) async {
+  final accepterUid = FirebaseAuth.instance.currentUser?.uid;
+  if (accepterUid == null) throw Exception('Not signed in');
+  if (requesterUid.isEmpty || requesterUid == accepterUid) {
+    throw Exception('Invalid user');
+  }
+
+  final batch = FirebaseFirestore.instance.batch();
+  batch.set(
+    FirestoreRefs.userDoc(accepterUid),
+    {
+      'friendIds': FieldValue.arrayUnion([requesterUid]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    },
+    SetOptions(merge: true),
+  );
+  batch.set(
+    FirestoreRefs.userDoc(requesterUid),
+    {
+      'friendIds': FieldValue.arrayUnion([accepterUid]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    },
+    SetOptions(merge: true),
+  );
+  await batch.commit();
+}
+
 /// Add a friend by UID. Updates the current user's friendIds with [friendUid].
 /// No-op if adding self or if already friends. Creates friendIds if missing (existing accounts).
+///
+/// Prefer [sendFriendRequestDm] + accept flow for UX; this is kept for legacy call sites.
 Future<void> addFriend(String friendUid) async {
   final currentUid = FirebaseAuth.instance.currentUser?.uid;
   if (currentUid == null) throw Exception('Not signed in');

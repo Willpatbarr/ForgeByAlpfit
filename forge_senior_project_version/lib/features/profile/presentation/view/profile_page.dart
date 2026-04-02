@@ -1,13 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../app/app_header.dart';
 import '../../../../app/auth_state.dart';
 import '../../../../core/firebase/firestore_refs.dart';
 import '../../../../services/auth_service.dart';
 import '../../../../services/friends_service.dart';
 import '../../../../services/gyms_service.dart';
+import '../../../../services/profile_avatar_service.dart';
+import '../../../../widgets/storage_avatar.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -26,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isEditingProfile = false;
   bool _profileLoading = true;
   String? _loadError;
+  bool _uploadingAvatar = false;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _contactController = TextEditingController();
 
@@ -56,18 +61,63 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     try {
-      final doc = await FirestoreRefs.userDoc(user.uid).get();
+      final doc = await _fetchUserDocPreferServer(user.uid);
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
-        final name = data['displayName'] as String? ?? user.displayName ?? user.email ?? 'User';
+        final name =
+            data['displayName'] as String? ??
+            user.displayName ??
+            user.email ??
+            'User';
         final contact = data['contactInfo'] as String?;
         final accountType = data['accountType'] as String?;
+        var avatarUrl = _avatarUrlFromFirestore(data['avatarUrl']);
+        Uint8List? avatarBytes;
+
+        final loaded = await loadProfileAvatarFromStorage(user.uid);
+        if (!mounted) return;
+        if (loaded.bytes != null && loaded.bytes!.isNotEmpty) {
+          avatarBytes = loaded.bytes;
+        }
+        if (loaded.downloadUrl != null &&
+            loaded.downloadUrl!.trim().isNotEmpty) {
+          if (avatarUrl == null || avatarUrl.isEmpty) {
+            avatarUrl = loaded.downloadUrl!.trim();
+            try {
+              await FirestoreRefs.userDoc(user.uid).set({
+                'avatarUrl': avatarUrl,
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+            } catch (_) {}
+          }
+        }
+
+        if (avatarBytes == null || avatarBytes.isEmpty) {
+          avatarBytes = ProfileAvatarSessionCache.instance
+              .snapshotFor(user.uid)
+              ?.bytes;
+        }
+        if (avatarUrl == null || avatarUrl.isEmpty) {
+          final cachedUrl = ProfileAvatarSessionCache.instance
+              .snapshotFor(user.uid)
+              ?.url;
+          if (cachedUrl != null && cachedUrl.isNotEmpty) {
+            avatarUrl = cachedUrl;
+          }
+        }
+
+        if (!mounted) return;
         setState(() {
           _userName = name;
           _contactInfo = contact;
           _accountType = accountType;
           _profileLoading = false;
         });
+        ProfileAvatarSessionCache.instance.putForUser(
+          uid: user.uid,
+          bytes: avatarBytes,
+          url: avatarUrl,
+        );
         _nameController.text = _userName;
         _contactController.text = contact ?? '';
         await _loadFriends(data['friendIds'] as List<dynamic>?);
@@ -77,11 +127,39 @@ class _ProfilePageState extends State<ProfilePage> {
           await _loadGyms(data['joinedGymIds'] as List<dynamic>?);
         }
       } else {
+        var fromUrl = '';
+        Uint8List? fromBytes;
+        final loaded = await loadProfileAvatarFromStorage(user.uid);
+        if (!mounted) return;
+        if (loaded.downloadUrl != null &&
+            loaded.downloadUrl!.trim().isNotEmpty) {
+          fromUrl = loaded.downloadUrl!.trim();
+        }
+        if (loaded.bytes != null && loaded.bytes!.isNotEmpty) {
+          fromBytes = loaded.bytes;
+        }
+        if (fromBytes == null || fromBytes.isEmpty) {
+          fromBytes = ProfileAvatarSessionCache.instance
+              .snapshotFor(user.uid)
+              ?.bytes;
+        }
+        if (fromUrl.isEmpty) {
+          final u = ProfileAvatarSessionCache.instance
+              .snapshotFor(user.uid)
+              ?.url;
+          if (u != null && u.isNotEmpty) fromUrl = u;
+        }
+        if (!mounted) return;
         setState(() {
           _userName = user.displayName ?? user.email ?? 'User';
           _accountType = null;
           _profileLoading = false;
         });
+        ProfileAvatarSessionCache.instance.putForUser(
+          uid: user.uid,
+          bytes: fromBytes,
+          url: fromUrl.isEmpty ? null : fromUrl,
+        );
         _nameController.text = _userName;
         _contactController.text = _contactInfo ?? '';
         await _loadFriends(null);
@@ -98,6 +176,30 @@ class _ProfilePageState extends State<ProfilePage> {
       await _loadFriends(null);
       await _loadGyms(null);
     }
+  }
+
+  /// Avoids stale local cache so [avatarUrl] and other fields match the server
+  /// after uploads or edits from other tabs/devices.
+  Future<DocumentSnapshot<Map<String, dynamic>>> _fetchUserDocPreferServer(
+    String uid,
+  ) async {
+    try {
+      return await FirestoreRefs.userDoc(
+        uid,
+      ).get(const GetOptions(source: Source.server));
+    } catch (_) {
+      return FirestoreRefs.userDoc(uid).get();
+    }
+  }
+
+  static String? _avatarUrlFromFirestore(Object? raw) {
+    if (raw == null) return null;
+    if (raw is String) {
+      final t = raw.trim();
+      return t.isEmpty ? null : t;
+    }
+    final t = raw.toString().trim();
+    return t.isEmpty ? null : t;
   }
 
   Future<void> _loadFriends(List<dynamic>? friendIds) async {
@@ -163,6 +265,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _logout() async {
+    ProfileAvatarSessionCache.instance.clear();
     await AuthService().signOut();
     AuthStateNotifier.instance.notifyListeners();
     if (mounted) context.go('/login');
@@ -179,14 +282,15 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: ProfilePage.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            const AppHeader(),
+      body: Column(
+        children: [
+          // Header (extends behind status bar)
+          const AppHeader(),
 
-            // Main content
-            Expanded(
+          // Main content
+          Expanded(
+            child: SafeArea(
+              top: false,
               child: SingleChildScrollView(
                 child: Column(
                   children: [
@@ -207,8 +311,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -220,11 +324,7 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -296,86 +396,126 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 : Column(
-              children: [
-                if (_loadError != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      'Could not load profile',
-                      style: TextStyle(color: Colors.red.shade700, fontSize: 12),
-                    ),
-                  ),
-                // Profile photo
-                GestureDetector(
-                  onTap: _isEditingProfile ? _changeProfilePhoto : null,
-                  child: Stack(
                     children: [
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 60,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      if (_isEditingProfile)
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: const BoxDecoration(
-                              color: ProfilePage.forgeBlue,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                              color: Colors.white,
-                              size: 20,
+                      if (_loadError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Text(
+                            'Could not load profile',
+                            style: TextStyle(
+                              color: Colors.red.shade700,
+                              fontSize: 12,
                             ),
                           ),
                         ),
+                      // Profile photo (tap to change while editing)
+                      GestureDetector(
+                        onTap: (_isEditingProfile && !_uploadingAvatar)
+                            ? _changeProfilePhoto
+                            : null,
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                                shape: BoxShape.circle,
+                              ),
+                              clipBehavior: Clip.antiAlias,
+                              child: _uploadingAvatar
+                                  ? const Center(
+                                      child: SizedBox(
+                                        width: 36,
+                                        height: 36,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    )
+                                  : ListenableBuilder(
+                                      listenable: Listenable.merge([
+                                        AvatarHeaderRefreshNotifier.version,
+                                        AuthStateNotifier.instance,
+                                      ]),
+                                      builder: (context, _) {
+                                        final version =
+                                            AvatarHeaderRefreshNotifier
+                                                .version
+                                                .value;
+                                        final uid = FirebaseAuth
+                                            .instance
+                                            .currentUser
+                                            ?.uid;
+                                        return StorageAvatar(
+                                          key: ValueKey(version),
+                                          uid: uid,
+                                          size: 120,
+                                          borderRadius: BorderRadius.circular(
+                                            60,
+                                          ),
+                                          placeholder: const Icon(
+                                            Icons.person,
+                                            size: 60,
+                                            color: Colors.grey,
+                                          ),
+                                        );
+                                      },
+                                    ),
+                            ),
+                            if (_isEditingProfile && !_uploadingAvatar)
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: const BoxDecoration(
+                                    color: ProfilePage.forgeBlue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Name field
+                      _buildEditableField(
+                        label: 'Name',
+                        controller: _nameController,
+                        enabled: _isEditingProfile,
+                        icon: Icons.person_outline,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Contact info field
+                      _buildEditableField(
+                        label: 'Contact Info (Optional)',
+                        controller: _contactController,
+                        enabled: _isEditingProfile,
+                        icon: Icons.phone_outlined,
+                        isOptional: true,
+                      ),
+                      // Log out button
+                      const SizedBox(height: 24),
+                      OutlinedButton.icon(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.logout, size: 20),
+                        label: const Text('Log out'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                        ),
+                      ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-
-                // Name field
-                _buildEditableField(
-                  label: 'Name',
-                  controller: _nameController,
-                  enabled: _isEditingProfile,
-                  icon: Icons.person_outline,
-                ),
-                const SizedBox(height: 16),
-
-                // Contact info field
-                _buildEditableField(
-                  label: 'Contact Info (Optional)',
-                  controller: _contactController,
-                  enabled: _isEditingProfile,
-                  icon: Icons.phone_outlined,
-                  isOptional: true,
-                ),
-                // Log out button
-                const SizedBox(height: 24),
-                OutlinedButton.icon(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout, size: 20),
-                  label: const Text('Log out'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red.shade700,
-                    side: BorderSide(color: Colors.red.shade300),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -396,13 +536,17 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Icon(icon, size: 20, color: Colors.black54),
             const SizedBox(width: 8),
-            Text(
-              label,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
               ),
             ),
           ],
@@ -419,17 +563,13 @@ class _ProfilePageState extends State<ProfilePage> {
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: enabled
-                    ? ProfilePage.forgeBlue
-                    : Colors.transparent,
+                color: enabled ? ProfilePage.forgeBlue : Colors.transparent,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: enabled
-                    ? ProfilePage.forgeBlue
-                    : Colors.transparent,
+                color: enabled ? ProfilePage.forgeBlue : Colors.transparent,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -444,9 +584,7 @@ class _ProfilePageState extends State<ProfilePage> {
               vertical: 12,
             ),
             hintText: isOptional ? 'Optional' : '',
-            hintStyle: TextStyle(
-              color: Colors.grey.withValues(alpha: 0.5),
-            ),
+            hintStyle: TextStyle(color: Colors.grey.withValues(alpha: 0.5)),
           ),
           style: const TextStyle(
             fontFamily: 'Poppins',
@@ -465,11 +603,7 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -549,17 +683,13 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.grey.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: friend['avatar'] != null
-                ? ClipOval(
-                    child: Image.network(
-                      friend['avatar'] as String,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : const Icon(
-                    Icons.person,
-                    color: Colors.grey,
-                  ),
+            clipBehavior: Clip.antiAlias,
+            child: StorageAvatar(
+              uid: friend['uid'] as String?,
+              size: 48,
+              borderRadius: BorderRadius.circular(24),
+              placeholder: const Icon(Icons.person, color: Colors.grey),
+            ),
           ),
           const SizedBox(width: 12),
           // Name
@@ -596,11 +726,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.close,
-                size: 18,
-                color: Colors.red,
-              ),
+              child: const Icon(Icons.close, size: 18, color: Colors.red),
             ),
           ),
         ],
@@ -615,11 +741,7 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -673,7 +795,9 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   )
                 : Column(
-                    children: _members.map((member) => _buildMemberItem(member)).toList(),
+                    children: _members
+                        .map((member) => _buildMemberItem(member))
+                        .toList(),
                   ),
           ),
         ],
@@ -693,17 +817,13 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.grey.withValues(alpha: 0.3),
               shape: BoxShape.circle,
             ),
-            child: member['avatar'] != null
-                ? ClipOval(
-                    child: Image.network(
-                      member['avatar'] as String,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : const Icon(
-                    Icons.person,
-                    color: Colors.grey,
-                  ),
+            clipBehavior: Clip.antiAlias,
+            child: StorageAvatar(
+              uid: member['uid'] as String?,
+              size: 48,
+              borderRadius: BorderRadius.circular(24),
+              placeholder: const Icon(Icons.person, color: Colors.grey),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -726,7 +846,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 await _loadMembers();
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${member['name'] ?? 'Member'} removed')),
+                    SnackBar(
+                      content: Text('${member['name'] ?? 'Member'} removed'),
+                    ),
                   );
                 }
               } catch (e) {
@@ -762,11 +884,7 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -846,18 +964,13 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.grey.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: gym['avatar'] != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      gym['avatar'] as String,
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : const Icon(
-                    Icons.fitness_center,
-                    color: Colors.grey,
-                  ),
+            clipBehavior: Clip.antiAlias,
+            child: StorageAvatar(
+              uid: gym['uid'] as String?,
+              size: 48,
+              borderRadius: BorderRadius.circular(12),
+              placeholder: const Icon(Icons.fitness_center, color: Colors.grey),
+            ),
           ),
           const SizedBox(width: 12),
           // Name
@@ -894,11 +1007,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 color: Colors.red.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(
-                Icons.exit_to_app,
-                size: 18,
-                color: Colors.red,
-              ),
+              child: const Icon(Icons.exit_to_app, size: 18, color: Colors.red),
             ),
           ),
         ],
@@ -906,13 +1015,104 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _changeProfilePhoto() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null || !mounted) return;
 
-  void _changeProfilePhoto() {
-    // TODO: Implement photo picker
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Photo picker coming soon'),
-      ),
-    );
+    var source = ImageSource.gallery;
+    if (!kIsWeb && mounted) {
+      final chosen = await showModalBottomSheet<ImageSource>(
+        context: context,
+        showDragHandle: true,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+            ],
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (chosen == null) return;
+      source = chosen;
+    }
+
+    final picker = ImagePicker();
+    XFile? picked;
+    try {
+      // Web: omit resize/quality so image_picker_for_web skips canvas + toBlob.
+      // That path revokes the original blob URL and is a common source of failures.
+      // Mobile: keep downscaling to limit upload size.
+      picked = await picker.pickImage(
+        source: source,
+        maxWidth: kIsWeb ? null : 1536,
+        maxHeight: kIsWeb ? null : 1536,
+        imageQuality: kIsWeb ? null : 88,
+        requestFullMetadata: !kIsWeb,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Could not open photo picker${kIsWeb ? ' (try another browser or check site permissions)' : ''}: $e',
+          ),
+        ),
+      );
+      return;
+    }
+    if (picked == null || !mounted) return;
+
+    setState(() => _uploadingAvatar = true);
+    try {
+      Uint8List bytes;
+      try {
+        bytes = await picked.readAsBytes();
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _uploadingAvatar = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Could not read image: $e')));
+        return;
+      }
+      final mime = picked.mimeType;
+      final contentType = (mime != null && mime.isNotEmpty)
+          ? mime
+          : 'image/jpeg';
+      final url = await uploadProfileAvatarBytes(
+        bytes: bytes,
+        contentType: contentType,
+      );
+      if (!mounted) return;
+      setState(() {
+        _uploadingAvatar = false;
+      });
+      ProfileAvatarSessionCache.instance.putForUser(
+        uid: uid,
+        bytes: bytes,
+        url: url,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Profile photo updated')));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _uploadingAvatar = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not upload photo: $e')));
+    }
   }
 }

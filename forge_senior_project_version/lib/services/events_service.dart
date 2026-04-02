@@ -88,7 +88,8 @@ Future<Map<String, dynamic>?> getNextWorkoutEventForUser() async {
 }
 
 /// Creates an event in Firestore under the current user's events subcollection.
-Future<void> createEvent({
+/// Returns the new event document id.
+Future<String> createEvent({
   required String title,
   required String notes,
   required String eventType,
@@ -108,7 +109,7 @@ Future<void> createEvent({
   final trimmedTitle = title.trim();
   if (trimmedTitle.isEmpty) throw Exception('Event title is required');
 
-  await FirestoreRefs.userEvents(user.uid).add({
+  final ref = await FirestoreRefs.userEvents(user.uid).add({
     'title': trimmedTitle,
     'notes': notes.trim(),
     'eventType': eventType,
@@ -123,6 +124,45 @@ Future<void> createEvent({
     'recurrence': _normalizeRecurrenceForWrite(recurrence),
     'createdAt': FieldValue.serverTimestamp(),
   });
+  return ref.id;
+}
+
+/// Loads a single event for calendar display (owner's doc). Caller must have read
+/// access (e.g. invitee or public friend/gym rules).
+Future<Map<String, dynamic>?> getCalendarEventForDeepLink({
+  required String ownerUid,
+  required String eventId,
+}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+
+  final doc = await FirestoreRefs.userEvents(ownerUid).doc(eventId).get();
+  if (!doc.exists || doc.data() == null) return null;
+  final d = doc.data()!;
+  if (d['startAt'] == null || d['endAt'] == null) return null;
+
+  if (user.uid == ownerUid) {
+    return _mapDocToEvent(
+      doc,
+      owner: 'You',
+      isOwnEvent: true,
+      ownerId: ownerUid,
+      color: _ownEventColor,
+    );
+  }
+
+  final ownerDoc = await FirestoreRefs.userDoc(ownerUid).get();
+  final dn = ownerDoc.data()?['displayName'] as String?;
+  final ownerName =
+      (dn != null && dn.trim().isNotEmpty) ? dn.trim() : 'Friend';
+
+  return _mapDocToEvent(
+    doc,
+    owner: ownerName,
+    isOwnEvent: false,
+    ownerId: ownerUid,
+    color: _friendEventColor,
+  );
 }
 
 /// Fetches a single event by ID for the current user. Returns null if not found.
@@ -198,7 +238,7 @@ const Color _friendEventColor = Color(0xFF4CAF50); // green
 const Color _gymEventColor = Color(0xFFFFA726); // orange
 
 Map<String, dynamic> _mapDocToEvent(
-  QueryDocumentSnapshot<Map<String, dynamic>> doc, {
+  DocumentSnapshot<Map<String, dynamic>> doc, {
   required String owner,
   required bool isOwnEvent,
   String? ownerId,
@@ -207,6 +247,9 @@ Map<String, dynamic> _mapDocToEvent(
   DateTime? endOverride,
 }) {
   final d = doc.data();
+  if (d == null) {
+    throw StateError('Event snapshot has no data');
+  }
   final originalStart = (d['startAt'] as Timestamp).toDate();
   final originalEnd = (d['endAt'] as Timestamp).toDate();
   final start = startOverride ?? originalStart;
@@ -289,7 +332,7 @@ bool _eventOccursOnDate(
 }
 
 Iterable<Map<String, dynamic>> _expandDocToEventsForDay(
-  QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  DocumentSnapshot<Map<String, dynamic>> doc,
   DateTime targetDate, {
   required String owner,
   required bool isOwnEvent,
@@ -297,6 +340,7 @@ Iterable<Map<String, dynamic>> _expandDocToEventsForDay(
   required Color color,
 }) sync* {
   final data = doc.data();
+  if (data == null) return;
   if (!_eventOccursOnDate(data, targetDate)) return;
 
   final tsStart = data['startAt'] as Timestamp?;
@@ -330,7 +374,7 @@ Iterable<Map<String, dynamic>> _expandDocToEventsForDay(
 }
 
 Iterable<Map<String, dynamic>> _expandDocToEventsForRange(
-  QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  DocumentSnapshot<Map<String, dynamic>> doc,
   DateTime rangeStart,
   DateTime rangeEnd, {
   required String owner,
@@ -339,6 +383,7 @@ Iterable<Map<String, dynamic>> _expandDocToEventsForRange(
   required Color color,
 }) sync* {
   final data = doc.data();
+  if (data == null) return;
   final recurrence = _readRecurrenceFromDoc(data);
   final tsStart = data['startAt'] as Timestamp?;
   final tsEnd = data['endAt'] as Timestamp?;
@@ -405,9 +450,19 @@ Stream<List<Map<String, dynamic>>> _mergeEventStreams(
 
   void emit() {
     final merged = latest.expand((l) => l).toList();
-    merged.sort(
-        (a, b) => (a['start'] as DateTime).compareTo(b['start'] as DateTime));
-    if (!controller.isClosed) controller.add(merged);
+    final seen = <String>{};
+    final deduped = <Map<String, dynamic>>[];
+    for (final e in merged) {
+      final start = e['start'] as DateTime;
+      final ownerKey = e['ownerId']?.toString() ?? '';
+      final id = e['id']?.toString() ?? '';
+      final key = '${ownerKey}_${id}_${start.millisecondsSinceEpoch}';
+      if (seen.add(key)) deduped.add(e);
+    }
+    deduped.sort(
+      (a, b) => (a['start'] as DateTime).compareTo(b['start'] as DateTime),
+    );
+    if (!controller.isClosed) controller.add(deduped);
   }
 
   for (var i = 0; i < streams.length; i++) {
@@ -417,13 +472,17 @@ Stream<List<Map<String, dynamic>>> _mergeEventStreams(
         latest[idx] = data;
         emit();
       },
-      onError: controller.addError,
+      onError: (Object e, StackTrace st) {
+        controller.addError(e, st);
+      },
       cancelOnError: false,
     ));
   }
 
   controller.onCancel = () async {
-    for (final s in subs) await s.cancel();
+    for (final s in subs) {
+      await s.cancel();
+    }
   };
 
   return controller.stream;
@@ -459,10 +518,6 @@ Stream<List<Map<String, dynamic>>> getEventsForDayStream(DateTime date) async* {
   try {
     final friends = await getFriendIdsWithNames();
     final gyms = await getJoinedGymsWithNames();
-    if (kDebugMode) {
-      debugPrint(
-          '[Calendar] Loaded ${friends.length} friends and ${gyms.length} gyms for day view');
-    }
     final streams = <Stream<List<Map<String, dynamic>>>>[ownEventsStream];
 
     for (final f in friends) {
@@ -490,6 +545,30 @@ Stream<List<Map<String, dynamic>>> getEventsForDayStream(DateTime date) async* {
         }
       });
       streams.add(friendStream);
+
+      final friendInvitedStream = FirestoreRefs.userEvents(uid)
+          .where('inviteeIds', arrayContains: user.uid)
+          .where('startAt', isLessThanOrEqualTo: Timestamp.fromDate(dayEnd))
+          .orderBy('startAt')
+          .snapshots()
+          .map((s) => s.docs
+              .where((d) => d.data()['endAt'] != null)
+              .expand((d) => _expandDocToEventsForDay(
+                    d,
+                    dayStart,
+                    owner: name,
+                    isOwnEvent: false,
+                    ownerId: uid,
+                    color: _friendEventColor,
+                  ))
+              .toList())
+          .handleError((e) {
+        if (kDebugMode) {
+          debugPrint(
+              '[Calendar] Friend $name ($uid) invited events error: $e');
+        }
+      });
+      streams.add(friendInvitedStream);
     }
 
     for (final g in gyms) {
@@ -517,6 +596,30 @@ Stream<List<Map<String, dynamic>>> getEventsForDayStream(DateTime date) async* {
         }
       });
       streams.add(gymStream);
+
+      final gymInvitedStream = FirestoreRefs.userEvents(gymUid)
+          .where('inviteeIds', arrayContains: user.uid)
+          .where('startAt', isLessThanOrEqualTo: Timestamp.fromDate(dayEnd))
+          .orderBy('startAt')
+          .snapshots()
+          .map((s) => s.docs
+              .where((d) => d.data()['endAt'] != null)
+              .expand((d) => _expandDocToEventsForDay(
+                    d,
+                    dayStart,
+                    owner: gymName,
+                    isOwnEvent: false,
+                    ownerId: gymUid,
+                    color: _gymEventColor,
+                  ))
+              .toList())
+          .handleError((e) {
+        if (kDebugMode) {
+          debugPrint(
+              '[Calendar] Gym $gymName ($gymUid) invited events error: $e');
+        }
+      });
+      streams.add(gymInvitedStream);
     }
 
     yield* _mergeEventStreams(streams);
@@ -570,10 +673,6 @@ Stream<List<Map<String, dynamic>>> getEventsForDateRangeStream(
   try {
     final friends = await getFriendIdsWithNames();
     final gyms = await getJoinedGymsWithNames();
-    if (kDebugMode) {
-      debugPrint(
-          '[Calendar] Loaded ${friends.length} friends and ${gyms.length} gyms for range view');
-    }
     final streams = <Stream<List<Map<String, dynamic>>>>[ownEventsStream];
 
     for (final f in friends) {
@@ -603,6 +702,32 @@ Stream<List<Map<String, dynamic>>> getEventsForDateRangeStream(
         }
       });
       streams.add(friendStream);
+
+      final friendInvitedStream = FirestoreRefs.userEvents(uid)
+          .where('inviteeIds', arrayContains: user.uid)
+          .where('startAt',
+              isLessThanOrEqualTo: Timestamp.fromDate(rangeEnd))
+          .orderBy('startAt')
+          .snapshots()
+          .map((s) => s.docs
+              .where((d) => d.data()['endAt'] != null)
+              .expand((d) => _expandDocToEventsForRange(
+                    d,
+                    rangeStart,
+                    rangeEnd,
+                    owner: name,
+                    isOwnEvent: false,
+                    ownerId: uid,
+                    color: _friendEventColor,
+                  ))
+              .toList())
+          .handleError((e) {
+        if (kDebugMode) {
+          debugPrint(
+              '[Calendar] Friend $name ($uid) invited events error: $e');
+        }
+      });
+      streams.add(friendInvitedStream);
     }
 
     for (final g in gyms) {
@@ -632,6 +757,32 @@ Stream<List<Map<String, dynamic>>> getEventsForDateRangeStream(
         }
       });
       streams.add(gymStream);
+
+      final gymInvitedStream = FirestoreRefs.userEvents(gymUid)
+          .where('inviteeIds', arrayContains: user.uid)
+          .where('startAt',
+              isLessThanOrEqualTo: Timestamp.fromDate(rangeEnd))
+          .orderBy('startAt')
+          .snapshots()
+          .map((s) => s.docs
+              .where((d) => d.data()['endAt'] != null)
+              .expand((d) => _expandDocToEventsForRange(
+                    d,
+                    rangeStart,
+                    rangeEnd,
+                    owner: gymName,
+                    isOwnEvent: false,
+                    ownerId: gymUid,
+                    color: _gymEventColor,
+                  ))
+              .toList())
+          .handleError((e) {
+        if (kDebugMode) {
+          debugPrint(
+              '[Calendar] Gym $gymName ($gymUid) invited events error: $e');
+        }
+      });
+      streams.add(gymInvitedStream);
     }
 
     yield* _mergeEventStreams(streams);

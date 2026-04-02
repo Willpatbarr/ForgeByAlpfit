@@ -105,9 +105,6 @@ Stream<List<Map<String, dynamic>>> getFeedUpdatesStream({
 
   try {
     final gyms = await getJoinedGymsWithNames();
-    if (kDebugMode) {
-      debugPrint('[Updates] Loaded ${gyms.length} gyms for posts');
-    }
 
     final streams = <Stream<List<Map<String, dynamic>>>>[
       upcomingEventsStream,

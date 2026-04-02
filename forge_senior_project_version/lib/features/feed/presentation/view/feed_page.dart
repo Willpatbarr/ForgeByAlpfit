@@ -5,6 +5,8 @@ import 'package:forge_senior_project_version/services/events_service.dart';
 import 'package:forge_senior_project_version/services/friends_service.dart';
 import 'package:forge_senior_project_version/services/updates_service.dart';
 import 'package:forge_senior_project_version/services/channel_posts_service.dart';
+import 'package:forge_senior_project_version/services/goals_service.dart';
+import 'package:forge_senior_project_version/models/goal.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:forge_senior_project_version/features/social/presentation/view/channel_page.dart';
 import '../../../../app/app_header.dart';
@@ -141,18 +143,19 @@ class _FeedPageState extends State<FeedPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: FeedPage.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // ---------- TOP HEADER BAR ----------
-            const AppHeader(),
+      body: Column(
+        children: [
+          // ---------- TOP HEADER BAR (extends behind status bar) ----------
+          const AppHeader(),
 
-            // ---------- MAIN CONTENT ----------
-            Expanded(
+          // ---------- MAIN CONTENT ----------
+          Expanded(
+            child: SafeArea(
+              top: false,
               child: _buildMainContent(),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -304,19 +307,19 @@ class _FeedPageState extends State<FeedPage> {
             bodyBuilder: _buildNextWorkoutBody,
           ),
         ),
-        // Goals: (0,3), 3 wide, 2 tall — basic
+        // Goals: (0,3), 3 wide, 2 tall — data-driven
         FeedGridItem(
           col: 0,
           row: 3,
           width: 3,
           height: 2,
-          child: buildBasicFeedWidget(
-            title: 'Goals',
+          child: buildDataDrivenFeedWidget(
+            name: 'Goals',
             col: 0,
             row: 3,
             width: 3,
             height: 2,
-            body: _buildGoalsBody(),
+            bodyBuilder: _buildGoalsBody,
           ),
         ),
         // Friends: (3,0), 2 wide, 4 tall — data-driven
@@ -419,13 +422,85 @@ class _FeedPageState extends State<FeedPage> {
     return '$hour$min $period';
   }
 
-  Widget _buildGoalsBody() {
-    return Center(
-      child: Text(
-        'No goals yet',
-        style: AppTextStyles.bodySmallWithColor(Colors.white70),
-      ),
+  Widget _buildGoalsBody(BuildContext context) {
+    return StreamBuilder<List<Goal>>(
+      stream: getActiveGoalsStream(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(12),
+              child: CircularProgressIndicator(color: Colors.white70),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Goals unavailable',
+              style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            ),
+          );
+        }
+
+        final goals = snapshot.data ?? [];
+        if (goals.isEmpty) {
+          return Center(
+            child: Text(
+              'No goals yet',
+              style: AppTextStyles.bodySmallWithColor(Colors.white70),
+            ),
+          );
+        }
+
+        final shown = goals.take(2).toList();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ...shown.map(
+              (goal) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _GoalRow(
+                  label: goal.name,
+                  current: goal.currentCheckupsCompleted,
+                  target: goal.requiredCheckupsPerPeriod,
+                  onIncrement: () => _onGoalCheckIn(goal.id),
+                  onDecrement: () => _onGoalUncheck(goal.id),
+                ),
+              ),
+            ),
+            if (goals.length > shown.length)
+              Text(
+                '+${goals.length - shown.length} more',
+                style: AppTextStyles.captionWithColor(Colors.white70),
+              ),
+          ],
+        );
+      },
     );
+  }
+
+  Future<void> _onGoalCheckIn(String goalId) async {
+    try {
+      await checkIn(goalId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
+  }
+
+  Future<void> _onGoalUncheck(String goalId) async {
+    try {
+      await uncheckIn(goalId);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   Widget _buildFriendsBody(BuildContext context) {
@@ -720,6 +795,13 @@ class _CollapsedCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: FeedPage.forgeBlue,
           borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -781,10 +863,7 @@ class _UpdateCard extends StatelessWidget {
             ),
             child: Text(
               source,
-              style: AppTextStyles.subtitle.copyWith(
-                fontWeight: AppTextStyles.semiBoldWeight,
-                color: Colors.white,
-              ),
+              style: AppTextStyles.subtitleWithColor(Colors.white),
             ),
           ),
           // Body
@@ -916,11 +995,15 @@ class _GoalRow extends StatelessWidget {
   final String label;
   final int current;
   final int target;
+  final VoidCallback onIncrement;
+  final VoidCallback onDecrement;
 
   const _GoalRow({
     required this.label,
     required this.current,
     required this.target,
+    required this.onIncrement,
+    required this.onDecrement,
   });
 
   @override
@@ -932,15 +1015,29 @@ class _GoalRow extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '$label $current/$target',
+            '$label  $current/$target',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: AppTextStyles.bodySmallWithColor(Colors.white),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: onDecrement,
+          child: const Icon(Icons.remove_circle_outline,
+              size: 18, color: Colors.white70),
+        ),
+        const SizedBox(width: 6),
         _GoalProgressRing(
           progress: progress,
           current: current,
           target: target,
+        ),
+        const SizedBox(width: 6),
+        GestureDetector(
+          onTap: onIncrement,
+          child:
+              const Icon(Icons.add_circle_outline, size: 18, color: Colors.white),
         ),
       ],
     );

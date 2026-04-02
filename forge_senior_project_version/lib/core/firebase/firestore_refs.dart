@@ -13,6 +13,14 @@ abstract class FirestoreRefs {
   static CollectionReference<Map<String, dynamic>> userEvents(String userId) =>
       userDoc(userId).collection('events');
 
+  /// Goals for a user. Doc: name, description, startDate, endDate, requiredCheckupsPerPeriod, resetPeriod, etc.
+  static CollectionReference<Map<String, dynamic>> userGoals(String userId) =>
+      userDoc(userId).collection('goals');
+
+  /// Plans for a user. Doc: name, repeatWindowWeeks, startDate, endDate, linkedEvents, createdAt, etc.
+  static CollectionReference<Map<String, dynamic>> userPlans(String userId) =>
+      userDoc(userId).collection('plans');
+
   /// Posts in a gym's channel. Doc: channelName, authorUid, authorName, content, createdAt, likeIds.
   static CollectionReference<Map<String, dynamic>> channelPosts(String gymUid) =>
       userDoc(gymUid).collection('channelPosts');
@@ -25,4 +33,17 @@ abstract class FirestoreRefs {
   static CollectionReference<Map<String, dynamic>> postComments(
           String gymUid, String postId) =>
       channelPostDoc(gymUid, postId).collection('comments');
+
+  /// Direct message threads. Doc: participants, lastMessage, lastSenderUid, updatedAt, createdAt.
+  static CollectionReference<Map<String, dynamic>> get directThreads =>
+      _store.collection('directThreads');
+
+  static DocumentReference<Map<String, dynamic>> directThreadDoc(
+          String threadId) =>
+      directThreads.doc(threadId);
+
+  /// Messages in a direct thread. Doc: senderUid, senderName, text, sentAt.
+  static CollectionReference<Map<String, dynamic>> directThreadMessages(
+          String threadId) =>
+      directThreadDoc(threadId).collection('messages');
 }

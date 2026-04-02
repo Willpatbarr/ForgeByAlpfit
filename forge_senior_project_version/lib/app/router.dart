@@ -125,7 +125,10 @@ final router = GoRouter(
         GoRoute(
           path: '/calendar',
           pageBuilder: (context, state) => _buildPageWithTransition(
-            const CalendarPage(),
+            CalendarPage(
+              focusOwnerUid: state.uri.queryParameters['focusOwner'],
+              focusEventId: state.uri.queryParameters['focusEvent'],
+            ),
             state,
           ),
         ),

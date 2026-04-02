@@ -121,7 +121,8 @@ service cloud.firestore {
 ✅ **Allow reading**: Anyone can read user accounts (needed for friend lists and gym lists)  
 ✅ **Security**: Users can only modify their own data, not others'  
 ✅ **Friends' public events**: Users can read public events from people in their friend list (calendar feature)  
-✅ **Gyms' public events**: Users can read public events from gyms they have joined (calendar feature)
+✅ **Gyms' public events**: Users can read public events from gyms they have joined (calendar feature)  
+✅ **Goals**: Users can read/write their own goals in `users/{userId}/goals/{goalId}`
 
 ## Deploying Rules from firestore.rules
 

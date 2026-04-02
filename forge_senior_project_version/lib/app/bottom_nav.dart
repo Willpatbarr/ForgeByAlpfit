@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../services/direct_messages_service.dart';
 
 class PersistentBottomNav extends StatelessWidget {
   const PersistentBottomNav({super.key});
@@ -22,10 +23,12 @@ class PersistentBottomNav extends StatelessWidget {
           ),
         ],
       ),
+      // top: false — otherwise iOS applies status-bar padding above this bar (wrong place).
       child: SafeArea(
+        top: false,
         child: Container(
-          height: 60,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          height: 56,
+          padding: const EdgeInsets.only(left: 8, right: 8, top: 4, bottom: 2),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -53,13 +56,22 @@ class PersistentBottomNav extends StatelessWidget {
                 route: '/event',
                 isActive: currentLocation == '/event',
               ),
-              _buildNavItem(
-                context,
-                icon: Icons.people_outline,
-                activeIcon: Icons.people,
-                label: 'Social',
-                route: '/social',
-                isActive: currentLocation == '/social',
+              StreamBuilder<Map<String, int>>(
+                stream: getDirectUnreadCountsStream(),
+                builder: (context, snapshot) {
+                  final totalUnread = (snapshot.data ?? const <String, int>{})
+                      .values
+                      .fold<int>(0, (sum, count) => sum + count);
+                  return _buildNavItem(
+                    context,
+                    icon: Icons.people_outline,
+                    activeIcon: Icons.people,
+                    label: 'Social',
+                    route: '/social',
+                    isActive: currentLocation == '/social',
+                    badgeCount: totalUnread,
+                  );
+                },
               ),
               _buildNavItem(
                 context,
@@ -83,6 +95,7 @@ class PersistentBottomNav extends StatelessWidget {
     required String label,
     required String route,
     required bool isActive,
+    int badgeCount = 0,
   }) {
     return Expanded(
       child: InkWell(
@@ -97,10 +110,38 @@ class PersistentBottomNav extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                isActive ? activeIcon : icon,
-                color: isActive ? forgeBlue : Colors.grey,
-                size: 24,
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    color: isActive ? forgeBlue : Colors.grey,
+                    size: 24,
+                  ),
+                  if (badgeCount > 0)
+                    Positioned(
+                      right: -8,
+                      top: -6,
+                      child: Container(
+                        constraints: const BoxConstraints(minWidth: 18),
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: const BoxDecoration(
+                          color: forgeBlue,
+                          borderRadius: BorderRadius.all(Radius.circular(999)),
+                        ),
+                        child: Text(
+                          badgeCount > 99 ? '99+' : badgeCount.toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 4),
               Text(

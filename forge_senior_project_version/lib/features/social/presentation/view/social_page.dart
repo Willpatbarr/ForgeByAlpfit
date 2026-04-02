@@ -4,10 +4,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../../../app/app_header.dart';
 import '../../../../core/firebase/firestore_refs.dart';
-import '../../../../services/friends_service.dart';
 import '../../../../services/gyms_service.dart';
 import '../../../../services/search_service.dart';
+import '../../../../services/direct_messages_service.dart';
 import 'channel_page.dart';
+import 'direct_message_page.dart';
+import 'user_profile_detail_page.dart';
+import '../../../../widgets/storage_avatar.dart';
 
 enum SocialTab { messages, friends, gyms, channels, search }
 
@@ -21,8 +24,9 @@ class SocialPage extends StatefulWidget {
   State<SocialPage> createState() => _SocialPageState();
 }
 
-class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateMixin {
+class _SocialPageState extends State<SocialPage> with TickerProviderStateMixin {
   late TabController _tabController;
+  bool get _usesGymTabLayout => _isGym == true;
 
   // Messages: derived from your joined gyms' latest channel posts.
   List<Map<String, dynamic>> _messages = [];
@@ -47,6 +51,28 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   List<String> _gymChannels = [];
   bool _channelsLoading = false;
   final TextEditingController _newChannelController = TextEditingController();
+  StreamSubscription<Map<String, int>>? _dmUnreadSub;
+  Map<String, int> _dmUnreadByUid = const {};
+
+  int get _gymsUnreadCount {
+    final gymUids =
+        _joinedGyms.map((g) => g['uid']?.toString() ?? '').where((x) => x.isNotEmpty);
+    var total = 0;
+    for (final uid in gymUids) {
+      total += _dmUnreadByUid[uid] ?? 0;
+    }
+    return total;
+  }
+
+  int get _friendsUnreadCount {
+    final friendUids =
+        _friends.map((f) => f['uid']?.toString() ?? '').where((x) => x.isNotEmpty);
+    var total = 0;
+    for (final uid in friendUids) {
+      total += _dmUnreadByUid[uid] ?? 0;
+    }
+    return total;
+  }
 
   @override
   void initState() {
@@ -57,6 +83,10 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     // - gym: Gyms, Friends, Channels, Search = 4
     _tabController = TabController(length: 3, vsync: this);
     _searchController.addListener(_onSearchChanged);
+    _dmUnreadSub = getDirectUnreadCountsStream().listen((counts) {
+      if (!mounted) return;
+      setState(() => _dmUnreadByUid = counts);
+    });
     _loadAccountTypeAndChannels();
   }
 
@@ -64,35 +94,60 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     final desiredLength = _isGym == true ? 4 : 3;
     if (_tabController.length == desiredLength) return;
 
-    _tabController.dispose();
-    _tabController = TabController(
+    final previous = _tabController;
+    final next = TabController(
       length: desiredLength,
       vsync: this,
       // Reset to the first tab to avoid index-mapping issues when removing Messages.
       initialIndex: 0,
     );
+
+    if (!mounted) {
+      next.dispose();
+      return;
+    }
+
+    // Swap controller in-state and dispose previous immediately.
+    setState(() {
+      _tabController = next;
+    });
+    previous.dispose();
   }
 
   Future<void> _loadAccountTypeAndChannels() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      if (mounted) setState(() => _isGym = false);
+      if (mounted && _isGym == null) {
+        setState(() => _isGym = false);
+      }
       return;
     }
+    bool resolvedIsGym = false;
     try {
       final doc = await FirestoreRefs.userDoc(uid).get();
-      final accountType = doc.data()?['accountType'] as String?;
-      final isGym = accountType == 'gym';
-      if (mounted) {
-        setState(() => _isGym = isGym);
-        _recreateTabControllerIfNeeded();
-      }
-      if (isGym) await _loadChannels();
+      final data = doc.data() ?? const <String, dynamic>{};
+      final accountTypeRaw = data['accountType']?.toString().toLowerCase();
+      final hasGymChannels = (data['channelNames'] as List<dynamic>?)?.isNotEmpty == true;
+      final hasMemberField = data.containsKey('memberUserIds');
+      resolvedIsGym =
+          accountTypeRaw == 'gym' || hasGymChannels || hasMemberField;
+      if (!mounted) return;
+      setState(() => _isGym = resolvedIsGym);
+      _recreateTabControllerIfNeeded();
     } catch (_) {
-      if (mounted) {
+      // Do not downgrade a previously resolved account type on transient errors.
+      if (mounted && _isGym == null) {
         setState(() => _isGym = false);
         _recreateTabControllerIfNeeded();
       }
+      return;
+    }
+
+    if (resolvedIsGym) {
+      // Channel loading errors should not downgrade account type.
+      try {
+        await _loadChannels();
+      } catch (_) {}
     }
     await _loadJoinedGyms();
     await _loadFriendsList();
@@ -172,18 +227,47 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
 
     if (mounted) setState(() => _friendsLoading = true);
     try {
+      final isGymAccount = _isGym == true;
+
+      if (isGymAccount) {
+        final members = await getGymMemberProfiles(uid);
+        members.sort(
+          (a, b) => (a['name'] as String? ?? '')
+              .compareTo((b['name'] as String? ?? ''),
+          ),
+        );
+        if (mounted) {
+          setState(() {
+            _friends = members
+                .map((m) => {
+                      'uid': m['uid'],
+                      'name': m['name'],
+                      'avatar': m['avatar'],
+                      'mutualFriends': null,
+                    })
+                .toList();
+          });
+        }
+        return;
+      }
+
       final currentDoc = await FirestoreRefs.userDoc(uid).get();
-      final raw = currentDoc.data()?['friendIds'] as List<dynamic>?;
-      final friendIds = (raw ?? []).whereType<String>().toList();
-      if (friendIds.isEmpty) {
+      final currentData = currentDoc.data() ?? const <String, dynamic>{};
+
+      final rawIds = currentData['friendIds'] as List<dynamic>?;
+      final userIds = (rawIds ?? []).whereType<String>().toList();
+      if (userIds.isEmpty) {
         if (mounted) setState(() => _friends = []);
         return;
       }
 
-      final currentFriendIdSet = friendIds.toSet();
+      final currentFriendIdSet = (currentData['friendIds'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toSet() ??
+          <String>{};
 
       final list = <Map<String, dynamic>>[];
-      for (final friendUid in friendIds) {
+      for (final friendUid in userIds) {
         try {
           final friendDoc = await FirestoreRefs.userDoc(friendUid).get();
           if (!friendDoc.exists || friendDoc.data() == null) continue;
@@ -200,7 +284,7 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             'uid': friendUid,
             'name': (d['displayName'] as String?) ?? 'Unknown',
             'avatar': d['avatarUrl'] as String?,
-            'mutualFriends': mutualCount,
+            'mutualFriends': isGymAccount ? null : mutualCount,
           });
         } catch (_) {
           // Ignore individual load failures
@@ -327,43 +411,67 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     _newChannelController.dispose();
+    _dmUnreadSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SocialPage.background,
-      body: SafeArea(
-        child: Column(
+    if (_isGym == null) {
+      return Scaffold(
+        backgroundColor: SocialPage.background,
+        body: Column(
           children: [
-            // Header
             const AppHeader(),
-
-            // Tabs
-            _buildTabs(),
-
-            // Tab content
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: _isGym == true
-                    ? [
-                        _buildGymsTab(),
-                        _buildFriendsTab(),
-                        _buildChannelsTab(),
-                        _buildSearchTab(),
-                      ]
-                    : [
-                        _buildGymsTab(),
-                        _buildFriendsTab(),
-                        _buildSearchTab(),
-                      ],
+              child: SafeArea(
+                top: false,
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ),
           ],
         ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: SocialPage.background,
+      body: Column(
+        children: [
+          // Header (extends behind status bar)
+          const AppHeader(),
+
+          // Tabs + content (respect safe area except top — header owns it)
+          Expanded(
+            child: SafeArea(
+              top: false,
+              child: Column(
+                children: [
+                  _buildTabs(),
+
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: _usesGymTabLayout
+                          ? [
+                              _buildGymsTab(),
+                              _buildFriendsTab(),
+                              _buildChannelsTab(),
+                              _buildSearchTab(),
+                            ]
+                          : [
+                              _buildGymsTab(),
+                              _buildFriendsTab(),
+                              _buildSearchTab(),
+                            ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -386,18 +494,49 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
           fontSize: 14,
           fontWeight: FontWeight.normal,
         ),
-        tabs: _isGym == true
-            ? const [
-                Tab(text: 'Gyms'),
-                Tab(text: 'Friends'),
-                Tab(text: 'Channels'),
-                Tab(text: 'Search'),
+        tabs: _usesGymTabLayout
+            ? [
+                _buildTabWithBadge('Gyms', _gymsUnreadCount),
+                _buildTabWithBadge('Members', _friendsUnreadCount),
+                const Tab(text: 'Channels'),
+                const Tab(text: 'Search'),
               ]
-            : const [
-                Tab(text: 'Gyms'),
-                Tab(text: 'Friends'),
-                Tab(text: 'Search'),
+            : [
+                _buildTabWithBadge('Gyms', _gymsUnreadCount),
+                _buildTabWithBadge('Friends', _friendsUnreadCount),
+                const Tab(text: 'Search'),
               ],
+      ),
+    );
+  }
+
+  Tab _buildTabWithBadge(String label, int unread) {
+    if (unread <= 0) return Tab(text: label);
+    return Tab(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(label),
+          const SizedBox(width: 6),
+          Container(
+            constraints: const BoxConstraints(minWidth: 18),
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+            decoration: const BoxDecoration(
+              color: SocialPage.forgeBlue,
+              borderRadius: BorderRadius.all(Radius.circular(999)),
+            ),
+            child: Text(
+              unread > 99 ? '99+' : unread.toString(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontFamily: 'Poppins',
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -454,21 +593,20 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                     color: Colors.grey.withValues(alpha: 0.3),
                     shape: BoxShape.circle,
                   ),
-                  child: message['avatar'] != null
-                      ? ClipOval(
-                          child: Image.network(
-                            message['avatar'] as String,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      : Icon(
-                          message['isGroup'] == true
-                              ? Icons.group
-                              : message['isGym'] == true
-                                  ? Icons.fitness_center
-                                  : Icons.person,
-                          color: Colors.grey,
-                        ),
+                  clipBehavior: Clip.antiAlias,
+                  child: StorageAvatar(
+                    uid: message['gymUid'] as String?,
+                    size: 56,
+                    borderRadius: BorderRadius.circular(28),
+                    placeholder: Icon(
+                      message['isGroup'] == true
+                          ? Icons.group
+                          : message['isGym'] == true
+                              ? Icons.fitness_center
+                              : Icons.person,
+                      color: Colors.grey,
+                    ),
+                  ),
                 ),
                 if (message['unread'] == true)
                   Positioned(
@@ -543,28 +681,196 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   }
 
   Widget _buildFriendsTab() {
-    if (_friendsLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (_friends.isEmpty) {
-      return const Center(
-        child: Text(
-          'No friends yet',
-          style: TextStyle(fontFamily: 'Poppins', color: Colors.grey),
-        ),
-      );
-    }
-    return ListView.builder(
-      itemCount: _friends.length,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      itemBuilder: (context, index) {
-        final friend = _friends[index];
-        return _buildFriendItem(friend);
+    return StreamBuilder<List<IncomingFriendRequest>>(
+      stream: getIncomingFriendRequestsStream(),
+      builder: (context, snap) {
+        if (snap.hasError) {
+          debugPrint('Incoming friend requests stream error: ${snap.error}');
+        }
+        final requests = snap.data ?? const <IncomingFriendRequest>[];
+        final hasFriends = _friends.isNotEmpty;
+        final streamWaitingFirst =
+            snap.connectionState == ConnectionState.waiting &&
+                snap.data == null;
+
+        // Spinner until we know friend rows and/or first request snapshot.
+        // Incoming requests are not blocked by [_friendsLoading] so they show
+        // as soon as the stream emits.
+        if (requests.isEmpty &&
+            !hasFriends &&
+            (_friendsLoading || streamWaitingFirst)) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (requests.isEmpty && !hasFriends) {
+          return Center(
+            child: Text(
+              _isGym == true ? 'No members yet' : 'No friends yet',
+              style: const TextStyle(fontFamily: 'Poppins', color: Colors.grey),
+            ),
+          );
+        }
+        return ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: [
+            ...requests.map(_buildIncomingFriendRequestTile),
+            if (hasFriends)
+              ..._friends.map((f) => _buildFriendItem(f)),
+          ],
+        );
       },
     );
   }
 
+  Widget _buildIncomingFriendRequestTile(IncomingFriendRequest r) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.25),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.person, color: Colors.grey),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  r.requesterName,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            r.text,
+            style: const TextStyle(
+              fontFamily: 'Poppins',
+              fontSize: 14,
+              height: 1.35,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: SocialPage.forgeBlue,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              onPressed: r.requesterUid.isEmpty
+                  ? null
+                  : () => openUserProfileDetailFromUid(
+                        context,
+                        uid: r.requesterUid,
+                      ),
+              child: const Text(
+                'View profile',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: r.requesterUid.isEmpty
+                      ? null
+                      : () async {
+                          try {
+                            await acceptIncomingFriendRequest(
+                              requesterUid: r.requesterUid,
+                              threadId: r.threadId,
+                              messageId: r.messageId,
+                            );
+                            if (!mounted) return;
+                            await _loadFriendsList();
+                            if (!mounted) return;
+                            setState(() {});
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('You are now friends'),
+                              ),
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not accept: $e')),
+                            );
+                          }
+                        },
+                  child: const Text(
+                    'Accept',
+                    style: TextStyle(fontFamily: 'Poppins'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () async {
+                    try {
+                      await declineIncomingFriendRequest(
+                        threadId: r.threadId,
+                        messageId: r.messageId,
+                      );
+                      if (!mounted) return;
+                      setState(() {});
+                    } catch (e) {
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Could not decline: $e')),
+                      );
+                    }
+                  },
+                  child: const Text(
+                    'Decline',
+                    style: TextStyle(fontFamily: 'Poppins'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildFriendItem(Map<String, dynamic> friend) {
+    final friendUid = friend['uid'] as String?;
+    final unread = friendUid == null ? 0 : (_dmUnreadByUid[friendUid] ?? 0);
     return InkWell(
       onTap: () {
         _showProfilePage(friend, isGym: false);
@@ -581,17 +887,14 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                 color: Colors.grey.withValues(alpha: 0.3),
                 shape: BoxShape.circle,
               ),
-              child: friend['avatar'] != null
-                  ? ClipOval(
-                      child: Image.network(
-                        friend['avatar'] as String,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.person,
-                      color: Colors.grey,
-                    ),
+              clipBehavior: Clip.antiAlias,
+              child: StorageAvatar(
+                uid: friendUid,
+                size: 56,
+                borderRadius: BorderRadius.circular(28),
+                placeholder:
+                    const Icon(Icons.person, color: Colors.grey),
+              ),
             ),
             const SizedBox(width: 12),
             // Friend info
@@ -599,18 +902,47 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    friend['name'] as String,
-                    style: const TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          friend['name'] as String,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      if (unread > 0)
+                        Container(
+                          margin: const EdgeInsets.only(left: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: const BoxDecoration(
+                            color: SocialPage.forgeBlue,
+                            borderRadius: BorderRadius.all(Radius.circular(999)),
+                          ),
+                          child: Text(
+                            unread > 99 ? '99+' : unread.toString(),
+                            style: const TextStyle(
+                              fontFamily: 'Poppins',
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${friend['mutualFriends']} mutual friends',
+                    friend['mutualFriends'] is int
+                        ? '${friend['mutualFriends']} mutual friends'
+                        : 'Member',
                     style: const TextStyle(
                       fontFamily: 'Poppins',
                       fontSize: 14,
@@ -623,7 +955,18 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
             // Message button
             IconButton(
               onPressed: () {
-                // TODO: Navigate to chat
+                final uid = friend['uid'] as String?;
+                final name = friend['name'] as String? ?? 'Friend';
+                if (uid == null || uid.isEmpty) return;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (context) => DirectMessagePage(
+                      friendUid: uid,
+                      friendName: name,
+                    ),
+                  ),
+                );
               },
               icon: const Icon(Icons.message, color: SocialPage.forgeBlue),
             ),
@@ -681,6 +1024,8 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   }
 
   Widget _buildGymItem(Map<String, dynamic> gym) {
+    final gymUid = gym['uid'] as String?;
+    final unread = gymUid == null ? 0 : (_dmUnreadByUid[gymUid] ?? 0);
     return InkWell(
       onTap: () {
         _showGymCommunityPage(gym);
@@ -709,19 +1054,17 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                 color: Colors.grey.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: gym['avatar'] != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        gym['avatar'] as String,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : const Icon(
-                      Icons.fitness_center,
-                      color: Colors.grey,
-                      size: 32,
-                    ),
+              clipBehavior: Clip.antiAlias,
+              child: StorageAvatar(
+                uid: gymUid,
+                size: 64,
+                borderRadius: BorderRadius.circular(12),
+                placeholder: const Icon(
+                  Icons.fitness_center,
+                  color: Colors.grey,
+                  size: 32,
+                ),
+              ),
             ),
             const SizedBox(width: 16),
             // Gym info
@@ -758,6 +1101,54 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                   ),
                 ],
               ),
+            ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  onPressed: () {
+                    final uid = gym['uid'] as String?;
+                    final name = gym['name'] as String? ?? 'Gym';
+                    if (uid == null || uid.isEmpty) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (context) => DirectMessagePage(
+                          friendUid: uid,
+                          friendName: name,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.message, color: SocialPage.forgeBlue),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    right: 2,
+                    top: 2,
+                    child: Container(
+                      constraints: const BoxConstraints(minWidth: 18),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: SocialPage.forgeBlue,
+                        borderRadius: BorderRadius.all(Radius.circular(999)),
+                      ),
+                      child: Text(
+                        unread > 99 ? '99+' : unread.toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const Icon(Icons.chevron_right, color: Colors.grey),
           ],
@@ -1099,20 +1490,18 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
                 shape: isGym ? BoxShape.rectangle : BoxShape.circle,
                 borderRadius: isGym ? BorderRadius.circular(12) : null,
               ),
-              child: result['avatar'] != null
-                  ? ClipRRect(
-                      borderRadius: isGym
-                          ? BorderRadius.circular(12)
-                          : BorderRadius.circular(28),
-                      child: Image.network(
-                        result['avatar'] as String,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Icon(
-                      isGym ? Icons.fitness_center : Icons.person,
-                      color: Colors.grey,
-                    ),
+              clipBehavior: Clip.antiAlias,
+              child: StorageAvatar(
+                uid: result['uid'] as String?,
+                size: 56,
+                borderRadius: isGym
+                    ? BorderRadius.circular(12)
+                    : BorderRadius.circular(28),
+                placeholder: Icon(
+                  isGym ? Icons.fitness_center : Icons.person,
+                  color: Colors.grey,
+                ),
+              ),
             ),
             const SizedBox(width: 12),
             // Name
@@ -1162,16 +1551,20 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
   Future<void> _addFriend(BuildContext context, String? friendUid, String? friendName) async {
     if (friendUid == null || friendUid.isEmpty) return;
     try {
-      await addFriend(friendUid);
+      await sendFriendRequestDm(friendUid);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${friendName ?? 'User'} added as friend')),
+          SnackBar(
+            content: Text(
+              'Friend request sent to ${friendName ?? 'User'}',
+            ),
+          ),
         );
       }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not add friend: $e')),
+          SnackBar(content: Text('$e')),
         );
       }
     }
@@ -1200,7 +1593,8 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => _ProfileViewPage(profile: profile, isGym: isGym),
+        builder: (context) =>
+            UserProfileDetailPage(profile: profile, isGym: isGym),
       ),
     );
   }
@@ -1210,138 +1604,6 @@ class _SocialPageState extends State<SocialPage> with SingleTickerProviderStateM
       context,
       MaterialPageRoute(
         builder: (context) => _GymCommunityPage(gym: gym),
-      ),
-    );
-  }
-}
-
-// Profile View Page
-class _ProfileViewPage extends StatelessWidget {
-  final Map<String, dynamic> profile;
-  final bool isGym;
-
-  const _ProfileViewPage({
-    required this.profile,
-    required this.isGym,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: SocialPage.background,
-      appBar: AppBar(
-        backgroundColor: SocialPage.forgeBlue,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Profile',
-          style: TextStyle(
-            fontFamily: 'Poppins',
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            // Avatar
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                shape: isGym ? BoxShape.rectangle : BoxShape.circle,
-                borderRadius: isGym ? BorderRadius.circular(24) : null,
-              ),
-              child: profile['avatar'] != null
-                  ? ClipRRect(
-                      borderRadius: isGym
-                          ? BorderRadius.circular(24)
-                          : BorderRadius.circular(60),
-                      child: Image.network(
-                        profile['avatar'] as String,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : Icon(
-                      isGym ? Icons.fitness_center : Icons.person,
-                      size: 60,
-                      color: Colors.grey,
-                    ),
-            ),
-            const SizedBox(height: 16),
-            // Name
-            Text(
-              profile['name'] as String,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 24),
-            // Action buttons
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  if (!isGym) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final uid = profile['uid'] as String?;
-                          if (uid == null) return;
-                          try {
-                            await addFriend(uid);
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('${profile['name'] ?? 'User'} added as friend')),
-                              );
-                            }
-                          } catch (e) {
-                            if (context.mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Could not add friend: $e')),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.person_add),
-                        label: const Text('Add Friend'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: SocialPage.forgeBlue,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Message
-                      },
-                      icon: const Icon(Icons.message),
-                      label: const Text('Message'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: SocialPage.forgeBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: SocialPage.forgeBlue),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
