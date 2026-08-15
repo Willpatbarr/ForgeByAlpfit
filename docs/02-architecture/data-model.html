@@ -14,16 +14,15 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#users">users/{uid}</a>
-    <a href="#events">events subcollection</a>
-    <a href="#goals">goals subcollection</a>
-    <a href="#plans">plans subcollection</a>
-    <a href="#channels">channelPosts + comments</a>
-    <a href="#threads">directThreads</a>
-    <a href="#dead-collection">Dead collection</a>
-    <a href="#relationships">Relationships</a>
-    <a href="#storage">Storage choices</a>
+    <a href="#headline">The headline finding</a>
+    <a href="#erd">ERD</a>
+    <a href="#entities">Entity reference</a>
+    <a href="#rules">Security rules</a>
+    <a href="#indexes">Composite indexes</a>
+    <a href="#missing">Missing from the model</a>
     <a href="#next">What to do next</a>
+    <a href="overview.html">Overview &rarr;</a>
+    <a href="conventions.html">Conventions &rarr;</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -31,199 +30,510 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 02-architecture / Data Model</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Architecture</div>
     <h1>Data Model</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the Firestore/Storage shape Forge's code actually reads and writes today, field by field — a reference page, not a proposal. Firestore is schemaless; this is inferred from <span class="fname">firestore_refs.dart</span>, the service files, and <span class="fname">firestore.rules</span>.</div>
+    <div class="whatthisis"><strong>What this is:</strong> the reference doc for every Firestore entity Forge actually writes — path, every field with its type, who can read and write it under the current rules, and whether it has a typed Dart class. Read it with <a href="overview.html#risks">overview.html risks</a> open; several rows here are the same finding seen from the data side.</div>
   </header>
 
-  <section id="users">
-    <h2><code>users/{uid}</code></h2>
-    <p>One collection models both people and gym accounts, discriminated by <code>accountType</code>. See Relationships below for what that means in practice.</p>
+  <section id="headline">
+    <h2>The headline finding</h2>
+
+    <div class="callout danger">
+      <strong>Only <code>Goal</code> is a real typed model class.</strong> <span class="fname">lib/models/</span> contains exactly one file, <span class="fname">goal.dart</span>. Every other entity in the system — <code>User</code>, <code>Event</code>, <code>ChannelPost</code>, <code>Comment</code>, <code>DirectThread</code>, <code>DirectMessage</code> — is an untyped <code>Map&lt;String, dynamic&gt;</code> passed hand-to-hand between services and widgets. <code>Plan</code> is the halfway case: it has read-side DTO classes declared inside its service file, but its writes are still raw maps.
+    </div>
+
+    <p>This is the single biggest data-layer finding, and it is not a style complaint. Three concrete consequences:</p>
+
+    <ul class="todo">
+      <li><strong>No compiler help.</strong> A field renamed in one service and not the other fails silently at runtime. Nothing catches <code>d['startAt']</code> vs <code>d['start_at']</code>.</li>
+      <li><strong>Unchecked casts everywhere.</strong> Reading an untyped map means writing <code>as Timestamp</code> and <code>as List&lt;String&gt;</code>. With <code>strict-casts</code> off (see <a href="conventions.html#lint">conventions</a>) these compile clean and crash at runtime.</li>
+      <li><strong>Schemas that don't round-trip.</strong> The event creator writes exercises as <code>setDetails: [{reps, weight}]</code>. <code>events_service._mapDocToEvent</code> reads a top-level <code>weight</code> key that <em>is never written</em>. The calendar therefore renders every exercise weight blank, and nothing anywhere reports an error.</li>
+    </ul>
+
+    <div class="callout">
+      <strong><span class="tag tag-decided">DECIDED</span> Add typed models incrementally, starting with <code>Event</code>.</strong>
+      Not a big-bang model layer, and not a code-generation package. One hand-written class per entity with <code>fromDoc</code> / <code>toMap</code>, added when that entity is next touched.
+      <br><br>
+      <strong>Why <code>Event</code> first:</strong> it is the only entity with a live crash path. <code>createEvent</code> writes <code>startAt</code>/<code>endAt</code> as nullable; <code>_mapDocToEvent</code> reads them with a non-null cast. A typed <code>Event</code> with a required <code>startAt</code> at the write boundary and a null-safe read closes the crash and the schema drift in one change. Order after that: <code>User</code> (because the rules rewrite in M1 needs a fixed shape to validate against), then <code>ChannelPost</code>, then the DM pair.
+    </div>
+  </section>
+
+  <section id="erd">
+    <h2>Entity relationship diagram</h2>
+    <p>Note the shape: <strong>a gym is a user.</strong> There is no gym collection — gym accounts are <span class="fname">users/{uid}</span> documents with <code>accountType: 'gym'</code>, and almost everything hangs off a user document as a subcollection. Only <code>directThreads</code> is top-level, because it is owned by two users at once.</p>
+
+    <div class="mermaid">
+erDiagram
+  USER ||--o{ EVENT : "owns users/uid/events"
+  USER ||--o{ GOAL : "owns users/uid/goals"
+  USER ||--o{ PLAN : "owns users/uid/plans"
+  GOAL ||--o{ GOALPERIODRECORD : "embeds array"
+  PLAN ||--o{ EVENT : "materialises instances"
+  USER ||--o{ CHANNELPOST : "hosts, gym accounts only"
+  CHANNELPOST ||--o{ COMMENT : "has"
+  USER }o--o{ USER : "friendIds, mutual"
+  USER }o--o{ USER : "joinedGymIds and memberUserIds"
+  USER }o--o{ DIRECTTHREAD : "participates, exactly 2"
+  DIRECTTHREAD ||--o{ DIRECTMESSAGE : "contains"
+  USER }o--o{ EVENT : "invited via inviteeIds"
+  USER ||--o| USERPREFERENCES : "rules exist, never written"
+    </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Relationship</th><th>How it is stored</th><th>Integrity risk</th></tr></thead>
         <tbody>
-          <tr><td><code>uid</code></td><td>string</td><td>Firebase Auth uid, doc id.</td></tr>
-          <tr><td><code>email</code></td><td>string</td><td>World-readable today (<code>firestore.rules:27</code>: <code>allow read: if true;</code>) — Milestone&nbsp;1 splits this behind an owner-or-friend check per brief &sect;7.</td></tr>
-          <tr><td><code>displayName</code></td><td>string</td><td>User-facing name.</td></tr>
-          <tr><td><code>displayNameLower</code></td><td>string</td><td>Lowercased copy of <code>displayName</code>, used for case-insensitive prefix search.</td></tr>
-          <tr><td><code>accountType</code></td><td>string enum</td><td><code>'user'</code> or <code>'gym'</code> — the field that discriminates a person doc from a gym doc.</td></tr>
-          <tr><td><code>contactInfo</code></td><td>string, optional</td><td>User-supplied; also currently world-readable.</td></tr>
-          <tr><td><code>avatarUrl</code></td><td>string, optional</td><td>Points into Firebase Storage — see Storage choices.</td></tr>
-          <tr><td><code>friendIds</code></td><td>string[]</td><td>User-side only. Denormalized array of friend uids, not a join collection.</td></tr>
-          <tr><td><code>joinedGymIds</code></td><td>string[]</td><td>User-side only. Gyms this user has joined.</td></tr>
-          <tr><td><code>memberUserIds</code></td><td>string[]</td><td>Gym-side only. Uids of members of this gym.</td></tr>
-          <tr><td><code>channelNames</code></td><td>string[]</td><td>Gym-side only. Names of this gym's channels.</td></tr>
-          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>Server timestamp.</td></tr>
-          <tr><td><code>updatedAt</code></td><td>Timestamp</td><td>Server timestamp.</td></tr>
+          <tr><td>Friendship</td><td><code>friendIds</code> array on both user docs, kept symmetric by a batched write in <code>friends_service.acceptFriend</code></td><td><span class="pill pill-warn">Medium</span> — the legacy <code>addFriend</code>/<code>removeFriend</code> are one-sided and leave an asymmetric graph.</td></tr>
+          <tr><td>Gym membership</td><td>Two arrays: <code>joinedGymIds</code> on the member, <code>memberUserIds</code> on the gym. A transaction touches both.</td><td><span class="pill pill-warn">Medium</span> — <code>memberUserIds</code> is never initialised at signup, so its absence is used as a heuristic for "is this a gym", inconsistently across screens.</td></tr>
+          <tr><td>Event invitation</td><td><code>inviteeIds</code> + denormalised <code>inviteeNames</code> on the event doc</td><td><span class="pill pill-warn">Medium</span> — invite DMs are sent on create only. Editing an event to add invitees notifies nobody.</td></tr>
+          <tr><td>Plan &rarr; Event</td><td><code>planId</code> and <code>planSourceEventId</code> on generated event docs; <code>linkedEvents</code> array on the plan</td><td><span class="pill pill-warn">Medium</span> — generation caps disagree: 250 on create, 180 on update.</td></tr>
+          <tr><td>DM thread identity</td><td>Deterministic id: <code>sorted(uidA, uidB).join('__')</code> — no lookup query needed</td><td><span class="pill pill-good">Good</span> — the cleanest modelling decision in the codebase.</td></tr>
+          <tr><td>Friend request</td><td><strong>Not an entity.</strong> A <code>DirectMessage</code> with <code>messageKind: 'friend_request'</code>.</td><td><span class="pill pill-bad">High</span> — see <a href="#missing">Missing from the model</a>.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="events">
-    <h2><code>users/{uid}/events/{eventId}</code></h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>title</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>notes</code></td><td>string, optional</td><td>&nbsp;</td></tr>
-          <tr><td><code>eventType</code></td><td>string enum</td><td><code>'basic'</code> or <code>'workout'</code> — the goal type was dropped from event types once Goals became its own object (brief ruling #3).</td></tr>
-          <tr><td><code>isPublic</code></td><td>bool</td><td>&nbsp;</td></tr>
-          <tr><td><code>inviteeIds</code></td><td>string[]</td><td>&nbsp;</td></tr>
-          <tr><td><code>inviteeNames</code></td><td>string[]</td><td>Denormalized alongside <code>inviteeIds</code> to avoid a lookup per render.</td></tr>
-          <tr><td><code>startAt</code> / <code>endAt</code></td><td>Timestamp</td><td>Converted from/to <code>DateTime</code> at the service boundary.</td></tr>
-          <tr><td><code>exercises</code></td><td>array of maps</td><td><code>{name, sets, weight}</code> — untyped, free-text exercise names.</td></tr>
-          <tr><td><code>locationGymId</code> / <code>locationGymName</code></td><td>string, optional</td><td>Denormalized gym reference.</td></tr>
-          <tr><td><code>recurrence</code></td><td>map</td><td><code>{frequency, endType, untilDate, daysOfWeek[]}</code>.</td></tr>
-          <tr><td><code>planId</code> / <code>planSourceEventId</code></td><td>string, optional</td><td>Set when this event instance was generated by a Plan.</td></tr>
-          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-        </tbody>
-      </table>
+  <section id="entities">
+    <h2>Entity reference</h2>
+    <p class="small muted">Status column: <span class="pill pill-good">Typed</span> = a real Dart class in <span class="fname">lib/models/</span>. <span class="pill pill-warn">DTO only</span> = classes exist inside a service file for reads, but writes are raw maps. <span class="pill pill-bad">Untyped</span> = <code>Map&lt;String, dynamic&gt;</code> end to end.</p>
+
+    <div class="card">
+      <h3>Goal <span class="pill pill-good">Typed</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{userId}/goals/{goalId}</span> &middot;
+        <strong>Class:</strong> <span class="fname">lib/models/goal.dart</span> &middot;
+        <strong>Access:</strong> owner read + write only. No sharing path exists. &middot;
+        <strong>Relationships:</strong> owned by one <code>User</code>; embeds a <code>periodHistory</code> array of <code>GoalPeriodRecord</code>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Dart type</th><th>Firestore type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code></td><td><code>String</code> final</td><td>doc id</td><td>Not stored inside the document.</td></tr>
+            <tr><td><code>userId</code></td><td><code>String</code> final</td><td>string</td><td>Denormalised owner uid — redundant with the path.</td></tr>
+            <tr><td><code>name</code></td><td><code>String</code></td><td>string</td><td>Required, trimmed, non-empty.</td></tr>
+            <tr><td><code>description</code></td><td><code>String</code></td><td>string</td><td></td></tr>
+            <tr><td><code>startDate</code></td><td><code>DateTime</code></td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>endDate</code></td><td><code>DateTime</code></td><td>Timestamp</td><td>Must be after <code>startDate</code> and within 1 year of it.</td></tr>
+            <tr><td><code>requiredCheckupsPerPeriod</code></td><td><code>int</code></td><td>number</td><td>Must be &gt; 0.</td></tr>
+            <tr><td><code>resetPeriod</code></td><td><code>ResetPeriod</code></td><td>string</td><td><code>daily</code> / <code>weekly</code> / <code>biweekly</code> / <code>monthly</code>. Default <code>weekly</code>. <strong><code>monthly</code> is implemented as a flat 30-day add</strong>, not a calendar month.</td></tr>
+            <tr><td><code>currentCheckupsCompleted</code></td><td><code>int</code></td><td>number</td><td>Cannot exceed <code>requiredCheckupsPerPeriod</code>.</td></tr>
+            <tr><td><code>currentPeriodStart</code></td><td><code>DateTime</code></td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>currentPeriodEnd</code></td><td><code>DateTime</code></td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>status</code></td><td><code>GoalStatus</code></td><td>string</td><td><code>active</code> / <code>archived</code>. No paused/failed/completed state.</td></tr>
+            <tr><td><code>periodHistory</code></td><td><code>List&lt;GoalPeriodRecord&gt;</code></td><td>array of maps</td><td><strong><code>updateGoalForCurrentUser</code> wipes this array</strong> and resets <code>currentCheckupsCompleted</code> to 0 — editing a goal's name destroys all its history. Documented in code as "Edit behavior (v1)".</td></tr>
+            <tr><td><code>createdAt</code></td><td><code>DateTime</code></td><td>Timestamp</td><td>Client clock, <strong>not</strong> <code>serverTimestamp</code>.</td></tr>
+            <tr><td><code>updatedAt</code></td><td><code>DateTime</code></td><td>Timestamp</td><td>Client clock.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Derived, not stored: <code>currentProgress</code>, <code>overallCompletionRate</code>, <code>isCurrentPeriodComplete</code>, <code>isActive</code>, <code>isArchived</code>. The design doc's directive that <code>Goal</code> be a data model only, with resets in a service, <strong>was followed</strong> — this is the one place the written design and the code agree.</p>
+    </div>
+
+    <div class="card">
+      <h3>GoalPeriodRecord <span class="pill pill-good">Typed</span></h3>
+      <p class="small">
+        <strong>Path:</strong> none — embedded as maps in <code>Goal.periodHistory</code> &middot;
+        <strong>Class:</strong> <span class="fname">lib/models/goal.dart</span> &middot;
+        <strong>Access:</strong> inherits the parent goal's owner-only rule.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Dart type</th><th>Firestore type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>periodStart</code></td><td><code>DateTime</code> final</td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>periodEnd</code></td><td><code>DateTime</code> final</td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>requiredCheckups</code></td><td><code>int</code> final</td><td>number</td><td>Snapshot of the requirement at the time the period closed.</td></tr>
+            <tr><td><code>completedCheckups</code></td><td><code>int</code> final</td><td>number</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Computed <code>completionRate</code> guards against divide-by-zero. Written by the transactional period rollover in <code>goals_service.checkIn</code>.</p>
+    </div>
+
+    <div class="card">
+      <h3>User <span class="pill pill-bad">Untyped</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{uid}</span> &middot;
+        <strong>Class:</strong> none — written inline by <code>auth_service</code> and <span class="fname">profile_page</span> &middot;
+        <strong>Read:</strong> <span class="pill pill-bad">everyone, unauthenticated</span> &middot;
+        <strong>Write:</strong> self, plus four narrow diff-guarded cross-user mutations. Delete: never. &middot;
+        <strong>Relationships:</strong> owns events, goals, plans; hosts channelPosts if a gym; participates in directThreads; links to other users via <code>friendIds</code>, <code>joinedGymIds</code>, <code>memberUserIds</code>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Written by</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>uid</code></td><td>string</td><td><code>auth_service</code></td><td>Duplicates the doc id.</td></tr>
+            <tr><td><code>email</code></td><td>string</td><td><code>auth_service</code></td><td><strong>World-readable.</strong> This field is the reason the <span class="fname">/users</span> rule is a privacy blocker, not a style nit.</td></tr>
+            <tr><td><code>displayName</code></td><td>string</td><td><code>auth_service</code>, <span class="fname">profile_page</span></td><td></td></tr>
+            <tr><td><code>displayNameLower</code></td><td>string</td><td><code>auth_service</code>, <span class="fname">profile_page</span></td><td><strong>Written but never queried.</strong> It exists for search; search filters in memory instead.</td></tr>
+            <tr><td><code>accountType</code></td><td>string</td><td><code>auth_service</code></td><td><code>'user'</code> or <code>'gym'</code>. Set once at registration, <strong>no way to change</strong> in the UI — and no rule stops a client writing <code>'gym'</code> onto its own doc to self-promote.</td></tr>
+            <tr><td><code>contactInfo</code></td><td>string?</td><td><span class="fname">profile_page</span></td><td>Initialised <code>null</code>. <strong>World-readable.</strong> Written by the profile editor and never displayed anywhere, including on the other-user profile page.</td></tr>
+            <tr><td><code>avatarUrl</code></td><td>string</td><td><code>profile_avatar_service</code></td><td><strong>Written but never read for rendering</strong> — every avatar re-resolves from Storage by uid.</td></tr>
+            <tr><td><code>friendIds</code></td><td>array&lt;string&gt;</td><td><code>friends_service</code></td><td>Rules-guarded: another user may add only themselves, exactly one at a time.</td></tr>
+            <tr><td><code>joinedGymIds</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td>Drives event visibility and channel access.</td></tr>
+            <tr><td><code>memberUserIds</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td><strong>Gym accounts only. Not initialised at signup</strong> — its mere presence is used as a gym heuristic in <span class="fname">social_page</span>, while <span class="fname">event_creator_page</span> checks <code>accountType</code>. Inconsistent account-type detection across screens.</td></tr>
+            <tr><td><code>channelNames</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td>Gym accounts only, not initialised at signup. <strong>Channels are a string array on the gym doc, not an entity.</strong></td></tr>
+            <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td><code>auth_service</code></td><td><code>serverTimestamp</code> — correct here, unlike goals/plans/messages.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Event <span class="pill pill-bad">Untyped</span> <span class="pill pill-bad">Crash path</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{ownerUid}/events/{eventId}</span> &middot;
+        <strong>Class:</strong> none — fields written inline by <code>events_service.createEvent</code> &middot;
+        <strong>Read:</strong> owner, any invitee, or <code>isPublic == true</code> when the owner is in the reader's <code>friendIds</code> or <code>joinedGymIds</code> &middot;
+        <strong>Write:</strong> owner only — <em>collaborative editing is architecturally impossible today</em> &middot;
+        <strong>Relationships:</strong> owned by one <code>User</code>, invites many <code>User</code>s, optionally generated by a <code>Plan</code>, optionally located at a gym <code>User</code>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>title</code></td><td>string</td><td>Required non-empty — the <em>only</em> validation on the whole entity.</td></tr>
+            <tr><td><code>notes</code></td><td>string</td><td></td></tr>
+            <tr><td><code>eventType</code></td><td>string</td><td><code>'basic'</code> or <code>'workout'</code>.</td></tr>
+            <tr><td><code>isPublic</code></td><td>bool</td><td>Drives the friend/gym visibility branch in the rules.</td></tr>
+            <tr><td><code>inviteeIds</code></td><td>array&lt;string&gt;</td><td>Indexed (CONTAINS) with <code>startAt</code>.</td></tr>
+            <tr><td><code>inviteeNames</code></td><td>array&lt;string&gt;</td><td>Denormalised display names — go stale if a user renames.</td></tr>
+            <tr><td><code>startAt</code></td><td>Timestamp?</td><td><span class="pill pill-bad">Nullable on write, non-null cast on read.</span> <code>_mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. Any event saved without a start time crashes the calendar for the owner <em>and</em> everyone it is shared with.</td></tr>
+            <tr><td><code>endAt</code></td><td>Timestamp?</td><td>Same. Also: nothing validates <code>endAt &gt; startAt</code> anywhere.</td></tr>
+            <tr><td><code>exercises</code></td><td>array&lt;map&gt;</td><td>Written as <code>{name, sets, setDetails: [{reps, weight}]}</code>. <strong>Read back as <code>{name, sets, weight}</code> from a top-level <code>weight</code> key that is never written</strong> — the calendar always renders blank weights. Per-set editing is unbuilt; every set gets identical reps and weight.</td></tr>
+            <tr><td><code>locationGymId</code></td><td>string?</td><td>A gym is a user, so this is a uid.</td></tr>
+            <tr><td><code>locationGymName</code></td><td>string?</td><td>Denormalised.</td></tr>
+            <tr><td><code>recurrence</code></td><td>map?</td><td><code>{frequency, endType, untilDate, daysOfWeek}</code>. <code>frequency</code> &isin; <code>weekly</code>, <code>monthly</code>, <code>every_other_day</code>, <code>custom_weekly</code>, <code>none</code>. <code>endType</code> &isin; <code>never</code>, <code>until_date</code>. <strong>Expanded client-side</strong> — one doc, N rendered occurrences.</td></tr>
+            <tr><td><code>planId</code></td><td>string?</td><td>Set only by plan generation. Indexed with <code>startAt</code>.</td></tr>
+            <tr><td><code>planSourceEventId</code></td><td>string?</td><td>Set only by plan generation.</td></tr>
+            <tr><td><code>createdAt</code></td><td>Timestamp</td><td><code>serverTimestamp</code> on direct create; <strong>client clock</strong> on plan-generated instances.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Two repetition mechanisms coexist and nothing reconciles them: <code>recurrence</code> expands at render time, while Plans materialise real documents. See <a href="overview.html#risks">overview risks</a>.</p>
+    </div>
+
+    <div class="card">
+      <h3>Plan <span class="pill pill-warn">DTO only</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{userId}/plans/{planId}</span> &middot;
+        <strong>Classes:</strong> <code>PlanSummary</code> and <code>PlanDetails</code> declared <em>inside</em> <span class="fname">lib/services/plans_service.dart</span>, read-side only &middot;
+        <strong>Access:</strong> owner read + write only &middot;
+        <strong>Relationships:</strong> owned by one <code>User</code>; generates many <code>Event</code> documents.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>userId</code></td><td>string</td><td>Denormalised owner uid.</td></tr>
+            <tr><td><code>name</code></td><td>string</td><td><strong>Used as a lookup key</strong> by <code>findPlanByNameForCurrentUser</code> — ambiguous with duplicate names, and needs a <code>name + updatedAt</code> composite index that is <em>not</em> in <span class="fname">firestore.indexes.json</span>.</td></tr>
+            <tr><td><code>description</code></td><td>string</td><td></td></tr>
+            <tr><td><code>repeatWindowWeeks</code></td><td>int</td><td>&ge; 1.</td></tr>
+            <tr><td><code>startDate</code> / <code>endDate</code></td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>linkedEvents</code></td><td>array&lt;map&gt;</td><td><code>{sourceEventId, title, weekday}</code>.</td></tr>
+            <tr><td><code>generatedInstanceCount</code></td><td>int</td><td></td></tr>
+            <tr><td><code>maxGenerationCap</code></td><td>int</td><td><strong>250 on create, 180 on update</strong> — inconsistent. Update deletes future instances then regenerates, so a plan silently loses instances when edited.</td></tr>
+            <tr><td><code>status</code></td><td>string</td><td><code>'active'</code> / <code>'archived'</code>. <strong>No delete-plan action exists in the UI</strong> (the goal sheet has one).</td></tr>
+            <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>Client clock.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted"><code>LinkableEvent</code> is a third read-side DTO in the same file, over event docs — not a stored entity.</p>
+    </div>
+
+    <div class="card">
+      <h3>ChannelPost <span class="pill pill-bad">Untyped</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{gymUid}/channelPosts/{postId}</span> &middot;
+        <strong>Class:</strong> none &middot;
+        <strong>Read:</strong> the gym, or any user with that gym in <code>joinedGymIds</code> &middot;
+        <strong>Write:</strong> create and <span class="pill pill-bad">update</span> by the gym or any joined member — <strong>update is unconstrained</strong>; delete by the gym or <code>resource.data.authorUid</code> &middot;
+        <strong>Relationships:</strong> hosted by a gym <code>User</code>, authored by any <code>User</code>, has many <code>Comment</code>s.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>channelName</code></td><td>string</td><td>A plain string matched against the gym doc's <code>channelNames</code> array. Indexed with <code>createdAt</code> DESC. <strong>There is no Channel entity</strong> and therefore no per-channel permissions, despite the proposal promising users may post on "certain channels".</td></tr>
+            <tr><td><code>authorUid</code></td><td>string</td><td>Any joined member can rewrite this field under the current update rule.</td></tr>
+            <tr><td><code>authorName</code></td><td>string</td><td>Denormalised.</td></tr>
+            <tr><td><code>content</code></td><td>string</td><td>No length cap, no content constraint, no rate limit.</td></tr>
+            <tr><td><code>createdAt</code></td><td>Timestamp</td><td><code>serverTimestamp</code> — correct.</td></tr>
+            <tr><td><code>likeIds</code></td><td>array&lt;string&gt;</td><td>Toggled transactionally. <strong>This array is the only thing the <code>update</code> rule was meant to permit</strong>, and the rule does not say so.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Moderation is broken at the model level: <code>channel_posts_service.isCurrentUserGymOwner</code> is literally <code>uid == gymUid</code>, so <strong>a post's own author cannot delete their own post from the UI</strong> even though the rule allows it.</p>
+    </div>
+
+    <div class="card">
+      <h3>Comment <span class="pill pill-bad">Untyped</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">users/{gymUid}/channelPosts/{postId}/comments/{commentId}</span> &middot;
+        <strong>Class:</strong> none &middot;
+        <strong>Read / create:</strong> the gym or any joined member &middot;
+        <strong>Delete:</strong> the gym or the comment author &middot;
+        <strong>Update:</strong> <code>if false</code> — comments are immutable, no editing, no comment likes &middot;
+        <strong>Relationships:</strong> belongs to one <code>ChannelPost</code>.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>authorUid</code></td><td>string</td><td></td></tr>
+            <tr><td><code>authorName</code></td><td>string</td><td>Denormalised.</td></tr>
+            <tr><td><code>content</code></td><td>string</td><td>Create has no rate limit and no content constraint.</td></tr>
+            <tr><td><code>createdAt</code></td><td>Timestamp</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Cascade-deleted with the parent post by <code>channel_posts_service</code>. Two live listeners are opened per visible post.</p>
+    </div>
+
+    <div class="card">
+      <h3>DirectThread <span class="pill pill-bad">Untyped</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">directThreads/{threadId}</span> where <code>threadId = sorted(uidA, uidB).join('__')</code> &middot;
+        <strong>Class:</strong> none &middot;
+        <strong>Read:</strong> either participant &middot;
+        <strong>Write:</strong> create and update by a participant, with <code>participants.size() == 2</code>. Delete: never. &middot;
+        <strong>Relationships:</strong> exactly two <code>User</code>s; has many <code>DirectMessage</code>s.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>participants</code></td><td>array&lt;string&gt;</td><td>Length exactly 2, sorted. <strong>Group DMs are impossible by construction</strong> — the id scheme and the rule both assume two.</td></tr>
+            <tr><td><code>lastMessage</code></td><td>string</td><td>A participant may rewrite this to arbitrary text under the update rule.</td></tr>
+            <tr><td><code>lastSenderUid</code></td><td>string</td><td></td></tr>
+            <tr><td><code>lastMessageAt</code></td><td>Timestamp</td><td></td></tr>
+            <tr><td><code>unreadCounts</code></td><td>map&lt;uid, int&gt;</td><td>Maintained with <code>FieldValue.increment</code>. A participant may rewrite the <em>other</em> party's count.</td></tr>
+            <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>Client clock.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>DirectMessage <span class="pill pill-bad">Untyped</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">directThreads/{threadId}/messages/{messageId}</span> &middot;
+        <strong>Class:</strong> none — <code>IncomingFriendRequest</code> is a read-side DTO in <span class="fname">direct_messages_service.dart</span> &middot;
+        <strong>Read:</strong> a participant, <span class="pill pill-warn">or anyone if the thread doc does not exist</span> &middot;
+        <strong>Create:</strong> participant, <code>senderUid == auth.uid</code>, and either a <code>friend_request</code> addressed to the other participant or a relationship that satisfies <code>dmAllowedBetween()</code> &middot;
+        <strong>Delete:</strong> only a <code>friend_request</code> you received. <strong>Update:</strong> never.
+      </p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>senderUid</code></td><td>string</td><td>Must equal the auth uid — rule-enforced.</td></tr>
+            <tr><td><code>senderName</code></td><td>string</td><td>Denormalised.</td></tr>
+            <tr><td><code>text</code></td><td>string</td><td>No length cap.</td></tr>
+            <tr><td><code>sentAt</code></td><td>Timestamp</td><td><strong><code>Timestamp.now()</code> — client clock, spoofable.</strong> No <code>request.time</code> validation, so message ordering can be forged.</td></tr>
+            <tr><td><code>messageKind</code></td><td>string?</td><td>Absent = plain text. <code>'friend_request'</code> or <code>'event_invite'</code>. Indexed with <code>recipientUid</code> and with <code>senderUid</code>. <strong>This one field carries the entire friend-request protocol.</strong></td></tr>
+            <tr><td><code>recipientUid</code></td><td>string?</td><td>Set for <code>friend_request</code> only.</td></tr>
+            <tr><td><code>eventId</code> / <code>eventOwnerUid</code></td><td>string?</td><td>Set for <code>event_invite</code> only. The Attend/Decline chips rendered on these messages are <strong>local-only and never persisted</strong> — the RSVP is lost on navigation and the inviter is never told.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>user_preferences <span class="pill pill-bad">Dead ruleset</span></h3>
+      <p class="small">
+        <strong>Path:</strong> <span class="fname">user_preferences/{userId}</span> &middot;
+        <strong>Class:</strong> none &middot;
+        <strong>Access:</strong> full owner-only CRUD rules exist at <span class="fname">firestore.rules</span> lines 192&ndash;204; delete denied.
+      </p>
+      <div class="callout warn">
+        <strong>This collection is referenced nowhere in <span class="fname">lib/</span>.</strong> No service reads it, no service writes it, no document has ever been created. It is also the <em>only</em> collection <span class="fname">FIRESTORE_RULES_SETUP.md</span> documents in detail — a doc describing the one collection the app never uses.
+        <br><br>
+        <span class="tag tag-decided">DECIDED</span> Delete the rule block in M1. If a settings feature ever needs it, the fields go on the user doc instead — one fewer top-level collection to secure.
+      </div>
     </div>
   </section>
 
-  <section id="goals">
-    <h2><code>users/{uid}/goals/{goalId}</code></h2>
-    <p>Backed by the one properly typed model in the app, <code>models/goal.dart</code>, with real <code>fromFirestore</code>/<code>toJson</code>.</p>
+  <section id="rules">
+    <h2>Security rules</h2>
+    <p><span class="fname">firestore.rules</span>, 206 lines. Read it as the real access-control spec — <span class="fname">FIRESTORE_RULES_SETUP.md</span> has drifted and is missing six of the nine collections.</p>
+
+    <div class="callout danger">
+      <strong><span class="fname">/users/{userId}</span> is <code>allow read: if true</code>.</strong> Not "any signed-in user" — <em>anyone</em>, with no authentication at all. Anyone who knows the Firebase project id can enumerate every user document and read <code>email</code>, <code>displayName</code>, <code>contactInfo</code>, <code>avatarUrl</code>, <code>friendIds</code>, <code>joinedGymIds</code>, and <code>memberUserIds</code>.
+      <br><br>
+      The project id is discoverable: Firebase client config is committed and git-tracked, which is <em>normal and acceptable</em> for Firebase — the security model puts enforcement in the rules. The problem is not the committed keys. <strong>The problem is that the rules do not enforce anything on this collection, and App Check is not enabled.</strong> Fix the rule; do not go rotate keys.
+      <br><br>
+      The inline comment justifies the rule as "needed for friend lists, gym lists". The app only ever reads user docs while signed in, so <code>request.auth != null</code> breaks nothing. This is the highest-severity item in the entire project.
+    </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Collection</th><th>Read</th><th>Write</th><th>Problem?</th></tr></thead>
         <tbody>
-          <tr><td><code>userId</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>name</code> / <code>description</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>startDate</code> / <code>endDate</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-          <tr><td><code>requiredCheckupsPerPeriod</code></td><td>number</td><td>&nbsp;</td></tr>
-          <tr><td><code>resetPeriod</code></td><td>string enum</td><td><code>daily | weekly | biweekly | monthly</code>.</td></tr>
-          <tr><td><code>currentCheckupsCompleted</code></td><td>number</td><td>Runs entirely client-side; no server-side validation of the counting logic (see debt list #11).</td></tr>
-          <tr><td><code>currentPeriodStart</code> / <code>currentPeriodEnd</code></td><td>Timestamp</td><td>See callout below — the most bug-prone fields in the model.</td></tr>
-          <tr><td><code>status</code></td><td>string enum</td><td><code>active | archived</code>.</td></tr>
-          <tr><td><code>periodHistory</code></td><td>array of maps</td><td><code>{periodStart, periodEnd, requiredCheckups, completedCheckups}</code> — accumulates one entry per rollover.</td></tr>
-          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr>
+            <td><span class="fname">users/{userId}</span></td>
+            <td><code>if true</code> — public, unauthenticated</td>
+            <td>Create: self only. Update: self, or one of four diff-guarded cross-user mutations (friend-accept adds only self to <code>friendIds</code>; join/leave gym adds/removes only self from a gym's <code>memberUserIds</code>; a gym removes only itself from a member's <code>joinedGymIds</code>). Delete: <code>if false</code>.</td>
+            <td><span class="pill pill-bad">Critical</span> — full PII leak. Also: <strong>no shape validation</strong>, so a client can write <code>accountType: 'gym'</code> on its own doc and gain channel-creation and DM-anyone privileges, or a 1 MB <code>displayName</code>. And <code>delete: if false</code> means <strong>account deletion is explicitly denied</strong> — an App Store 5.1.1(v) blocker.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">users/{u}/events/{e}</span></td>
+            <td>Owner, invitee, or <code>isPublic</code> AND owner &isin; reader's <code>friendIds</code> or <code>joinedGymIds</code></td>
+            <td>Owner only</td>
+            <td><span class="pill pill-warn">Medium</span> — the read logic is sound. But owner-only write makes the "invite friends to edit a workout" requirement <strong>architecturally impossible</strong>. No field validation, so the nullable <code>startAt</code> crash path can be written by any client.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">users/{u}/goals/{g}</span></td>
+            <td>Owner only</td>
+            <td>Owner only</td>
+            <td><span class="pill pill-good">OK</span> — apart from the client-supplied <code>createdAt</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">users/{u}/plans/{p}</span></td>
+            <td>Owner only</td>
+            <td>Owner only</td>
+            <td><span class="pill pill-good">OK</span> — same timestamp caveat.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">users/{gym}/channelPosts/{p}</span></td>
+            <td>Gym or joined member</td>
+            <td>Create: gym or joined member. <strong>Update: gym or joined member, unconstrained.</strong> Delete: gym or <code>authorUid</code>.</td>
+            <td><span class="pill pill-bad">High</span> — the update rule was written for likes but restricts nothing. Any joined member can overwrite any post's <code>content</code> or <code>authorUid</code>. Needs <code>affectedKeys().hasOnly(['likeIds'])</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">…/channelPosts/{p}/comments/{c}</span></td>
+            <td>Gym or joined member</td>
+            <td>Create: gym or joined member. Delete: gym or author. Update: <code>if false</code>.</td>
+            <td><span class="pill pill-warn">Medium</span> — create has <strong>no rate limit and no content constraint</strong>. Immutability is fine; unbounded creation is not.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">directThreads/{t}</span></td>
+            <td>Participant</td>
+            <td>Create/update: participant, <code>participants.size() == 2</code>. Delete: <code>if false</code>.</td>
+            <td><span class="pill pill-warn">Medium</span> — update lets a participant rewrite the other party's <code>unreadCounts</code> and set <code>lastMessage</code> to arbitrary text.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">…/{t}/messages/{m}</span></td>
+            <td>Participant, <strong>or if the thread doc does not exist</strong></td>
+            <td>Create: participant + <code>senderUid == auth.uid</code> + (a <code>friend_request</code> addressed to the other participant, OR <code>dmAllowedBetween()</code>). Delete: only a received <code>friend_request</code>. Update: <code>if false</code>.</td>
+            <td><span class="pill pill-warn">Medium</span> — the <code>!exists()</code> read branch is a hole by construction. Separately, <code>dmAllowedBetween()</code> performs <strong>3&ndash;4 <code>get()</code> calls per message write</strong>: each is billed, and it is close to Firestore's 10-<code>get()</code>-per-evaluation ceiling.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">user_preferences/{userId}</span></td>
+            <td>Self</td>
+            <td>Self; delete never</td>
+            <td><span class="pill pill-warn">Dead</span> — no code path touches this collection. Delete the block.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">Storage: avatars/{userId}/**</span></td>
+            <td><code>if true</code> — public, unauthenticated</td>
+            <td><code>request.auth.uid == userId</code></td>
+            <td><span class="pill pill-warn">Medium</span> — <strong>no file-size limit and no content-type restriction.</strong> A user can upload a 5 GB file to their own avatar path. Everything outside <span class="fname">/avatars/**</span> is implicitly denied, which is correct. <span class="fname">storage-cors.json</span> is <code>origin: ["*"]</code> with <code>Authorization</code> in <code>responseHeader</code>.</td>
+          </tr>
         </tbody>
       </table>
     </div>
+
+    <p class="small muted">Cross-cutting: <strong>not one rule in the file validates a field type, a string length, or a required key.</strong> Every timestamp on goals, plans, and DMs is client-supplied <code>Timestamp.now()</code>, with no <code>request.time</code> check anywhere. See the <a href="../03-services/firebase.html">Firebase runbook</a> for the deploy command and <a href="../04-plan/milestones.html#m1">M1</a> for the fix order.</p>
+  </section>
+
+  <section id="indexes">
+    <h2>Composite indexes</h2>
+    <p>From <span class="fname">firestore.indexes.json</span> — 7 indexes, <code>fieldOverrides: []</code>.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>Collection</th><th>Scope</th><th>Fields</th><th>Serves</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>events</code></td><td>COLLECTION_GROUP</td><td><code>isPublic</code> ASC, <code>startAt</code> ASC</td><td>Friend/gym public-event feeds and calendar streams.</td></tr>
+          <tr><td>2</td><td><code>events</code></td><td>COLLECTION_GROUP</td><td><code>inviteeIds</code> CONTAINS, <code>startAt</code> ASC</td><td>"Events I was invited to."</td></tr>
+          <tr><td>3</td><td><code>channelPosts</code></td><td>COLLECTION_GROUP</td><td><code>channelName</code> ASC, <code>createdAt</code> DESC</td><td>Channel feed, newest first.</td></tr>
+          <tr><td>4</td><td><code>events</code></td><td>COLLECTION_GROUP</td><td><code>planId</code> ASC, <code>startAt</code> ASC</td><td>Finding and regenerating a plan's materialised instances.</td></tr>
+          <tr><td>5</td><td><code>goals</code></td><td>COLLECTION</td><td><code>status</code> ASC, <code>createdAt</code> DESC</td><td><code>getActiveGoalsStream</code>. Correctly scoped.</td></tr>
+          <tr><td>6</td><td><code>messages</code></td><td>COLLECTION_GROUP</td><td><code>messageKind</code> ASC, <code>recipientUid</code> ASC</td><td>Incoming friend requests.</td></tr>
+          <tr><td>7</td><td><code>messages</code></td><td>COLLECTION_GROUP</td><td><code>messageKind</code> ASC, <code>senderUid</code> ASC</td><td>Outgoing friend requests / pending state.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="callout warn">
-      <strong>Most bug-prone part of the model.</strong>
-      <p><code>currentPeriodStart</code>, <code>currentPeriodEnd</code>, and <code>periodHistory[]</code> drive the check-in/uncheck-in rollover transaction in <span class="fname">goals_service.dart:185-273</span>. This date math is exactly why Milestone 4 (brief &sect;8) adds unit tests specifically here, alongside recurrence expansion and plan generation — it is the algorithmically densest, silently-corrupting code in the app, and there is no test coverage anywhere in the repo today.</p>
+      <strong>Two index notes worth acting on.</strong>
+      <br>&bull; Indexes 1, 2 and 4 are declared COLLECTION_GROUP, but every query in the code is a direct subcollection query on <span class="fname">users/{uid}/events</span>. A collection-group index does satisfy those, so this is harmless today — and it is exactly the index you would need if the calendar listener fan-out is replaced with a single collection-group query.
+      <br>&bull; <strong>Nothing indexes <code>plans</code> on <code>name + updatedAt</code></strong>, which <code>findPlanByNameForCurrentUser</code> requires. Firestore will demand it at runtime — and <span class="fname">channel_page.dart</span> currently handles that class of error by <em>rendering Firebase CLI instructions to the end user</em>, telling a gym member to run <code>firebase login --reauth</code> and <code>firebase deploy</code>. Add the index; delete the developer error screen.
     </div>
   </section>
 
-  <section id="plans">
-    <h2><code>users/{uid}/plans/{planId}</code></h2>
-    <p>Backed by typed classes in <span class="fname">plans_service.dart</span> (<code>PlanSummary</code>, <code>PlanDetails</code>, <code>LinkableEvent</code>) — the other typed exception to the <code>Map&lt;String, dynamic&gt;</code> norm.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>userId</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>name</code> / <code>description</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>repeatWindowWeeks</code></td><td>number</td><td>&nbsp;</td></tr>
-          <tr><td><code>startDate</code> / <code>endDate</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-          <tr><td><code>linkedEvents</code></td><td>array of maps</td><td><code>{sourceEventId, title, weekday}</code> — the template a plan generates instances from.</td></tr>
-          <tr><td><code>generatedInstanceCount</code></td><td>number</td><td>&nbsp;</td></tr>
-          <tr><td><code>maxGenerationCap</code></td><td>number</td><td>Bounds how many event instances one plan can generate in a batched write.</td></tr>
-          <tr><td><code>status</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+  <section id="missing">
+    <h2>Missing from the model</h2>
+    <p>Things the requirements need that no entity supports. "Priority" is when the absence starts costing something, not how hard it is.</p>
 
-  <section id="channels">
-    <h2><code>users/{gymUid}/channelPosts/{postId}</code> + nested comments</h2>
-    <p>Gym accounts only, conceptually — nothing in the schema itself enforces that a post's parent doc has <code>accountType: 'gym'</code>.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Missing entity / field</th><th>Needed for</th><th>Priority</th></tr></thead>
         <tbody>
-          <tr><td><code>channelName</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>authorUid</code> / <code>authorName</code></td><td>string</td><td>Denormalized author identity.</td></tr>
-          <tr><td><code>content</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-          <tr><td><code>likeIds</code></td><td>string[]</td><td>Denormalized array of liker uids.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="small muted">Nested subcollection: <code>.../channelPosts/{postId}/comments/{commentId}</code></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>authorUid</code> / <code>authorName</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>content</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p>Owner-or-author delete only, gated by <code>isCurrentUserGymOwner</code> (<span class="fname">channel_posts_service.dart:99-114</span>). No report/mute/ban tooling exists yet — that is a Milestone 3 item per the brief.</p>
-  </section>
-
-  <section id="threads">
-    <h2><code>directThreads/{threadId}</code> + messages</h2>
-    <p>Doc id is a sorted <code>uidA__uidB</code> pair. This is the one top-level collection outside <code>users</code> — everything else nests under the owning user's doc.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>participants</code></td><td>[uidA, uidB]</td><td>2-element array; creation only checks the requester is in it, not that the pair is an allowed relationship — see security posture in <span class="fname">out/04-asbuilt.md</span> item 5.</td></tr>
-          <tr><td><code>lastMessage</code></td><td>string</td><td>Either participant can rewrite this independent of the real message log (rules gap, debt list #2b).</td></tr>
-          <tr><td><code>lastSenderUid</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>lastMessageAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-          <tr><td><code>unreadCounts</code></td><td>map&lt;uid, number&gt;</td><td>Per-participant unread count, computed client-side.</td></tr>
-          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="small muted">Subcollection: <code>directThreads/{threadId}/messages/{messageId}</code></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td><code>senderUid</code> / <code>senderName</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>text</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>sentAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
-          <tr><td><code>messageKind</code></td><td>string enum, nullable</td><td><code>'friend_request' | 'event_invite' | null</code> — messages double as the friend-request delivery mechanism, there is no separate friend-request collection.</td></tr>
-          <tr><td><code>recipientUid</code></td><td>string</td><td>&nbsp;</td></tr>
-          <tr><td><code>eventId</code> / <code>eventOwnerUid</code></td><td>string, optional</td><td>Populated only for <code>event_invite</code> messages.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="dead-collection">
-    <h2>Dead collection: <code>user_preferences/{userId}</code></h2>
-    <div class="callout warn">
-      <strong>Rules exist, code doesn't.</strong>
-      <p><code>firestore.rules:191-204</code> defines access rules for <code>user_preferences/{userId}</code>. Nothing in <span class="fname">lib/</span> reads or writes this collection — it is referenced only in the rules file and two stale markdown docs. Treat it as a cleanup item, not a feature to build toward.</p>
-    </div>
-  </section>
-
-  <section id="relationships">
-    <h2>Relationships</h2>
-    <p>Two structural choices explain most of the shape above. Both are honest trade-offs, not mistakes, and both are locked in by brief &sect;7 ("do not change the existing Firestore data model").</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Choice</th><th>Consequence</th></tr></thead>
-        <tbody>
-          <tr><td>One <code>users</code> collection models both people and gyms, discriminated by <code>accountType</code>. A gym is a user doc that additionally carries <code>memberUserIds</code>/<code>channelNames</code>.</td><td>Simple to query (one collection, one set of security rules to reason about) but means gym-specific fields sit unused on every person doc's schema, and vice versa. There is no schema-level guarantee a "gym" doc doesn't also have <code>friendIds</code> set.</td></tr>
-          <tr><td>Friendships and gym membership are denormalized uid arrays (<code>friendIds</code>, <code>joinedGymIds</code>, <code>memberUserIds</code>) directly on the user/gym doc, not a separate join collection.</td><td>Reading "who are my friends" is one document read, not a query — fast and cheap on the free tier. It also means the array shares the document's 1&nbsp;MiB Firestore size limit with every other field on that doc, so it does not scale to a large friend or member count, and any single friend/member read still means loading the whole array even to check one relationship.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="storage">
-    <h2>Storage choices</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Choice</th><th>Detail</th></tr></thead>
-        <tbody>
-          <tr><td>Firestore for structured data</td><td>Every collection above. Primary datastore for the whole app.</td></tr>
-          <tr><td>Firebase Storage for avatars only</td><td>Path convention <code>avatars/{uid}/profile</code>, bucket <code>forge-by-alpfit.firebasestorage.app</code>. No other file uploads exist in the app.</td></tr>
-          <tr><td>Enums as strings</td><td><code>accountType</code>, <code>eventType</code>, <code>resetPeriod</code>, <code>status</code>, <code>messageKind</code> are all stored as plain strings, not Firestore's native enum-adjacent types.</td></tr>
-          <tr><td><code>DateTime</code> &#8644; <code>Timestamp</code></td><td>Conversion happens at the service boundary — services accept/return Dart <code>DateTime</code>, Firestore stores <code>Timestamp</code>. No shared converter utility (<span class="fname">core/firebase/converters.dart</span> is 0 bytes) — each service does this inline.</td></tr>
+          <tr>
+            <td><strong>User groups</strong> — no entity, no collection, no rules, no UI</td>
+            <td>"Create and join groups of other users to interact with" is an explicit Social page requirement in the Initial Requirements; the Final Specs demotes it to a stretch ("create groups of friends to share events and posts with"). Nothing anywhere implements it.</td>
+            <td><span class="pill">Optional</span> — the demotion is the later signal. See <a href="../01-product/features.html#groups">features &rarr; groups</a>.</td>
+          </tr>
+          <tr>
+            <td><strong>Friend request as a first-class entity</strong> — currently a <code>DirectMessage</code> with <code>messageKind: 'friend_request'</code></td>
+            <td>A request has a lifecycle — pending, accepted, declined, withdrawn, blocked — and none of it is representable. Consequences today: the other-user profile shows "Add Friend" with <strong>no pending state</strong>, so users fire duplicate requests until the service throws; declining pops the whole chat page while accepting does not; and there is no unfriend-then-reblock story.</td>
+            <td><span class="pill pill-warn">Important</span> — the duplicate-request bug is user-visible now.</td>
+          </tr>
+          <tr>
+            <td><strong>Gym membership approval state</strong> — <code>addGym</code> joins instantly; only the kick half exists</td>
+            <td>"Remove from or accept users into managed community" is a must-have requirement. Membership is currently two arrays with no <code>pending</code> value and no request record. There is no way for a gym to gate who joins.</td>
+            <td><span class="pill pill-warn">Important</span> — a rec-center beta means a real gym expects this.</td>
+          </tr>
+          <tr>
+            <td><strong>Moderation / report records</strong> — <span class="fname">moderation_service.dart</span> is 0 bytes</td>
+            <td>Report, block, hide, takedown, appeal. App Store guideline 1.2 requires a report/block mechanism for any UGC app; Forge has gym channels <em>and</em> DMs. There is no <code>reports</code> collection, no <code>blockedUserIds</code> field, no hidden-content flag.</td>
+            <td><span class="pill pill-bad">Must</span> — hard iOS submission blocker, and D6 puts real external users in scope.</td>
+          </tr>
+          <tr>
+            <td><strong>Notification tokens</strong> — no <code>fcmTokens</code> field, no <code>notificationPreferences</code></td>
+            <td>Push. <span class="fname">push_service.dart</span> is empty, so invites, DMs, and event changes are all silent — you learn about them by opening the app. Even deferring push, the <em>token storage</em> shape needs deciding before it is retrofitted onto a live user table.</td>
+            <td><span class="pill">Optional</span> — <span class="tag tag-deferred">DEFERRED</span> to M5, trigger: retention becomes the problem worth solving.</td>
+          </tr>
+          <tr>
+            <td><strong>Account-deletion tombstones</strong> — <code>allow delete: if false</code> on <span class="fname">users</span>, no UI</td>
+            <td>Apple guideline 5.1.1(v) requires in-app account deletion. Deleting a user also orphans their events, goals, plans, channel posts, comments, DM threads, avatar blob, and their uid inside every friend's <code>friendIds</code> and every gym's <code>memberUserIds</code>. A tombstone or a soft-delete flag is needed so surviving references render as "Deleted user" instead of crashing.</td>
+            <td><span class="pill pill-bad">Must</span> — hard iOS blocker, and the cascade is the real work.</td>
+          </tr>
+          <tr>
+            <td><strong>Recurring-event exceptions</strong> — <code>recurrence</code> has no exception list</td>
+            <td>"Skip this one occurrence" and "edit just this occurrence" are unrepresentable. Client-side expansion means every occurrence is derived; there is nowhere to record that one of them moved or was cancelled. Plans dodge this by materialising real docs — which is why two mechanisms exist.</td>
+            <td><span class="pill pill-warn">Important</span> — the first user who cancels one week of a recurring workout hits it.</td>
+          </tr>
+          <tr>
+            <td><strong>Timezones</strong> — every timestamp is naive; the goal period engine does flat date arithmetic</td>
+            <td>A calendar app and a period-based goal engine both depend on "what day is it for this user". <code>ResetPeriod.monthly</code> is a flat 30-day add; the day grid starts at a hardcoded 4 AM and renders anything earlier at a negative offset, off-grid. No document in the corpus addresses timezones at all.</td>
+            <td><span class="pill pill-warn">Important</span> — silent wrong-day bugs, and they get worse with travel and DST.</td>
+          </tr>
+          <tr>
+            <td><strong>Channel as an entity</strong> — currently a string in the gym doc's <code>channelNames</code> array</td>
+            <td>Per-channel write permissions ("users can post on <em>certain</em> channels"), channel descriptions, ordering, archiving, and the "subpages" requirement. A string array supports none of it, and renaming a channel orphans every post that carries the old <code>channelName</code>.</td>
+            <td><span class="pill pill-warn">Important</span> — the rename-orphans-posts bug is one gym admin away.</td>
+          </tr>
+          <tr>
+            <td><strong>Personal posts</strong> — no post entity outside gym channels</td>
+            <td>"View updates from friends" in the Feed requirement. Today that resolves to "your friend scheduled a public event" — friends have <strong>no posting surface at all</strong>. The requirement is met in name only.</td>
+            <td><span class="pill">Optional</span> — the Final Specs lists friend-directed posts as stretch.</td>
+          </tr>
+          <tr>
+            <td><strong>Exercise / movement catalog</strong> — exercises are free-text maps inside each event</td>
+            <td>Every requirements doc names an exercise database as a needed resource ("I will create this or find a free API"), and it was never specified or built. Without it there is no autocomplete, no dedupe, and no way to answer "when did I last do this movement".</td>
+            <td><span class="pill">Optional</span> — and note the anti-scope: Forge does not compete on workout programming. Fix the <code>setDetails</code> round-trip bug first; that is the real defect.</td>
+          </tr>
+          <tr>
+            <td><strong>Event RSVP state</strong> — no <code>attendeeStatus</code> map on the event</td>
+            <td>The Attend/Decline chips already exist in the DM UI and animate convincingly. They write nothing. A <code>{uid: 'going'|'declined'}</code> map on the event doc is the missing half.</td>
+            <td><span class="pill pill-warn">Important</span> — this is fake UI shipping today, not a future feature.</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -232,10 +542,11 @@
   <section id="next">
     <h2>What To Do Next</h2>
     <ol>
-      <li>Do not build against <code>user_preferences</code> — it has rules but zero code, and is a deletion candidate, not a starting point.</li>
-      <li>Before touching goal period-rollover logic, read the callout under Goals above and check whether Milestone 4's tests exist yet.</li>
-      <li>See <a href="conventions.html">conventions.html</a> for how new fields/collections should be added to this model, and <a href="overview.html">overview.html</a> for how these collections are reached from the View layer.</li>
+      <li><strong>Write a failing test for the <code>Event.startAt</code> null crash, then add the typed <code>Event</code> model.</strong> It is the first entry in the typed-model rollout and it closes a live crash path, the <code>setDetails</code> round-trip bug, and the missing <code>endAt &gt; startAt</code> validation in one pass.</li>
+      <li><strong>Change <code>allow read: if true</code> to <code>allow read: if request.auth != null</code> on <span class="fname">/users</span>.</strong> One line. Nothing in the app breaks. It is the highest-severity item in the project and it is a five-minute fix followed by a careful test. <a href="../04-plan/milestones.html#m1">M1</a>.</li>
+      <li>Take the "Missing from the model" rows marked <span class="pill pill-bad">Must</span> — moderation records and account-deletion tombstones — into <a href="../04-plan/milestones.html#m3">M3</a> scoping. Both are store blockers with real data-model design behind them, not paperwork.</li>
     </ol>
+    <p class="small muted">Related: <a href="overview.html">architecture overview</a> · <a href="conventions.html">conventions</a> · <a href="../01-product/features.html">product features</a> · <a href="../03-services/firebase.html">Firebase runbook</a> · <a href="../04-plan/milestones.html">milestones</a> · <a href="../index.html">docs hub</a></p>
   </section>
 
 </main>
@@ -248,6 +559,9 @@ nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('c
   nav.classList.remove('open');
   requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true, theme:'dark'});</script>
 
 </body>
 </html>

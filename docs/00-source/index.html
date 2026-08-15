@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Raw Source — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#rule">Read this first</a>
+    <a href="#alpfit">AlpFit era</a>
+    <a href="#capstone">Capstone era</a>
+    <a href="#notindexed">Not mirrored here</a>
+    <a href="#questions">Open questions for you</a>
+    <a href="#next">What to do next</a>
+    <a href="contradictions.html">Contradictions ledger</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Source</div>
+    <h1>Raw Source</h1>
+    <div class="whatthisis"><strong>What this is:</strong> your original notes, preserved exactly as written &mdash; nothing here has been edited.</div>
+  </header>
+
+  <section id="rule">
+    <h2>Read this first</h2>
+    <div class="callout warn">
+      <strong>Never edit anything in this folder.</strong> Every file under <span class="fname">00-source/raw/</span> is a faithful HTML rendering of one of your original <span class="fname">.docx</span> files &mdash; same words, same order, same typos. They exist so you can always check what you actually wrote.
+      <br><br>
+      The <em>organized</em> versions live elsewhere: <a href="../01-product/vision.html">01-product</a> for what Forge is and what it does, <a href="../02-architecture/overview.html">02-architecture</a> for how it is built. If something in a raw file is wrong or out of date, fix it <strong>there</strong> &mdash; and if it disagrees with something else, it is already in the <a href="contradictions.html">contradictions ledger</a>.
+    </div>
+    <div class="onesentence">19 source documents, roughly 9,000 words total, spanning from the first brain-dump to the last implementation note. <strong>Zero images.</strong></div>
+  </section>
+
+  <section id="alpfit">
+    <h2>AlpFit era &mdash; repo root and <span class="fname">Requirements Specs/</span></h2>
+    <p>The current product thinking. These 13 files were bulk-imported in one commit, so file dates carry no signal &mdash; the era below is inferred from internal content cues (page names, stack references, and which document answers which).</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Document</th><th>Era</th><th>What it covers</th><th>Where its content ended up</th></tr></thead>
+        <tbody>
+
+          <tr>
+            <td><a href="raw/AlpFit-Overview.html">AlpFit Overview</a> <span class="small faint">320 words</span></td>
+            <td><strong>Earliest.</strong> An unedited first brain-dump &mdash; it opens with the stray typo <code>sdWhat do I want the app to be able to do?</code></td>
+            <td>Raw feature wishlist: workouts, gym communities, gym posts and channels, movement insights, max tracking, notification-driven refresh, a Pok&eacute;mon-Go-style gym map.</td>
+            <td><a href="../01-product/vision.html">vision</a> for the original impulse. Most of the specifics are in <a href="contradictions.html#dropped">"Things dropped without comment"</a> &mdash; insights, maxes, and the map never resurface in any later doc.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/AlpFit-Mission-Statement_Goals.html">AlpFit Mission Statement_Goals</a> <span class="small faint">467 words</span></td>
+            <td><strong>Early, second.</strong> Company-level vision sitting above Forge. Still calls the landing page "Dashboard".</td>
+            <td>Mission statement; the three-platform AlpFit strategy (consumer app / gym software / trainer software); "Forge Clientside goals"; a 5-page IA with per-page bullets.</td>
+            <td><a href="../01-product/vision.html">vision</a> for the AlpFit-vs-Forge brand relationship. The trainer platform and standalone gym software are cut &mdash; see <a href="../01-product/decisions.html">D4</a> and ledger rows 1&ndash;3.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Forge-Initial-Requirements.html">Forge Initial Requirements</a> <span class="small faint">304 words</span></td>
+            <td><strong>Mid.</strong> The Dashboard&rarr;Feed rename has happened and Event Creator is its own page.</td>
+            <td>Page-by-page functional requirements: Feed, Calendar, Event Creator (basic + workout), Social, a Gyms-only block, Profile.</td>
+            <td><a href="../01-product/features.html">features</a> &mdash; this is the spine the app was actually built against. A few items (groups, edit-invites, source filtering) get demoted or dropped later.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/WilliamBarrFinalRequirementsSpecs.html">WilliamBarrFinalRequirementsSpecs</a> <span class="small faint">1,371 words</span></td>
+            <td><strong>Latest requirements doc.</strong> Self-titled "Final"; names the concrete stack.</td>
+            <td>Purpose and problem framing, ~30 must-have + 9 stretch requirements, workflow, resources, data at rest / on the wire / state, HMI-GUI in prose only, verification.</td>
+            <td><a href="../01-product/features.html">features</a> and <a href="../02-architecture/overview.html">architecture overview</a> &mdash; the governing requirements baseline. Its "Goals are a stretch" line is the one thing overruled (D2).</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--CSE499Requirements_updated.html">CSE499Requirements_updated</a> <span class="small faint">1,191 words</span></td>
+            <td><strong>2024-10-18.</strong> University-authored; it predates the project. The only file with real document metadata, and the creator is a professor.</td>
+            <td>The CSE 499 course rubric: required document outline, minimums (&ge;6 must-have, &ge;4 stretch), the "demonstrable without reading code" rule, and the requirements change-freeze policy.</td>
+            <td><strong>Nowhere.</strong> Every gate in it is dead &mdash; see ledger row 58. Kept only so you can see what the old constraints were.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Goal-Requirements.html">Goal Requirements</a> <span class="small faint">1,060 words</span></td>
+            <td><strong>Mid-late.</strong> Goal thread, part 1. Contains a verbatim Q&amp;A transcript with 18 numbered answers that <em>reverse the class sketch listed above them in the same file</em>.</td>
+            <td>Goal concept narrative, 7 requirements + 1 stretch, a first <code>Goal</code> class sketch, then 18 design answers revising it.</td>
+            <td><a href="../02-architecture/data-model.html">data model</a> for intent. Superseded in specifics by the class design &mdash; ledger rows 28&ndash;30 trace which answers won.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Forge_Goal_Class_Design.html">Forge_Goal_Class_Design</a> <span class="small faint">362 words</span></td>
+            <td><strong>Goal thread, part 2 &mdash; later.</strong> It is the <em>output</em> of that Q&amp;A: all 18 answers are resolved here. Machine-generated (<code>python-docx</code>).</td>
+            <td>Full <code>Goal</code> data-model spec: Dart class, <code>ResetPeriod</code>/<code>GoalStatus</code> enums, <code>GoalPeriodRecord</code>, method list, behaviour and validation rules, widget usage, the <code>GoalService</code> split, Firestore serialization notes.</td>
+            <td><a href="../02-architecture/data-model.html">data model</a> &mdash; the most engineering-ready artifact in the whole set, and it shipped near-verbatim as <span class="fname">lib/models/goal.dart</span>.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Feed-Page-Widget-Modules.html">Feed Page Widget Modules</a> <span class="small faint">311 words</span></td>
+            <td><strong>Implementation era.</strong> Written as a prompt ("alright here comes the hard part") and refers to "the <em>current</em> goal widget" &mdash; so the feed already existed.</td>
+            <td>Feed widget architecture: a base widget builder, a data-driven builder on top of it, and a 5&times;6 grid with exact positions and sizes for Next Workout, Goals, and Friends.</td>
+            <td><a href="../02-architecture/overview.html">architecture overview</a>. The most concrete UI spec in the set &mdash; but the grid coordinates do not close under either reading of <code>row:col</code> (ledger row 22).</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Workout-Page-Requirements-Spec.html">Workout Page Requirements Spec</a> <span class="small faint">54 words</span></td>
+            <td><strong>Unknown &mdash; orphan.</strong> Describes a screen that appears in no other document.</td>
+            <td>Six bullets for a live in-progress workout session: elapsed timer, current set/exercise, full exercise+set list, on-the-fly plan adjustment, workout name, and "Font should be Poppins with no bold or styled text" &mdash; the corpus's only typography rule.</td>
+            <td><a href="contradictions.html#scope">Ledger row 5</a>, flagged <span class="pill pill-warn">needs your input</span>. The largest unattributed scope in the corpus.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Untitled-document.html">Untitled document</a> <span class="small faint">11 words</span></td>
+            <td><strong>Implementation era, scratch.</strong></td>
+            <td>Three <code>gsutil</code> CORS commands against <code>gs://forge-by-alpfit.firebasestorage.app</code>. Confirms Firebase Storage and the project id. Contains a typo'd <code>gs://gs://</code> in the <code>set</code> command.</td>
+            <td><a href="../03-services/firebase.html">Firebase runbook</a>. Current as an infra fact, worthless as a requirement &mdash; and note the CORS policy it sets is <code>origin: ["*"]</code>.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Ideas-for-Future.html">Ideas for Future</a> <span class="small faint">88 words</span></td>
+            <td><strong>Explicitly post-MVP</strong> &mdash; titled "Ideas to Eventually Add Into The App and Make It Better".</td>
+            <td>One architectural idea only: replace direct-to-Firebase with a lightweight frontend plus an API gateway that abstracts storage from the client, for events, friends, and posts.</td>
+            <td><a href="../01-product/decisions.html">decisions</a> &mdash; D1 keeps it as a <span class="tag tag-deferred">DEFERRED</span> item with a named trigger, rather than a live conflict.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Updates-To-Be-Made.html">Updates To Be Made</a> <span class="small faint">0 words</span></td>
+            <td>Unknown</td>
+            <td><strong>Empty.</strong> A single blank paragraph, zero words.</td>
+            <td>Nowhere &mdash; see <a href="#questions">open questions</a>.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/Requirements-Specs--Workout-Event-Creation-Sheet.html">Workout Event Creation Sheet</a> <span class="small faint">0 words</span></td>
+            <td>Unknown</td>
+            <td><strong>Empty.</strong> A single blank paragraph, zero words.</td>
+            <td>Nowhere &mdash; see <a href="#questions">open questions</a>.</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Inferred order: Overview &rarr; Mission Statement &rarr; Initial Requirements &rarr; Final Specs &rarr; <em>(implementation begins)</em> &rarr; Goal Requirements &rarr; Goal Class Design &rarr; Feed Page Widget Modules &rarr; Untitled document. <span class="fname">Workout Page Requirements Spec</span> and <span class="fname">Ideas for Future</span> are unplaced; the CSE 499 rubric sits outside the line entirely.</p>
+  </section>
+
+  <section id="capstone">
+    <h2>Capstone era &mdash; <span class="fname">forge_senior_project_version/project_documents/</span></h2>
+    <p>The BYU-I senior project layer. Five of these six were exported from Google Drive in one batch and added to git on 2026-02-07; the Goal class design landed later, on 2026-04-02. Useful for the problem statement and positioning; the schedules, hour budgets, and rubric sections in them are dead (<a href="contradictions.html#process">ledger row 58</a>).</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Document</th><th>Era</th><th>What it covers</th><th>Where its content ended up</th></tr></thead>
+        <tbody>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Pre-Proposal-1.html">Pre-Proposal (1)</a> <span class="small faint">297 words</span></td>
+            <td><strong>Earliest conceptual doc.</strong> Answers lettered course prompts (a., b.).</td>
+            <td>The real-world problem (gym disconnect, self-consciousness), who the users are, and the buy-in requirement. Gym management as a user class is explicitly a stretch goal "much later".</td>
+            <td><a href="../01-product/vision.html">vision</a> &mdash; it fixes the original problem statement. Its "gyms much later" line is overruled by every later artifact and by the code (<a href="contradictions.html#scope">ledger row 2</a>).</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Forge-Proposal-1.html">Forge Proposal (1)</a> <span class="small faint">2,174 words</span></td>
+            <td><strong>Second era.</strong> The canonical narrative &mdash; and the longest document in the set. Large stretches are unedited instructor prompt text.</td>
+            <td>Purpose, author background, seven major features, audience (18&ndash;late-50s), significance, new CS concepts, a 14-week &times;2 semester schedule, resources and costs, dependencies, risks.</td>
+            <td><a href="../01-product/vision.html">vision</a> &mdash; positioning, the competitive claim, and the load-bearing anti-scope line ("would not try to enter that market"). The schedule, hour budget, and rubric sections are dead.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Forge-Initial-Requirements-1.html">Forge Initial Requirements (1)</a> <span class="small faint">304 words</span></td>
+            <td>Same batch. The copy that sat next to the code.</td>
+            <td>Identical page-by-page requirements to the root copy above.</td>
+            <td><a href="../01-product/features.html">features</a>. Duplicate &mdash; read the root copy, not this one.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Bigger-Rec-Manager-Meeting.html">Bigger Rec Manager Meeting</a> <span class="small faint">137 words</span></td>
+            <td>Same batch. Stakeholder meeting agenda.</td>
+            <td>Purpose restated as "Connect people through fitness" plus four mechanisms, and an explicit list of what you needed <em>from</em> a gym partner: design feedback, feature feedback, two beta cohorts.</td>
+            <td><a href="../01-product/vision.html">vision</a> and <a href="../04-plan/milestones.html">milestones</a> (the beta plan). <strong>Important caveat:</strong> it is an <em>ask</em> list &mdash; the one true stakeholder document contains no stakeholder-originated requirements.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Elevator-Pitch-For-Project.html">Elevator Pitch For Project</a> <span class="small faint">90 words</span></td>
+            <td>Same batch. Shortest doc in the set.</td>
+            <td>Three bullets of what you need (beta testers, feedback), four on why partner with the school, and the one-paragraph pitch.</td>
+            <td><a href="../01-product/vision.html">vision</a> &mdash; the positioning sentence is quoted verbatim. Near-zero requirement content.</td>
+          </tr>
+
+          <tr>
+            <td><a href="raw/forge_senior_project_version--project_documents--Forge_Goal_Class_Design-1.html">Forge_Goal_Class_Design (1)</a> <span class="small faint">362 words</span></td>
+            <td><strong>Newest doc in this folder</strong> (2026-03-21, added 2026-04-02). Machine-generated.</td>
+            <td>Identical <code>Goal</code> spec to the root copy above.</td>
+            <td><a href="../02-architecture/data-model.html">data model</a>. Duplicate. Notable only because it is a fully-specified entity that appears in <em>no</em> requirements doc in this folder.</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="notindexed">
+    <h2>Not mirrored here</h2>
+    <p>Six markdown files live in <span class="fname">forge_senior_project_version/</span> and are deliberately <strong>not</strong> copied into this folder, because they are not source notes &mdash; they are stale status reports, and four of them are AI-assistant session outputs frozen at the moment they were generated.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>Why it isn't here</th></tr></thead>
+        <tbody>
+          <tr><td><span class="fname">PROJECT_STATUS.md</span></td><td>Calls an app with empty services "Production-Ready Core" and lists implemented services as empty. The single most misleading file in the repo &mdash; <a href="contradictions.html#stale">ledger rows 45&ndash;49</a>.</td></tr>
+          <tr><td><span class="fname">PROJECT_SUMMARY.md</span></td><td>Describes a pre-backend app; understates the build by roughly everything. Rows 50&ndash;51.</td></tr>
+          <tr><td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td><td>Its findings were fixed in the same commit era; its recommendations (Riverpod, DI, repository interfaces) were recorded and abandoned. Rows 40, 41, 44, 52.</td></tr>
+          <tr><td><span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span></td><td>A mid-session handoff note overtaken inside the same commit. Row 53.</td></tr>
+          <tr><td><span class="fname">FIRESTORE_RULES_SETUP.md</span></td><td>The only markdown that was ever updated &mdash; and it still drifted behind the real <span class="fname">firestore.rules</span>. Rows 54&ndash;55.</td></tr>
+          <tr><td><span class="fname">README.md</span></td><td>55 bytes: the untouched <code>flutter create</code> stub. Row 56.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">All six are covered in the <a href="contradictions.html#stale">docs-vs-code section of the ledger</a>. Treat every one as historical.</p>
+  </section>
+
+  <section id="questions">
+    <h2>Open questions for you</h2>
+
+    <div class="callout warn">
+      <strong>1. Two of your documents are empty.</strong> <span class="fname">Updates To Be Made.docx</span> and <span class="fname">Requirements Specs/Workout Event Creation Sheet.docx</span> both contain a single blank paragraph &mdash; <strong>zero words</strong> (both are 6,480 bytes, which is an empty Word file). Their titles imply a change log and the field-by-field spec for creating a workout event. Both would materially change the plan if they existed.
+      <br><br>
+      <strong>Does that content live somewhere else?</strong> Google Drive, Apple Notes, a different machine, a chat thread. If it does, it is the highest-value missing input we know of. If it doesn't, say so and we will stop wondering what was supposed to be in them.
+    </div>
+
+    <div class="callout warn">
+      <strong>2. There are no mockups. Anywhere.</strong> Not one image, wireframe, screenshot, or drawing exists in any of the 19 source documents or in the repo. Two things make this conspicuous:
+      <ul>
+        <li><span class="fname">PROJECT_SUMMARY.md</span>'s next steps are "review and implement Feed page <em>mockups</em>" and "implement remaining page mockups in order" &mdash; so mockups were being worked from.</li>
+        <li><span class="fname">Forge Proposal</span> schedules "a full draft of page UIs and a full style guide" for Week 4.</li>
+      </ul>
+      Neither exists here. The only concrete visual rule in the entire corpus is a single font directive on an orphan page. <strong>This is a real gap</strong> &mdash; there is no visual design reference of any kind to build against, and no colour palette (the app hardcodes one blue in six separate files, and <span class="fname">core/constants/colors.dart</span> is empty).
+    </div>
+
+    <div class="callout">
+      <strong>3. About the big file.</strong> <span class="fname">Ideas for Future.docx</span> is <strong>303 KB for 88 words</strong>. Nothing is hiding in it &mdash; the size is four embedded Poppins font weights, not content. Same story for <span class="fname">Goal Requirements.docx</span> at 220 KB (embedded RobotoMono). We checked the raw document XML for both; the word counts are real. No action needed, just so a large file never sends you looking for something that isn't there.
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <div class="onesentence">Answer <a href="#questions">open question 1</a> &mdash; whether the content for the two empty documents exists somewhere else.</div>
+    <ol class="steps">
+      <li>Tell us if <span class="fname">Updates To Be Made</span> and <span class="fname">Workout Event Creation Sheet</span> have content elsewhere. Everything else in this folder has been read and mined; those two are the only known blind spot.</li>
+      <li>Then read the <a href="contradictions.html#next">eight flagged rows in the contradictions ledger</a> &mdash; the scope calls we made on your behalf while you were away.</li>
+      <li>Leave this folder alone from here on. Corrections go in <a href="../01-product/vision.html">01-product</a> and <a href="../02-architecture/overview.html">02-architecture</a>, never in <span class="fname">raw/</span>.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

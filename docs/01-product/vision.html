@@ -14,13 +14,16 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
+    <a href="#thesis">The thesis</a>
     <a href="#problem">The problem</a>
-    <a href="#mission">Mission</a>
-    <a href="#users">Target users</a>
-    <a href="#scope">Scope call</a>
-    <a href="#success">What success looks like</a>
-    <a href="#competition">Competitive position</a>
+    <a href="#who">Who it's for</a>
+    <a href="#differentiator">The differentiator</a>
+    <a href="#not">What Forge is not</a>
+    <a href="#success">Success looks like</a>
+    <a href="#narrowing">The AlpFit narrowing</a>
     <a href="#next">What to do next</a>
+    <a href="features.html">Feature inventory</a>
+    <a href="decisions.html">Decision log</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -28,87 +31,220 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 01-product / Vision</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Product / Vision</div>
     <h1>Vision</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the problem Forge exists to solve, who it's for, and what "working" means at beta — pulled from William's own Proposal and Final Requirements Spec, never invented.</div>
+    <div class="whatthisis"><strong>What this is:</strong> the one-page answer to "what is Forge, who is it for, and how would we know it worked." Read it before <a href="features.html">features.html</a> — every priority call on that page traces back to this one.</div>
   </header>
 
+  <section id="thesis">
+    <h2>The thesis</h2>
+    <div class="onesentence">Gym intimidation is a <strong>social</strong> problem, not a programming problem — so Forge does not sell you a better workout, it sells you people to do it with.</div>
+    <p class="small muted">Author's own words, from the proposal: there is <em>"a barrier of intimidation and self-consciousness that keeps people from starting a fitness journey"</em>, and <em>"when we make genuine human connections we feel safer. If people feel safer they are more likely to try new things."</em> Every scope call in these docs is downstream of that sentence.</p>
+  </section>
+
   <section id="problem">
-    <h2>The problem</h2>
-    <p>Forge exists to break down the <strong>"barrier of intimidation and self-consciousness that keeps people from starting a fitness journey."</strong> That exact phrasing recurs verbatim across William's Proposal and his Final Requirements Spec — it is his own framing, not a paraphrase.</p>
-    <p>The Pre-Proposal states the same problem from the other direction: a disconnect that leads to self-consciousness and hesitancy to work out in public. The proposed fix is two-sided — features for planning workouts with others, plus community interaction tied to a person's actual physical gym.</p>
+    <h2>The problem, in four rows</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Source</th><th>Framing</th></tr></thead>
+        <thead><tr><th>Observation</th><th>Where it came from</th><th>What Forge does about it</th></tr></thead>
         <tbody>
-          <tr><td>Elevator Pitch</td><td>"A social fitness app aimed at making the gym less intimidating by helping people start their journey with friends and supportive communities."</td></tr>
-          <tr><td>Pre-Proposal</td><td>Disconnect &rarr; self-consciousness &rarr; hesitancy to start. Solved by social planning + gym-tied community.</td></tr>
+          <tr><td>People don't start because they're scared of looking dumb in front of strangers.</td><td>Proposal — problem statement</td><td>You arrive knowing names, not just equipment.</td></tr>
+          <tr><td>Gyms are physically full and socially empty — <em>"in a place where people wear headphones the whole time they attend, there can be a bit of separation between everyone."</em></td><td>Proposal — social-isolation insight</td><td>A shared calendar makes showing up a plan with someone, not a solo errand.</td></tr>
+          <tr><td>Gyms want a way to talk to members and host a community; today they use a Facebook group.</td><td>Rec-manager meeting notes</td><td>The gym gets an account type inside Forge, with channels and posts.</td></tr>
+          <tr><td>Nothing in this category was built for it from the start — the alternatives are general-purpose social tools bent into shape.</td><td>Proposal — competitive claim</td><td>The gym is the organizing unit, not a hashtag.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="mission">
-    <h2>Mission</h2>
-    <p>Quoted verbatim from the extraction of William's notes:</p>
-    <div class="onesentence">"To create a one-stop-shop for people to connect with their gym, trainer, and other gym goers in order to create a more inviting and connected experience for gym communities."</div>
-    <p>Note the mission statement still names a trainer product and a gym product alongside the consumer app — that is the earliest, least-formal framing of the idea. See the scope call below for how that narrowed.</p>
-  </section>
-
-  <section id="users">
-    <h2>Target users</h2>
-    <p>Audience: adults 18 through the late 50s, with the majority being younger adults already active on social media. The Proposal names three concrete archetypes:</p>
+  <section id="who">
+    <h2>Who it's for</h2>
+    <p>Audience is <strong>adults 18 to late 50s</strong>, skewing to younger adults who already use social apps. The notes name three user categories; one of them is the gym itself.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Archetype</th><th>What they want from Forge</th></tr></thead>
+        <thead><tr><th>User</th><th>Who they are</th><th>What their first five minutes look like</th><th>What "it worked" means for them</th></tr></thead>
         <tbody>
-          <tr><td>New gym attendee</td><td>Help getting started — a less intimidating on-ramp to a fitness routine.</td></tr>
-          <tr><td>Consistent attendee</td><td>Connection — plan workouts with friends, stay accountable, share progress.</td></tr>
-          <tr><td>Gym (as an account type)</td><td>Host its own community — post updates, run channels, manage membership.</td></tr>
+          <tr>
+            <td><strong>The prospect</strong><br><span class="small faint">hasn't walked in yet</span></td>
+            <td>Signed up for a membership, or thinking about it. Has never been inside. The most intimidated person in the product.</td>
+            <td>Create account &rarr; search the gym by name &rarr; join its community &rarr; read the channel and see that these are normal people &rarr; message someone or accept an invite to a workout.</td>
+            <td>They walk in the first time already knowing one name and one time.</td>
+          </tr>
+          <tr>
+            <td><strong>The new attendee</strong><br><span class="small faint">going, knows nobody</span></td>
+            <td>Attends but wanders. Doesn't know what to do or who to ask. The proposal's <em>"new gym attendee looking for help."</em></td>
+            <td>Create account &rarr; join gym &rarr; add the one or two people they already know &rarr; see their friends' upcoming workouts on the feed &rarr; ask to join one.</td>
+            <td>They stop going alone.</td>
+          </tr>
+          <tr>
+            <td><strong>The consistent attendee</strong><br><span class="small faint">wants partners</span></td>
+            <td>Trains regularly, wants training partners and accountability. The proposal's <em>"consistent attendee looking to connect."</em></td>
+            <td>Create account &rarr; join gym &rarr; create a workout event for Thursday 6am &rarr; invite three friends &rarr; set a goal like "four workouts a week."</td>
+            <td>Their calendar fills with other people's names.</td>
+          </tr>
+          <tr>
+            <td><strong>The gym account</strong><br><span class="small faint">an account type, not a product</span></td>
+            <td>A rec center or gym that wants to host its own community and push news and events. Chosen at sign-up; today it cannot be changed afterward.</td>
+            <td>Create account as "gym" &rarr; add channels &rarr; post a first update &rarr; create an event every member can see &rarr; watch members join.</td>
+            <td>Members read the gym's posts in Forge instead of on a Facebook page.</td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <p>No named individual stakeholders exist. The formal Proposal states plainly: "Stakeholders with Contact information: TBD."</p>
+    <div class="callout">
+      <strong>One framing call is mine, not his.</strong> The notes name three categories — new attendee, consistent attendee, gym. I split "new attendee" into <em>prospect</em> (pre-visit) and <em>new attendee</em> (post-visit) because the pre-visit case is the whole differentiator and it deserves its own row. Logged as <span class="tag tag-proposed">PROPOSED</span> D18 in <a href="decisions.html#scope">decisions.html</a> — collapse the two rows back together if you disagree.
+    </div>
   </section>
 
-  <section id="scope">
-    <h2>Scope call — one app, not a company</h2>
-    <div class="callout warn">
-      <strong><span class="tag tag-proposed">PROPOSED</span> Needs William's review — the single biggest open call in this brief.</strong>
-      <p>Forge is one consumer app. It is <em>not</em> the three-product "AlpFit" business (consumer app + gym management software + trainer software) described in the earliest, undated brainstorm. That three-product vision appears exactly once and never resurfaces in any formal Proposal or Requirements doc — every later document scopes to a single Flutter app in which "gym" is an account type, not a separate product.</p>
-      <p>Direction of travel favors one app: ambition narrowed consistently as the notes got more formal. The trainer product and the gym-facing website are <span class="tag tag-deferred">DEFERRED</span>. This is tagged <span class="tag tag-proposed">PROPOSED</span> rather than decided because it is a question about what the product fundamentally is — that call belongs to William, and he was away when this brief was written.</p>
+  <section id="differentiator">
+    <h2>The differentiator</h2>
+    <div class="onesentence">You join a gym's community <strong>before your first visit</strong> — so the first time you walk in, you already know someone.</div>
+    <p>This is the one idea that survives every era of the notes. It is in the earliest pre-proposal, it is in the proposal verbatim (<em>"New attendees would also be able to go and join a gym's community before even attending the gym, getting to know people and asking questions so they feel more prepared for their first workout"</em>), it is one of the four differentiators in the project summary, and it is the reason the gym account type exists at all.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What competitors do</th><th>What Forge does</th></tr></thead>
+        <tbody>
+          <tr><td>Fitness apps connect you to a program.</td><td>Forge connects you to a room full of people.</td></tr>
+          <tr><td>Social apps connect you to people anywhere.</td><td>Forge connects you to the people at <em>your</em> gym, at a specific hour.</td></tr>
+          <tr><td>Gym apps start working after you're a member and inside the building.</td><td>Forge starts working before you've ever opened the door.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Everything else in the product — friends, calendar, invites, channels — exists to make that sentence true. When a feature doesn't serve it, that's the signal to cut the feature.</p>
+  </section>
+
+  <section id="not">
+    <h2>What Forge is deliberately not</h2>
+    <p>The anti-scope is the author's own, stated in the proposal: <em>"There are many apps that focus on delivering high quality programming or meal planning tools. This app would not try to enter that market, but merely touch on those."</em></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Not a…</th><th>Why not</th><th>Trigger that would change it</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Workout programming app</strong></td>
+            <td>Exercises exist to <em>describe</em> a planned workout so a friend knows what they're joining — never to <em>prescribe</em> one. Competing on programming means competing with a dozen funded apps on their strongest ground.</td>
+            <td>Beta users repeatedly ask "what should I do today" rather than "who is going today." Even then, the answer is a shared library, not a coach.</td>
+          </tr>
+          <tr>
+            <td><strong>Meal planning / nutrition app</strong></td>
+            <td>Zero connection to the social thesis. The author has the domain background (ESS&nbsp;381) and still ruled it out.</td>
+            <td>Nothing currently on the table. Treat as permanently out.</td>
+          </tr>
+          <tr>
+            <td><strong>Trainer marketplace</strong></td>
+            <td>The trainer platform was one of AlpFit's three ambitions and is <strong>cut</strong> (D4). No trainer role, account type, or feature exists anywhere in the code, and the trainer interview notes the proposal cites were never written down.</td>
+            <td>A gym asks Forge to sell training sessions on its behalf — a payments product, i.e. a different company.</td>
+          </tr>
+          <tr>
+            <td><strong>Gym management software</strong></td>
+            <td>Membership billing, check-ins, class booking, staff scheduling. The gym gets an <em>account type inside Forge</em>, not a separate product (D4). Building gym-side software means selling B2B to institutions with procurement cycles.</td>
+            <td>Three gyms independently ask for a member roster export or a desktop moderation console. Even then, the desktop trigger belongs to D3, not to a new product line.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
   <section id="success">
-    <h2>What success looks like at beta</h2>
-    <p>The only stakeholder record in the entire corpus is the "Bigger Rec Manager Meeting" note. It describes a beta group split into two roles, and Milestone 3 (rec center beta) is built directly on this arrangement:</p>
+    <h2>Success looks like</h2>
+    <div class="callout warn">
+      <strong>These five metrics are my invention, not his.</strong> Both intake passes flag the same gap: the notes contain <em>no</em> success metrics of any kind. The only definition of done in the corpus is <em>"demo-able"</em> — a grade, not a product signal — and the only measures are per-session ("the user created or edited an event"). Everything below is tagged <span class="tag tag-proposed">PROPOSED</span> because you have never stated a number. Change any of them freely; the point is that there is one to change.
+    </div>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Role</th><th>Definition</th></tr></thead>
+        <thead><tr><th>#</th><th>Metric</th><th>Target</th><th>Why this one</th><th>Measurable today?</th></tr></thead>
         <tbody>
-          <tr><td>The Gym</td><td>Hosts its own community; communicates news and events to members.</td></tr>
-          <tr><td>The User</td><td>Uses the app; participates in the host gym's community.</td></tr>
+          <tr>
+            <td>SM1</td>
+            <td>Beta cohort size at the BYU-I Rec Center</td>
+            <td><strong>30 members</strong> in the first cohort, plus the gym account itself</td>
+            <td>Small enough to hand-recruit, big enough that a gym channel isn't a ghost town. The rec-manager notes already ask for two beta cohorts — gym-side and user-side.</td>
+            <td><span class="pill pill-good">Yes</span> — a count</td>
+          </tr>
+          <tr>
+            <td>SM2</td>
+            <td><strong>% of workout events with at least one invitee who accepted</strong></td>
+            <td><strong>&ge; 40%</strong></td>
+            <td>This is the entire product thesis in one number. A workout nobody accepted is a note-to-self; Forge only worked if two people showed up. If exactly one number survives editing, keep this one.</td>
+            <td><span class="pill pill-bad">No</span> — RSVP is never persisted (see <a href="features.html#hollow">Looks done, isn't</a>). Fixing that is a prerequisite for measuring anything.</td>
+          </tr>
+          <tr>
+            <td>SM3</td>
+            <td>Week-2 retention</td>
+            <td><strong>&ge; 35%</strong> of beta sign-ups open the app in their second week</td>
+            <td>Cheap, standard, and it catches the failure mode where everyone signs up at a table in the rec center lobby and nobody comes back.</td>
+            <td><span class="pill pill-warn">Partial</span> — needs analytics, which is deliberately not adopted yet. Countable by hand at n=30.</td>
+          </tr>
+          <tr>
+            <td>SM4</td>
+            <td>Gyms onboarded with a live channel</td>
+            <td><strong>3 gyms</strong> within six months of first external release</td>
+            <td>One gym is a favor. Three is a pattern, and three is also the stated trigger for reopening monetization (D8).</td>
+            <td><span class="pill pill-good">Yes</span> — a count</td>
+          </tr>
+          <tr>
+            <td>SM5</td>
+            <td>New users who join a gym community in their first session</td>
+            <td><strong>&ge; 60%</strong></td>
+            <td>The differentiator only fires if joining a gym is the natural first act. If this number is low, onboarding — not the feature set — is the problem.</td>
+            <td><span class="pill pill-warn">Partial</span> — derivable from <span class="fname">joinedGymIds</span> vs account age, but nothing tracks "session."</td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <p>William's Final Requirements Spec sets a verification bar that doubles as the cleanest definition of "done" anywhere in the notes. Quoted verbatim:</p>
-    <div class="onesentence">"A requirement is considered fulfilled when the expected behavior occurs through the user interface and the resulting data is correctly saved and displayed across app restarts. A requirement will not be fulfilled if an action fails, produces incorrect or missing data, or does not persist across restarts."</div>
-    <p>Applied to the beta: success is five or more non-William users signing up, joining the rec center's community, and posting — with everything they did still there the next time they open the app.</p>
+    <p class="small muted">Note what is <em>not</em> here: downloads, DAU, and time-in-app. A social app for a single gym with 30 beta users cannot move those numbers, and chasing them would pull the product toward engagement mechanics that make gyms feel less welcoming, not more.</p>
   </section>
 
-  <section id="competition">
-    <h2>Competitive position</h2>
-    <p>William's own research found no direct competitor: "As far as I can find this specific type of app has not been created." Existing fitness apps focus on workout programming and meal planning, not on the social/community layer Forge is built around.</p>
-    <p>Stated honestly, this is a claim from one person's search, not a market study — there is no named competitor to contrast against, and no evidence of a broader competitive audit.</p>
+  <section id="narrowing">
+    <h2>The AlpFit narrowing — said plainly</h2>
+    <p>AlpFit was described in the earliest vision doc as three products, each usable <em>"independently or together"</em>: a consumer app, gym software (website + mobile), and trainer software (website + mobile). That is not the plan any more.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Original AlpFit ambition</th><th>Status now</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Consumer mobile app (Forge)</td><td><span class="pill pill-good">In scope — this is the product</span></td><td>~16,300 lines of it already run. It is the only thing that exists.</td></tr>
+          <tr><td>Gym software (separate website + app)</td><td><span class="pill pill-warn">Narrowed to an account type</span></td><td>D4. Gyms get an account type <em>inside</em> Forge — already built, already the differentiator. A separate B2B product is a different company.</td></tr>
+          <tr><td>Trainer software (separate website + app)</td><td><span class="pill pill-bad">Cut</span></td><td>D4. No trainer role, account type, feature, or line of code exists anywhere. The account-type enum is member/gym only. See <a href="decisions.html#deferred">the deferred table</a> — it is marked <em>cut</em>, not parked.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">The brand name stays. The three-platform strategy does not. If you want the ambition back on the page, the honest place for it is a "someday" line in the decision log with a trigger, which is exactly where it now lives.</p>
+  </section>
+
+  <section id="honest">
+    <h2>Where this product actually is</h2>
+    <div class="callout danger">
+      <strong>The app is substantially built and nowhere near shippable, and those are both true.</strong> Roughly 16,300 lines run against live Firestore across feed, calendar, events, goals, plans, DMs, friend requests, gym channels, and avatars. It also has <strong>zero tests</strong>, a <strong>world-readable user table</strong> (<span class="fname">firestore.rules</span> grants <span class="fname">allow read: if true</span> on <span class="fname">/users</span>, exposing every email and contact field unauthenticated), no moderation, no account deletion, no push, and <span class="fname">com.example.*</span> bundle ids that both app stores reject outright. Do not read "substantially built" as "nearly done."
+    </div>
+    <ul class="remember3">
+      <li>The vision has been stable for two years. It does not need re-deciding — see <a href="decisions.html">decisions.html</a>.</li>
+      <li>The highest-value engineering work is the surfaces that <em>look</em> finished and aren't — see <a href="features.html#hollow">features.html &rarr; Looks done, isn't</a>.</li>
+      <li>The highest-severity item in the whole project is one line in <span class="fname">firestore.rules</span> — see <a href="../02-architecture/data-model.html">the data model</a> and <a href="../04-plan/milestones.html">the milestones</a>.</li>
+    </ul>
+  </section>
+
+  <section id="links">
+    <h2>Where to go from here</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Page</th><th>What it answers</th></tr></thead>
+        <tbody>
+          <tr><td><a href="features.html">01-product/features.html</a></td><td>Every feature, its priority, and whether it actually works.</td></tr>
+          <tr><td><a href="decisions.html">01-product/decisions.html</a></td><td>D1–D42 with tags, rationale, and reversibility. Start at the <span class="tag tag-proposed">PROPOSED</span> card.</td></tr>
+          <tr><td><a href="../02-architecture/overview.html">02-architecture/overview.html</a></td><td>How the pieces fit and what the stack actually is.</td></tr>
+          <tr><td><a href="../02-architecture/data-model.html">02-architecture/data-model.html</a></td><td>Collections, fields, and the security rules.</td></tr>
+          <tr><td><a href="../03-services/index.html">03-services/index.html</a></td><td>Every third-party service, its trigger, and its cost.</td></tr>
+          <tr><td><a href="../04-plan/milestones.html">04-plan/milestones.html</a></td><td>What order to do it in.</td></tr>
+          <tr><td><a href="../00-source/contradictions.html">00-source/contradictions.html</a></td><td>Where the notes disagreed with themselves and how each was resolved.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
-    <ol>
-      <li>Get William's ruling on the <span class="tag tag-proposed">PROPOSED</span> scope call above — one app vs. the three-product AlpFit business. Everything else in this doc set assumes "one app."</li>
-      <li>If the rec center relationship changes or falls through, revisit the beta success definition in this section — it currently has no fallback stakeholder.</li>
-      <li>See <a href="features.html">features.html</a> for what is actually built toward this vision today, and <a href="decisions.html">decisions.html</a> for the full decision log behind these calls.</li>
+    <ol class="steps">
+      <li><strong>Pick a number for SM2.</strong> Open the <a href="#success">Success looks like</a> table and either accept "&ge; 40% of workout events have an accepted invitee" or write your own. It is the only metric that measures the thesis, and it is the one that tells you whether persisting the DM RSVP is worth doing first. Everything else on this page can wait.</li>
     </ol>
   </section>
 

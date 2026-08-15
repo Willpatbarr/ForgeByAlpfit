@@ -14,12 +14,15 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#web">Web app</a>
-    <a href="#firestore-rules">Firestore rules &amp; indexes</a>
-    <a href="#android">Android</a>
-    <a href="#docs-deploy">Docs site</a>
-    <a href="#no-ci">No CI, by design</a>
-    <a href="#checklist">Pre-deploy checklist</a>
+    <a href="#what-deploys">What can deploy today</a>
+    <a href="#docs-deploy">1. The docs site</a>
+    <a href="#firestore-rules">2. Firestore rules</a>
+    <a href="#app-ios">3. The app &rarr; TestFlight</a>
+    <a href="#app-android">4. The app &rarr; Play</a>
+    <a href="#promote">5. Promoting to production</a>
+    <a href="#checklist">Release checklist</a>
+    <a href="#rejected">When a build is rejected</a>
+    <a href="#ci">CI &mdash; the guardrail</a>
     <a href="#next">What to do next</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
@@ -28,93 +31,260 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 05-runbooks / Deploy</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Runbooks</div>
     <h1>Deploy</h1>
-    <div class="whatthisis"><strong>What this is:</strong> how a change actually reaches production today, across three paths — web (live), Firestore rules (the security boundary), and Android (blocked) — plus docs, which deploy separately.</div>
+    <div class="whatthisis"><strong>What this is:</strong> how a change reaches production, for the two things that actually deploy &mdash; the docs site and the app. Do the docs one first; it's simple, it works today, and it's the only one of the two that isn't blocked.</div>
   </header>
 
-  <section id="web">
-    <h2>1. Web app &rarr; Firebase Hosting <span class="tag tag-decided">DECIDED</span></h2>
-    <p>This is the live deploy path today. <code>firebase.json</code> points <code>hosting.public</code> at <code>build/web</code>, so the build output has to exist before you deploy it.</p>
-    <ol class="steps">
-      <li>
-        Build the web release from the app root (<code>forge_senior_project_version/</code>).
-        <pre><code>cd forge_senior_project_version
-flutter build web</code></pre>
-      </li>
-      <li>
-        Deploy only the hosting target — do not run a bare <code>firebase deploy</code>, which would also attempt rules/indexes.
-        <pre><code>firebase deploy --only hosting</code></pre>
-      </li>
-      <li><span class="verify">Verify:</span> open the hosting URL Firebase prints and confirm the deployed build reflects your change (hard-refresh to bypass cache).</li>
-    </ol>
-    <p>Web is unbranded today — <code>web/index.html</code> still carries Flutter's default title/description. That is a known gap, not a deploy-step problem — see the decision brief's Milestone 2.</p>
-  </section>
+  <section id="what-deploys">
+    <h2>What can deploy today</h2>
 
-  <section id="firestore-rules">
-    <h2>2. Firestore rules &amp; indexes <span class="tag tag-conflict">CONFLICT</span></h2>
-    <p>Rules are the actual security boundary for this app — not the committed config files (see <a href="local-setup.html#firebase-config">local-setup.html</a>). Deploying rules is not routine busywork; treat it with the same care as a production database migration.</p>
+    <div class="callout danger">
+      <strong>Nothing can reach either app store until <a href="../04-plan/milestones.html#m3">Milestone 3</a> is done.</strong> Three hard blockers, all present right now: bundle IDs are <span class="fname">com.example.*</span> on both platforms (neither store accepts that), release builds are signed with the <em>debug</em> keystore, and there is no Apple Developer or Google Play account. Sections 3, 4 and 5 below are written so they're ready &mdash; they are not runnable yet.
+    </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Command</th><th>Deploys</th></tr></thead>
+        <thead><tr><th>Artifact</th><th>Where it goes</th><th>Trigger</th><th>Status</th></tr></thead>
         <tbody>
-          <tr><td><code>firebase deploy --only firestore:rules</code></td><td><code>firestore.rules</code> — the actual security boundary.</td></tr>
-          <tr><td><code>firebase deploy --only firestore:indexes</code></td><td><code>firestore.indexes.json</code> — composite index definitions.</td></tr>
+          <tr><td>Docs site (<span class="fname">docs/</span>)</td><td>Cloudflare Pages</td><td>Push to <span class="fname">main</span></td><td><span class="pill pill-warn">Needs one-time setup</span></td></tr>
+          <tr><td>Firestore rules &amp; indexes</td><td>Firebase project <span class="fname">forge-by-alpfit</span></td><td>Manual CLI command</td><td><span class="pill pill-good">Works today</span></td></tr>
+          <tr><td>Storage rules</td><td>Same project</td><td>Manual CLI command</td><td><span class="pill pill-good">Works today</span></td></tr>
+          <tr><td>iOS app</td><td>TestFlight &rarr; App Store</td><td>Manual build + upload</td><td><span class="pill pill-bad">Blocked &mdash; M3</span></td></tr>
+          <tr><td>Android app</td><td>Play internal testing &rarr; production</td><td>Manual build + upload</td><td><span class="pill pill-bad">Blocked &mdash; M3</span></td></tr>
+          <tr><td>Flutter web build</td><td>Firebase Hosting (configured in <span class="fname">firebase.json</span>)</td><td>&mdash;</td><td><span class="pill">Not a target</span> &mdash; per <a href="../01-product/decisions.html">D3</a>, web is deferred. The Hosting config is leftover; don't build on it.</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="callout danger">
-      <strong>Known open hole, being fixed in Milestone 1.</strong> The current deployed rules allow <code>allow read: if true;</code> on the entire <code>users</code> collection — every user's <code>email</code> and <code>contactInfo</code> is world-readable by anyone with the web API key today. Do not treat the current rules as a safe baseline to copy from; Milestone 1 splits public-safe fields from gated ones.
-    </div>
-    <div class="callout warn">
-      <strong>Do not deploy from <code>FIRESTORE_RULES_SETUP.md</code>.</strong> That file, in the repo root, contains a <strong>stale copy</strong> of the rules — it is missing the DM-thread rules, several <code>users</code> update branches, and the goals/plans subcollection rules that exist in the real, deployed <code>firestore.rules</code>. Copying rules from that doc and deploying them would silently reopen security holes already closed in the live rules file. It is slated for deletion in Milestone 0 — until then, treat it as poison, not reference material.
-    </div>
-    <p>The only trustworthy source for current rules is <code>forge_senior_project_version/firestore.rules</code> itself, read directly.</p>
-  </section>
 
-  <section id="android">
-    <h2>3. Android &rarr; Play Console internal testing <span class="tag tag-deferred">DEFERRED — blocked until Milestone 2</span></h2>
-    <ol class="steps">
-      <li>Build the app bundle.
-        <pre><code>flutter build appbundle</code></pre>
-      </li>
-      <li>Upload the resulting <code>.aab</code> to Google Play Console, internal testing track.</li>
-    </ol>
-    <div class="callout warn">
-      <strong>Blocked today.</strong> The Android <code>applicationId</code> is still the Flutter scaffold default <code>com.example.forge_senior_project_version</code> (<code>android/app/build.gradle.kts</code>). Play Console will not accept a <code>com.example.*</code> application id for any real submission. Fixing this requires re-registering the Firebase Android app under a real id and regenerating <code>google-services.json</code> — scoped as Milestone 2, not a same-day fix.</p>
-    </div>
+    <p class="small muted">Path shorthand: <strong><span class="fname">$APP</span></strong> = <span class="fname">forge_senior_project_version/</span> today, <span class="fname">app/</span> after <a href="../01-product/decisions.html#proposed">D7</a>. All Firebase CLI commands run from inside <span class="fname">$APP</span>, because that's where <span class="fname">firebase.json</span> lives.</p>
   </section>
 
   <section id="docs-deploy">
-    <h2>Docs site — deploys separately</h2>
-    <p>This <code>docs/</code> folder is not part of either deploy path above. It builds and deploys on its own via <strong>Cloudflare Pages</strong> on every push to the repo — see <a href="../03-services/cloudflare-pages.html">cloudflare-pages.html</a> for the full setup. Firebase Hosting stays scoped to the app; Cloudflare Pages is for docs.</p>
+    <h2>1. The docs site &rarr; Cloudflare Pages</h2>
+    <p class="onesentence">Push to <span class="fname">main</span>, Cloudflare Pages builds <span class="fname">docs/</span>, the site is live. That's the whole pipeline &mdash; static HTML, no build step, no framework.</p>
+
+    <h3>One-time setup <span class="tier tier-t1">T1</span></h3>
+    <ol class="steps">
+      <li>Create a Cloudflare account (free) and open <strong>Workers &amp; Pages &rarr; Create &rarr; Pages &rarr; Connect to Git</strong>.</li>
+      <li>Authorise the GitHub app for the <strong>ForgeByAlpfit</strong> repository only. Not the whole account.</li>
+      <li>Set the build configuration. This is the step people get wrong &mdash; the docs are in a subdirectory of an app repo, not at the root:
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Field</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Production branch</td><td><span class="fname">main</span></td></tr>
+              <tr><td>Framework preset</td><td><strong>None</strong></td></tr>
+              <tr><td>Build command</td><td><em>(leave empty)</em></td></tr>
+              <tr><td>Build output directory</td><td><span class="fname">docs</span></td></tr>
+              <tr><td>Root directory</td><td><em>(leave as repo root)</em></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </li>
+      <li>Deploy. Cloudflare gives you a <span class="fname">*.pages.dev</span> URL.
+        <br><span class="verify">Verify: open the URL and confirm you land on the docs hub with the stylesheet applied. A page that renders unstyled means the CSS path resolved wrong &mdash; check that <span class="fname">docs/index.html</span> links <span class="fname">assets/forge.css</span> and the section pages link <span class="fname">../assets/forge.css</span>.</span>
+      </li>
+      <li>Full detail, including custom domain and what to do about preview deployments: <a href="../03-services/cloudflare-pages.html">cloudflare-pages.html</a>.</li>
+    </ol>
+
+    <h3>Every time after that</h3>
+    <ol class="steps">
+      <li>Edit HTML under <span class="fname">docs/</span>.</li>
+      <li>Open the file locally in a browser to check it renders. There is no build to run.</li>
+      <li>Commit and push to <span class="fname">main</span>.</li>
+      <li>Cloudflare builds automatically, typically in under a minute.
+        <br><span class="verify">Verify: hard-refresh the live URL and confirm your change is there. If it isn't, check the Pages deployment log before touching anything else.</span>
+      </li>
+    </ol>
+
+    <div class="callout">
+      <strong>Why Cloudflare and not Firebase Hosting</strong> &mdash; even though Hosting is already configured. <a href="../01-product/decisions.html">D9 <span class="tag tag-decided">DECIDED</span></a>: consistency with William's other projects. The <span class="fname">hosting</span> block in <span class="fname">firebase.json</span> points at <span class="fname">build/web</span>, which is a Flutter web build, not this docs site &mdash; they were never the same thing.
+    </div>
   </section>
 
-  <section id="no-ci">
-    <h2>No CI — a deliberate deferral</h2>
-    <p>There is no GitHub Actions workflow, no Codemagic config, nothing. Every deploy path above is run by hand, on William's own machine, when he decides to run it.</p>
-    <p>This is a stated deferral, not an oversight — per the decision brief's rejected-services table, CI is adopted when a second developer joins or the first broken build reaches a tester, whichever comes first. Until then, the pre-deploy checklist below is the only safety net.</p>
+  <section id="firestore-rules">
+    <h2>2. Firestore rules &mdash; the deploy everyone forgets</h2>
+
+    <div class="callout warn">
+      <strong>Rules are a separate deploy from everything else.</strong> Editing <span class="fname">firestore.rules</span> and pushing to GitHub changes nothing in production. Nothing takes effect until you run the command below. This is the single most forgettable step in the whole project &mdash; and it is the one that gates access to every user's data.
+    </div>
+
+    <ol class="steps">
+      <li>
+        <strong>Authenticate the CLI once per machine.</strong>
+        <div class="fname">firebase login</div>
+      </li>
+      <li>
+        <strong>Move to the app directory</strong> &mdash; <span class="fname">firebase.json</span> lives there, not at the repo root.
+        <div class="fname">cd forge_senior_project_version&nbsp;&nbsp;<span class="faint"># or: cd app</span></div>
+      </li>
+      <li>
+        <strong>Confirm you're pointed at the right project.</strong>
+        <div class="fname">firebase use</div>
+        Must be <span class="fname">forge-by-alpfit</span>. There is only one project &mdash; no staging environment exists, so <strong>a rules deploy is a production deploy</strong>.
+      </li>
+      <li>
+        <strong>Deploy the rules.</strong>
+        <div class="fname">firebase deploy --only firestore:rules</div>
+      </li>
+      <li>
+        <strong>Deploy the indexes when you've added a query.</strong>
+        <div class="fname">firebase deploy --only firestore:indexes</div>
+        Firestore will demand an index at runtime if you forget; the error message in the console contains a one-click creation URL. Note that <span class="fname">plans</span> queried by <span class="fname">name</span> + <span class="fname">updatedAt</span> currently has no declared index &mdash; that query will ask for one the first time it runs.
+      </li>
+      <li>
+        <strong>Deploy Storage rules separately if you changed them.</strong>
+        <div class="fname">firebase deploy --only storage</div>
+      </li>
+      <li>
+        <strong>Verify in the console, not in the terminal.</strong> Open Firebase console &rarr; Firestore &rarr; Rules and confirm the published ruleset text matches the file you just deployed. Then use the Rules Playground to run one denial you expect &mdash; e.g. an unauthenticated read of a <span class="fname">users/</span> document.
+        <br><span class="verify">Verified when: the playground denies the read you expect it to deny. A successful CLI deploy only proves the syntax parsed.</span>
+      </li>
+    </ol>
+
+    <div class="callout danger">
+      <strong>Do not deploy rules copied from <span class="fname">FIRESTORE_RULES_SETUP.md</span>.</strong> That file in <span class="fname">$APP/</span> holds a stale copy of the rules &mdash; it is missing the DM-thread rules, several <span class="fname">users</span> update branches, and the goals/plans subcollection rules that exist in the real <span class="fname">firestore.rules</span>. Deploying from it would silently reopen holes already closed. It is slated for deletion in <a href="../04-plan/milestones.html#m2">M2</a>. Until then treat it as poison, not reference material. <strong>The file <span class="fname">$APP/firestore.rules</span> is the only source of truth.</strong>
+    </div>
+
+    <div class="callout warn">
+      <strong>The currently deployed rules have a known hole.</strong> <span class="fname">allow read: if true</span> on <span class="fname">/users/{userId}</span> makes every user's email and contact info world-readable, unauthenticated. Do not treat the live ruleset as a safe baseline to copy from. Fixing it is the first issue in <a href="../04-plan/milestones.html#m1">Milestone 1</a>.
+    </div>
+  </section>
+
+  <section id="app-ios">
+    <h2>3. The app &rarr; TestFlight (iOS) <span class="tag tag-deferred">Blocked until M3</span></h2>
+    <p class="muted">Prerequisites, all in <a href="../04-plan/milestones.html#m3">M3</a>: a real bundle ID, an Apple Developer Program membership ($99/yr), the Firebase iOS app re-registered under the new ID, and a signing certificate + provisioning profile. Detail: <a href="../03-services/apple-developer.html">apple-developer.html</a>.</p>
+
+    <ol class="steps">
+      <li>Do the <a href="#checklist">release checklist</a> first. Every item, every time.</li>
+      <li>
+        <strong>Build the release archive.</strong>
+        <div class="fname">cd $APP &amp;&amp; flutter build ipa --release</div>
+        This produces an <span class="fname">.xcarchive</span> and, if signing is configured in Xcode, an <span class="fname">.ipa</span> under <span class="fname">build/ios/ipa/</span>.
+      </li>
+      <li>
+        <strong>Upload.</strong> Either <span class="fname">xcrun altool</span>/<span class="fname">notarytool</span>, or open the archive in Xcode Organizer and use <strong>Distribute App &rarr; App Store Connect</strong>. Xcode Organizer is the boring, well-documented path &mdash; use it.
+      </li>
+      <li>
+        <strong>Wait for processing</strong> in App Store Connect. Usually minutes; occasionally an hour. You'll get an email if it fails processing.
+      </li>
+      <li>
+        <strong>Answer export compliance.</strong> The app uses HTTPS only, which is standard-encryption-exempt, but you still have to answer the question before the build is testable.
+      </li>
+      <li>
+        <strong>Add the build to a TestFlight group</strong> and invite testers by email. Internal testers (up to 100, on your team) need no review. External testers require a Beta App Review &mdash; budget a day.
+        <br><span class="verify">Verified when: a device that is not William's has installed from TestFlight and signed in successfully.</span>
+      </li>
+    </ol>
+  </section>
+
+  <section id="app-android">
+    <h2>4. The app &rarr; Play internal testing (Android) <span class="tag tag-deferred">Blocked until M3</span></h2>
+    <p class="muted">Prerequisites, all in <a href="../04-plan/milestones.html#m3">M3</a>: a real <span class="fname">applicationId</span> (Play rejects <span class="fname">com.example.*</span> outright), a Google Play Console account ($25 one-time), a real upload keystore, and pinned <span class="fname">minSdk</span>/<span class="fname">targetSdk</span>. Detail: <a href="../03-services/google-play.html">google-play.html</a>.</p>
+
+    <ol class="steps">
+      <li>Do the <a href="#checklist">release checklist</a>.</li>
+      <li>
+        <strong>Confirm you are not debug-signing.</strong> Open <span class="fname">$APP/android/app/build.gradle.kts</span> and confirm the release build type no longer uses <span class="fname">signingConfigs.getByName("debug")</span>. Today it does. A debug-signed AAB cannot be uploaded, and the failure message is unhelpful.
+      </li>
+      <li>
+        <strong>Build the app bundle.</strong>
+        <div class="fname">cd $APP &amp;&amp; flutter build appbundle --release</div>
+        Output: <span class="fname">build/app/outputs/bundle/release/app-release.aab</span>.
+      </li>
+      <li>
+        <strong>Upload</strong> to Play Console &rarr; Testing &rarr; <strong>Internal testing</strong> &rarr; Create new release. Internal testing has no review delay and allows up to 100 testers.
+      </li>
+      <li>
+        <strong>Add testers</strong> by email list and share the opt-in link.
+        <br><span class="verify">Verified when: a device that is not William's has installed from the internal testing track and signed in successfully.</span>
+      </li>
+      <li>
+        <strong>Store the keystore somewhere that survives losing the laptop.</strong> Losing the upload key is recoverable via Play App Signing key reset; losing it without Play App Signing enabled is not. Enable Play App Signing.
+      </li>
+    </ol>
+  </section>
+
+  <section id="promote">
+    <h2>5. Promoting to production</h2>
+    <p>Only after the <a href="../04-plan/milestones.html#m5">Rec Center beta</a> has run and <a href="../04-plan/milestones.html#m4">M4</a>'s legal surface exists. A public store listing for a UGC social app without account deletion, report/block, and a privacy policy will be rejected &mdash; and should be.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Platform</th><th>Path</th><th>Review time</th><th>Rollback</th></tr></thead>
+        <tbody>
+          <tr><td>iOS</td><td>App Store Connect &rarr; select the TestFlight build &rarr; submit for App Review</td><td>~1&ndash;3 days, first submission usually longer</td><td>No true rollback. You submit a new build. Use phased release so you can pause it.</td></tr>
+          <tr><td>Android</td><td>Play Console &rarr; promote the internal testing release to Production</td><td>Hours to days</td><td>Halt the staged rollout, then promote a fixed build. Halting is instant; the fix is not.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>Use staged rollout on Android and phased release on iOS.</strong> With one developer and no on-call, the ability to stop a bad release at 10% of users is the only incident response you have.
+    </div>
   </section>
 
   <section id="checklist">
-    <h2>Pre-deploy checklist</h2>
+    <h2>Release checklist</h2>
+    <p>Run this before <em>every</em> app build that leaves your machine. It is short on purpose.</p>
     <ul class="todo">
-      <li><code>flutter analyze</code> comes back clean, or any warnings are understood and intentional.</li>
-      <li>You ran the app locally against production Firestore and confirmed the change works end to end (see <a href="local-setup.html">local-setup.html</a> — there is no emulator, so this is the only real check).</li>
-      <li>If the change touches <code>firestore.rules</code>: you read the rule diff line by line against the current deployed file, not against <code>FIRESTORE_RULES_SETUP.md</code>.</li>
-      <li>If the change touches <code>firestore.rules</code>: you deployed <code>firestore:rules</code> alone first and re-tested before also shipping a hosting build that depends on the new rule shape.</li>
-      <li>For a web deploy: you ran <code>flutter build web</code> immediately before <code>firebase deploy --only hosting</code>, so the deployed bundle matches your current branch.</li>
-      <li>You know which of the three paths (web / rules / Android) you're actually deploying — never run a bare <code>firebase deploy</code> that could touch more than intended.</li>
+      <li><strong>Version bump.</strong> Increment <span class="fname">version:</span> in <span class="fname">$APP/pubspec.yaml</span>. It currently reads <span class="fname">0.1.0</span> with <strong>no build number</strong> &mdash; both stores require a monotonically increasing build number, so move to the <span class="fname">x.y.z+n</span> form and bump <span class="fname">n</span> on every upload, without exception.</li>
+      <li><strong>Tests pass.</strong> <span class="fname">flutter test</span> exits 0. (Before <a href="../04-plan/milestones.html#m1">M1</a> this is vacuous &mdash; there are no tests.)</li>
+      <li><strong>Analyzer clean.</strong> <span class="fname">flutter analyze</span> with <span class="fname">strict-casts</span> on. Before M1 turns it on, a clean analyze means nothing.</li>
+      <li><strong>Rules are deployed and match the repo.</strong> An app build that expects tightened rules against a project still running the old ones fails in ways that look like app bugs. <a href="#firestore-rules">Deploy the rules first, app second.</a></li>
+      <li><strong>Indexes are deployed</strong> if you added or changed a query.</li>
+      <li><strong>Signing is real.</strong> iOS: a distribution certificate, not automatic-debug. Android: the upload keystore, not <span class="fname">signingConfigs.debug</span>.</li>
+      <li><strong>Changelog written.</strong> One paragraph of what changed, in the TestFlight "What to Test" field and the Play release notes. Testers who don't know what changed test nothing.</li>
+      <li><strong>Smoke test the release build on a real device</strong> before uploading: sign in, view the feed, create an event, force-quit, reopen, confirm the event survived.</li>
+      <li><strong>Crashlytics is receiving.</strong> After the first install of a new build, confirm the version appears in the Crashlytics console &mdash; otherwise a crash from this build reports nowhere. See <a href="../03-services/crashlytics.html">crashlytics.html</a>.</li>
     </ul>
+  </section>
+
+  <section id="rejected">
+    <h2>When a build is rejected</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Rejection</th><th>What it actually means</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td>App Store <strong>Guideline 5.1.1(v)</strong> &mdash; account deletion</td><td>Any app with account creation must let a user delete their account from inside the app. Forge's rules currently deny user-doc delete outright.</td><td>Not appealable. It's an <a href="../04-plan/milestones.html#m4">M4</a> issue &mdash; build the deletion flow.</td></tr>
+          <tr><td>App Store <strong>Guideline 1.2</strong> &mdash; UGC safety</td><td>User-generated content needs a report mechanism, a block mechanism, and a way to remove content. <span class="fname">moderation_service.dart</span> is a 0-byte file.</td><td>Not appealable. <a href="../04-plan/milestones.html#m4">M4</a>.</td></tr>
+          <tr><td>Missing privacy policy URL</td><td>Both stores require one before the listing can be published.</td><td><a href="../04-plan/milestones.html#m4">M4</a>. Host it on the Cloudflare Pages site you already have.</td></tr>
+          <tr><td>Invalid bundle ID / package name</td><td><span class="fname">com.example.*</span> is reserved scaffold namespace.</td><td><a href="../04-plan/milestones.html#m3">M3</a>. Changing it means re-registering the Firebase apps &mdash; do it once, deliberately.</td></tr>
+          <tr><td>"You uploaded a debuggable APK or Android App Bundle"</td><td>Release build used the debug signing config.</td><td><a href="../04-plan/milestones.html#m3">M3</a>. Real keystore.</td></tr>
+          <tr><td>Missing purpose strings / privacy manifest</td><td>iOS needs usage descriptions for camera and photo library. Forge already has both, correctly &mdash; the one platform thing done right.</td><td>If it still trips, check the privacy manifest requirements for the Firebase SDKs in the current Xcode version.</td></tr>
+          <tr><td>Metadata rejection (screenshots, description, age rating)</td><td>The listing, not the binary.</td><td>Fix in App Store Connect / Play Console and resubmit. No new build needed. Answer the age-rating questionnaire honestly &mdash; social features and UGC raise the rating.</td></tr>
+          <tr><td>Anything else</td><td>&mdash;</td><td>Read the actual reviewer note, fix exactly what it says, resubmit. Do not bundle unrelated changes into a resubmission &mdash; it makes the next rejection harder to diagnose.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="ci">
+    <h2>CI &mdash; the guardrail, and nothing more</h2>
+    <div class="onesentence">CI answers exactly one question: <strong>does it build, and do the tests pass?</strong> Anything beyond that is theatre for a one-person team.</div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>In scope, when CI exists</th><th>Deliberately out of scope</th></tr></thead>
+        <tbody>
+          <tr><td><span class="fname">flutter pub get</span></td><td>Automated store uploads (Fastlane, Codemagic)</td></tr>
+          <tr><td><span class="fname">flutter analyze</span> with <span class="fname">strict-casts</span></td><td>Coverage thresholds and coverage badges</td></tr>
+          <tr><td><span class="fname">flutter test</span></td><td>Required reviewers, PR templates, branch protection ceremony</td></tr>
+          <tr><td>Build the Android debug APK to prove it compiles</td><td>Nightly builds, matrix builds, integration-test farms</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>When to add it:</strong> not yet. CI is <a href="../04-plan/milestones.html#not-in-plan">deferred</a> with two triggers &mdash; a second developer joins, or a broken build reaches a tester. Until one of those fires, running two commands before you push is the same guardrail with none of the maintenance. Revisit at <a href="../03-services/github.html">github.html</a>.</p>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
     <ol>
-      <li>For a normal feature or UI change: <code>flutter build web</code> then <code>firebase deploy --only hosting</code>.</li>
-      <li>For a rules change: read the current <code>firestore.rules</code> directly, never <code>FIRESTORE_RULES_SETUP.md</code>, and deploy <code>firestore:rules</code> on its own.</li>
-      <li>Do not attempt an Android release build until Milestone 2's bundle-id fix lands.</li>
+      <li><strong>Set up Cloudflare Pages for the docs site</strong> &mdash; it's the only deploy on this page that is unblocked, it takes about ten minutes, and it makes everything else here readable from a phone. <a href="#docs-deploy">Section 1.</a></li>
+      <li>Before touching any app build, finish <a href="../04-plan/milestones.html#m1">M1</a> and deploy the fixed rules using <a href="#firestore-rules">section 2</a> &mdash; the rules deploy is separate and is the one that gets forgotten.</li>
+      <li>Do not pay for an Apple or Google account until <a href="../04-plan/milestones.html#m3">M3</a> starts. Sections 3, 4 and 5 are unreachable before then by design.</li>
     </ol>
+    <p class="small muted">Related: <a href="local-setup.html">local setup</a> &middot; <a href="onboarding.html">onboarding</a> &middot; <a href="../03-services/index.html">service map</a> &middot; <a href="../04-plan/milestones.html">milestones</a> &middot; <a href="../index.html">docs hub</a></p>
   </section>
 
 </main>

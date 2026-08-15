@@ -15,12 +15,14 @@
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
     <a href="#diagram">System diagram</a>
-    <a href="#components">Major components</a>
-    <a href="#pattern">The real pattern</a>
-    <a href="#dead-scaffold">Dead scaffold warning</a>
-    <a href="#routing">Routing</a>
-    <a href="#duplication">Known duplication</a>
+    <a href="#components">Component map</a>
+    <a href="#empty">The 21 empty files</a>
+    <a href="#as-is">As-is vs as-intended</a>
+    <a href="#risks">Architectural risks</a>
+    <a href="#not-building">Not building</a>
     <a href="#next">What to do next</a>
+    <a href="data-model.html">Data model &rarr;</a>
+    <a href="conventions.html">Conventions &rarr;</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -28,156 +30,463 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 02-architecture / Overview</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Architecture</div>
     <h1>Architecture Overview</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the shape of Forge as it actually exists today — client, backend surface, feature areas, and the one pattern that holds all of it together — not an idealized redesign.</div>
+    <div class="whatthisis"><strong>What this is:</strong> the shape of the system as it actually exists in <span class="fname">forge_senior_project_version/lib</span> — every directory, what runs where, what the notes recommended and we are not doing, and the architectural risks that will bite. Read this before opening <a href="data-model.html">data-model.html</a>.</div>
   </header>
 
   <section id="diagram">
     <h2>System diagram</h2>
-    <p>One Flutter codebase, three build targets with real Firebase registration, one Firebase project as the entire backend. There is no server tier — the client talks to Firebase directly.</p>
+    <p>Solid boxes and lines exist today. Dashed boxes are planned and not wired up. Linear and GitHub are process, not runtime — nothing in the app calls them.</p>
+
     <div class="mermaid">
-      <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flutter client on Web, Android, and iOS connects directly to Firebase Auth, Firestore, Storage, and Hosting; no server tier in between." style="max-width:100%; height:auto;">
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M0,0 L10,5 L0,10 z" fill="#6cc394"/>
-          </marker>
-        </defs>
+graph TD
+  subgraph client["Flutter app &mdash; iOS + Android"]
+    NAV["GoRouter shell&lt;br/&gt;5 tabs"]
+    P1["Feed"]
+    P2["Calendar"]
+    P3["Create"]
+    P4["Social"]
+    P5["Profile"]
+    SVC["lib/services&lt;br/&gt;11 working services&lt;br/&gt;free functions, no DI"]
+  end
 
-        <!-- Flutter client group -->
-        <rect x="40" y="30" width="230" height="220" rx="12" fill="#1d2126" stroke="#3a424b" stroke-width="1.5"/>
-        <text x="155" y="55" text-anchor="middle" fill="#e8eaed" font-size="15" font-weight="600" font-family="ui-monospace,Menlo,monospace">Flutter client</text>
+  NAV --> P1
+  NAV --> P2
+  NAV --> P3
+  NAV --> P4
+  NAV --> P5
+  P1 --> SVC
+  P2 --> SVC
+  P3 --> SVC
+  P4 --> SVC
+  P5 --> SVC
 
-        <rect x="60" y="75" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="155" y="100" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">Web</text>
+  subgraph fb["Firebase project forge-by-alpfit"]
+    AUTH["Firebase Auth&lt;br/&gt;email + password only"]
+    FS["Cloud Firestore&lt;br/&gt;users, events, goals, plans,&lt;br/&gt;channelPosts, directThreads"]
+    ST["Cloud Storage&lt;br/&gt;avatars only"]
+  end
 
-        <rect x="60" y="128" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="155" y="153" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">Android</text>
+  SVC --> AUTH
+  SVC --> FS
+  SVC --> ST
 
-        <rect x="60" y="181" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="155" y="206" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">iOS</text>
+  AC["Firebase App Check&lt;br/&gt;PLANNED &mdash; M1"]
+  FCM["FCM push&lt;br/&gt;PLANNED &mdash; M5"]
+  SVC -.-> AC
+  AC -.-> FS
+  SVC -.-> FCM
+  FCM -.-> FS
 
-        <text x="155" y="240" text-anchor="middle" fill="#a4acb5" font-size="10.5">View &#8594; service &#8594; Firestore</text>
+  DOCS["docs/ static HTML"] --> CFP["Cloudflare Pages&lt;br/&gt;PLANNED &mdash; M3"]
 
-        <!-- Arrow -->
-        <line x1="272" y1="140" x2="378" y2="140" stroke="#6cc394" stroke-width="2" marker-end="url(#arrow)"/>
-        <text x="325" y="128" text-anchor="middle" fill="#6cc394" font-size="10.5">direct SDK calls</text>
+  subgraph process["Process only &mdash; never called at runtime"]
+    LIN["Linear &mdash; ForgeAlt team"]
+    GH["GitHub &mdash; private repo"]
+  end
 
-        <!-- Firebase group -->
-        <rect x="382" y="30" width="300" height="260" rx="12" fill="#1d2126" stroke="#3a424b" stroke-width="1.5"/>
-        <text x="532" y="55" text-anchor="middle" fill="#e8eaed" font-size="15" font-weight="600" font-family="ui-monospace,Menlo,monospace">Firebase (forge-by-alpfit)</text>
+  classDef planned stroke-dasharray: 6 4;
+  class AC,FCM,CFP planned;
+    </div>
 
-        <rect x="402" y="72" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="462" y="100" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Auth</text>
-
-        <rect x="542" y="72" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="602" y="100" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Firestore</text>
-
-        <rect x="402" y="130" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="462" y="158" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Storage</text>
-
-        <rect x="542" y="130" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
-        <text x="602" y="158" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Hosting</text>
-
-        <rect x="402" y="188" width="260" height="42" rx="8" fill="#14171a" stroke="#2b3138" stroke-dasharray="4 3"/>
-        <text x="532" y="213" text-anchor="middle" fill="#737c86" font-size="11.5" font-family="ui-monospace,Menlo,monospace">Functions — not used</text>
-
-        <text x="532" y="255" text-anchor="middle" fill="#a4acb5" font-size="10.5">rules deployed, App Check not yet on</text>
-      </svg>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Edge</th><th>Status</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td>App &rarr; Firebase Auth</td><td><span class="pill pill-good">Live</span></td><td>Email/password only. No social auth, no email verification, no password reset.</td></tr>
+          <tr><td>App &rarr; Firestore</td><td><span class="pill pill-good">Live</span></td><td>Direct SDK calls from 11 services. No repository layer, no seam.</td></tr>
+          <tr><td>App &rarr; Storage</td><td><span class="pill pill-good">Live</span></td><td>One path: <span class="fname">avatars/{uid}/profile</span>. No size or MIME cap on write.</td></tr>
+          <tr><td>App Check &rarr; Firestore</td><td><span class="pill pill-bad">Planned</span></td><td>Not enabled. Combined with the open <span class="fname">/users</span> read rule, anyone with the project id can read the user table. See <a href="#risks">risks</a>.</td></tr>
+          <tr><td>FCM</td><td><span class="pill pill-bad">Planned</span></td><td><span class="fname">lib/services/push_service.dart</span> is 0 bytes. Invites and DMs are silent today.</td></tr>
+          <tr><td>Docs &rarr; Cloudflare Pages</td><td><span class="pill pill-warn">Planned</span></td><td>D9. Firebase Hosting is already configured for <span class="fname">build/web</span> and stays only if the app itself needs it.</td></tr>
+          <tr><td>Cloud Functions</td><td><span class="pill">Not adopted</span></td><td>No package, no <span class="fname">functions/</span> dir, no <span class="fname">firebase.json</span> entry. Deliberate — see <a href="../03-services/index.html">Rejected as premature</a>.</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
   <section id="components">
-    <h2>Major components</h2>
-    <p>Six feature areas make up the app. All are working end-to-end against live Firestore; line counts are the primary view file only, not the whole feature folder.</p>
+    <h2>Component map</h2>
+    <p>Every directory under <span class="fname">lib/</span>. 58 <span class="fname">.dart</span> files, ~16,300 lines, <strong>21 of them 0 bytes</strong>.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Feature area</th><th>What it owns</th><th>Main file</th><th>Lines</th></tr></thead>
+        <thead><tr><th>Directory</th><th>Files</th><th>What lives there</th><th>Health</th></tr></thead>
         <tbody>
-          <tr><td>Auth</td><td>Login, register, logout, route gating.</td><td><span class="fname">features/auth/presentation/view/{login,register}_page.dart</span> + <span class="fname">services/auth_service.dart</span></td><td>Not individually broken out</td></tr>
-          <tr><td>Feed</td><td>Home landing screen: personal widget dashboard plus a social update stream from friends and gyms.</td><td><span class="fname">features/feed/presentation/view/feed_page.dart</span></td><td>1,333</td></tr>
-          <tr><td>Calendar</td><td>Day and multi-day/range views, recurrence expansion, merged own/friends/gyms event streams, deep-link focus.</td><td><span class="fname">features/calendar/presentation/view/calendar_page.dart</span></td><td>1,489</td></tr>
-          <tr><td>Event Creator</td><td>Basic + workout event creation, plus the hub that fans out to goal and plan creation sheets.</td><td><span class="fname">features/event_creator/presentation/view/event_creator_page.dart</span></td><td>2,141 (plus 909 / 524 / 658 in the hub, goal sheet, plan sheet)</td></tr>
-          <tr><td>Social</td><td>User/gym search, friends, gym join/leave, DMs, channel posts/comments/likes.</td><td><span class="fname">features/social/presentation/view/social_page.dart</span></td><td>1,963</td></tr>
-          <tr><td>Profile</td><td>Avatar upload, friends list, joined gyms, gym member removal, edit name/contact.</td><td><span class="fname">features/profile/presentation/view/profile_page.dart</span></td><td>1,118</td></tr>
+          <tr>
+            <td><span class="fname">lib/</span> <span class="small faint">(root)</span></td>
+            <td>4</td>
+            <td><span class="fname">main.dart</span>, <span class="fname">firebase_options.dart</span> (5 platform configs), and the web image-picker conditional-import shim pair.</td>
+            <td><span class="pill pill-good">Real</span></td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/app/</span></td>
+            <td>6 <span class="small faint">(1 empty)</span></td>
+            <td>App shell and theme, GoRouter config + auth guard, <code>AuthStateNotifier</code>, bottom nav with live unread badge, shared header.</td>
+            <td><span class="pill pill-warn">Mixed</span> — <span class="fname">di_providers.dart</span> is 0 bytes; <span class="fname">router.dart</span> keeps a mutable module-level <code>String _currentRoute</code> as global state.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/core/constants/</span></td>
+            <td>4 <span class="small faint">(3 empty)</span></td>
+            <td>Only <span class="fname">app_text_styles.dart</span> has content. <span class="fname">colors.dart</span>, <span class="fname">icons.dart</span>, <span class="fname">strings.dart</span> are empty.</td>
+            <td><span class="pill pill-bad">Mostly empty</span> — which is why <code>Color(0xFF4D7CFF)</code> is redeclared in 6+ files.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/core/errors/</span></td>
+            <td>2 <span class="small faint">(2 empty)</span></td>
+            <td>Nothing. <span class="fname">app_exception.dart</span> and <span class="fname">failure.dart</span> are both 0 bytes.</td>
+            <td><span class="pill pill-bad">Empty</span> — there is no error type in the app. Failures are swallowed by <code>catch (_) {}</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/core/firebase/</span></td>
+            <td>2 <span class="small faint">(1 empty)</span></td>
+            <td><span class="fname">firestore_refs.dart</span> — untyped collection reference helpers, the one piece of shared data plumbing. <span class="fname">converters.dart</span> is empty.</td>
+            <td><span class="pill pill-warn">Half</span> — refs exist, <code>withConverter</code> never used.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/core/util/</span></td>
+            <td>3 <span class="small faint">(3 empty)</span></td>
+            <td>Nothing. <span class="fname">date_utils.dart</span>, <span class="fname">extensions.dart</span>, <span class="fname">validators.dart</span> all 0 bytes.</td>
+            <td><span class="pill pill-bad">Empty</span> — no email validation anywhere, no shared date maths.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/auth/</span></td>
+            <td>2</td>
+            <td>Login (160 lines) and Register (275 lines, user-vs-gym chooser).</td>
+            <td><span class="pill pill-warn">Thin</span> — no forgot-password, no email-format check, no consent.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/calendar/</span></td>
+            <td>1</td>
+            <td><span class="fname">calendar_page.dart</span>, 1,489 lines. Day / 4-day multi / month, live streams, pinch zoom, DM deep-link.</td>
+            <td><span class="pill pill-warn">Partial</span> — the filter popup is fake data and its state is never read by a query.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/event_creator/</span></td>
+            <td>4</td>
+            <td>Event creator (2,141 lines), Create hub (909), goal creator sheet (524), plan creator sheet (658).</td>
+            <td><span class="pill pill-warn">Partial</span> — 4 of 12 hub sections are <code>const []</code>; goal sheet is the cleanest file in the repo.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/feed/</span></td>
+            <td>8 <span class="small faint">(7 empty)</span></td>
+            <td><span class="fname">presentation/view/feed_page.dart</span> is 1,333 real lines. Everything else — <span class="fname">data/</span>, <span class="fname">domain/</span>, <span class="fname">presentation/viewmodel/</span>, <span class="fname">feed_card.dart</span> — is 0 bytes.</td>
+            <td><span class="pill pill-bad">Scaffold lies</span> — the only feature with a clean-architecture skeleton, and the whole skeleton is blank.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/profile/</span></td>
+            <td>1</td>
+            <td><span class="fname">profile_page.dart</span>, 1,118 lines. Avatar upload, edit, logout, friends/gyms/members management.</td>
+            <td><span class="pill pill-warn">Works, leaks failures</span> — 4 sites of <code>catch (_) {}</code> report success on failed writes.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/features/social/</span></td>
+            <td>4</td>
+            <td>Social page (1,963), channel feed (766), DM page (715), other-user profile (301).</td>
+            <td><span class="pill pill-warn">Partial</span> — ~380 lines of unreachable dead widgets; RSVP is cosmetic; moderation check is <code>uid == gymUid</code>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/models/</span></td>
+            <td>1</td>
+            <td><span class="fname">goal.dart</span> — <code>Goal</code>, <code>GoalPeriodRecord</code>, <code>ResetPeriod</code>, <code>GoalStatus</code>. <strong>The entire typed model layer.</strong></td>
+            <td><span class="pill pill-bad">One entity</span> — see the <a href="data-model.html#headline">data-model headline finding</a>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/services/</span></td>
+            <td>15 <span class="small faint">(4 empty)</span></td>
+            <td>11 working services. Empty: <span class="fname">push_service</span>, <span class="fname">moderation_service</span>, <span class="fname">presence_service</span>, <span class="fname">link_preview_service</span>.</td>
+            <td><span class="pill pill-warn">Works, no seam</span> — top-level free functions calling <code>FirebaseAuth.instance.currentUser</code> directly. Two of the four empty files are App Store blockers.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">lib/widgets/</span></td>
+            <td>1</td>
+            <td><span class="fname">storage_avatar.dart</span> — bytes-first avatar with a web fallback strategy.</td>
+            <td><span class="pill pill-good">Real</span></td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <p class="small muted">Source: <span class="fname">out/04-asbuilt.md</span> feature status table. Goals and Plans are documented separately as their own working features on <a href="data-model.html">data-model.html</a>.</p>
   </section>
 
-  <section id="pattern">
-    <h2>The real architecture pattern</h2>
-    <p>Every screen is a <code>StatefulWidget</code> that calls a free function in <span class="fname">lib/services/*.dart</span> directly from <code>build()</code>, usually through a <code>StreamBuilder</code> or <code>FutureBuilder</code>. The service function talks to Firestore. That is the entire stack.</p>
+  <section id="empty">
+    <h2>The 21 empty files</h2>
+    <div class="callout danger">
+      <strong>21 of 58 <span class="fname">.dart</span> files are 0 bytes.</strong> A full <code>grep</code> for TODO/FIXME/HACK across <span class="fname">lib/</span> returns exactly <strong>2 hits, both in dead code</strong>. The incompleteness is invisible to tooling — anyone who greps will conclude the app is finished. It is not.
+    </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Layer</th><th>What's there</th><th>What's not there</th></tr></thead>
+        <thead><tr><th>Group</th><th>Files</th><th>What its absence means</th><th>Call</th></tr></thead>
         <tbody>
-          <tr><td>View</td><td><code>StatefulWidget</code> + <code>setState</code>, or <code>StreamBuilder</code>/<code>FutureBuilder</code> wired to a service call.</td><td>No ViewModel, no Bloc, no Provider.</td></tr>
-          <tr><td>Service</td><td>Free functions in <span class="fname">lib/services/*.dart</span> — the de facto data layer for every feature.</td><td>No repository interfaces, no DI container.</td></tr>
-          <tr><td>Data</td><td>Raw <code>Map&lt;String, dynamic&gt;</code> almost everywhere; <code>Goal</code> and the <code>Plan*</code> classes are the only typed exceptions.</td><td>No DTOs, no converters layer.</td></tr>
-          <tr><td>State management</td><td>None — no Riverpod, Bloc, Provider, or get_it anywhere in <code>pubspec.yaml</code> or code.</td><td><code>ARCHITECTURE_ANALYSIS.md</code> recommended Riverpod; never adopted.</td></tr>
+          <tr>
+            <td><span class="fname">core/errors/</span></td>
+            <td><span class="fname">app_exception.dart</span>, <span class="fname">failure.dart</span></td>
+            <td>No error type exists, so every service returns raw exceptions or nothing. Directly causes the <code>catch (_) {}</code> habit.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill with <em>one</em> <code>AppException</code>. Not a Result/Either hierarchy.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">core/util/</span></td>
+            <td><span class="fname">date_utils.dart</span>, <span class="fname">extensions.dart</span>, <span class="fname">validators.dart</span></td>
+            <td>No email validation (login checks non-empty only), no shared date maths — the 30-day "month" in <span class="fname">goals_service</span> lives alone.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">validators.dart</span> when auth hardening lands. Leave the other two until something needs them twice.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">core/constants/</span></td>
+            <td><span class="fname">colors.dart</span>, <span class="fname">icons.dart</span>, <span class="fname">strings.dart</span></td>
+            <td>The brand blue is copy-pasted into 6+ files. One theme change is a 6-file edit.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">colors.dart</span>. Leave <span class="fname">strings.dart</span> and <span class="fname">icons.dart</span> empty — no i18n is planned.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">core/firebase/converters.dart</span></td>
+            <td>1</td>
+            <td>No <code>withConverter</code>, so every read is an untyped map.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill alongside the first typed model (<code>Event</code>).</td>
+          </tr>
+          <tr>
+            <td><span class="fname">app/di_providers.dart</span></td>
+            <td>1</td>
+            <td>No dependency injection at all.</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete it.</strong> Per D5 we are not adding DI; the file is a promise nobody is keeping.</td>
+          </tr>
+          <tr>
+            <td>Feed MVVM layer</td>
+            <td><span class="fname">feed_dto</span>, <span class="fname">feed_repository</span>, <span class="fname">feed_filter</span>, <span class="fname">feed_item</span>, <span class="fname">feed_card</span>, <span class="fname">feed_state</span>, <span class="fname">feed_viewmodel</span></td>
+            <td>Seven empty files implying an architecture the app does not use. Meanwhile <span class="fname">feed_page.dart</span> holds 1,333 lines of working <code>setState</code> + <code>StreamBuilder</code>.</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete all seven.</strong> Folders that lie are worse than no folders. Consistent with D5.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">services/push_service.dart</span></td>
+            <td>1</td>
+            <td>No push notifications. A social app where invites and DMs are silent.</td>
+            <td><span class="tag tag-deferred">DEFERRED</span> Keep the file. Trigger: post-beta, once retention is the problem worth solving (M5).</td>
+          </tr>
+          <tr>
+            <td><span class="fname">services/moderation_service.dart</span></td>
+            <td>1</td>
+            <td>No reporting, blocking, or content filtering. App Store guideline 1.2 blocks a UGC app without them.</td>
+            <td><span class="tag tag-locked">LOCKED</span> Must be filled before any external user. M3.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">services/presence_service.dart</span>, <span class="fname">link_preview_service.dart</span></td>
+            <td>2</td>
+            <td>Online status and link previews. Neither has a requirement in any document.</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete both.</strong> No requirement, no trigger, no reason to carry the file.</td>
+          </tr>
         </tbody>
       </table>
     </div>
+  </section>
+
+  <section id="as-is">
+    <h2>Architecture as-is vs as-intended</h2>
+    <p><span class="fname">ARCHITECTURE_ANALYSIS.md</span> and <span class="fname">PROJECT_STATUS.md</span> made a set of architectural recommendations in February. Six months and ~16,000 lines later, <strong>none of the three headline recommendations were adopted</strong>. That is not a failure — a working app got built instead. But the docs still claim the intent, so here is the honest ledger.</p>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Recommendation</th><th>Source</th><th>Adopted?</th><th>Our call</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Adopt Riverpod for state management</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("Riverpod recommended") and again in <span class="fname">PROJECT_STATUS.md</span></td>
+            <td><span class="pill pill-bad">No</span> — no state package in <span class="fname">pubspec.yaml</span> at all</td>
+            <td><span class="tag tag-proposed">PROPOSED</span> <strong>D5 — do not migrate.</strong> Keep <code>setState</code> + <code>StreamBuilder</code>. Recommended twice, adopted zero times, and the app works. Introduce Riverpod only where state genuinely crosses screens. <em>This is the most reversible-but-expensive call in the plan — see <a href="../01-product/decisions.html">decisions</a>.</em></td>
+          </tr>
+          <tr>
+            <td>Set up proper dependency injection</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span>; <span class="fname">di_providers.dart</span> scaffolded</td>
+            <td><span class="pill pill-bad">No</span> — the file is 0 bytes</td>
+            <td><span class="tag tag-decided">DECIDED</span> Not doing it. <code>AuthService</code> already accepts optional <code>FirebaseAuth</code>/<code>FirebaseFirestore</code> — that constructor seam is the only injection we need, and it is currently unexercised. Delete <span class="fname">di_providers.dart</span>.</td>
+          </tr>
+          <tr>
+            <td>Create base classes / interfaces for repositories</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
+            <td><span class="pill pill-bad">No</span> — services are top-level free functions calling Firebase directly</td>
+            <td><span class="tag tag-deferred">DEFERRED</span> Trigger: an actual backend migration, or a second non-Flutter client (same trigger as D1). Until then a repository interface buys one developer nothing. <strong>Cost of the debt, stated plainly:</strong> any move off Firebase touches all 15 service files and most of the UI.</td>
+          </tr>
+          <tr>
+            <td>Feature-based clean architecture — <span class="fname">data/domain/presentation</span> per feature</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("Excellent separation by feature", "DON'T START OVER")</td>
+            <td><span class="pill pill-warn">Partially</span> — the folder tree exists everywhere; only <span class="fname">presentation/view/</span> ever has content</td>
+            <td><span class="tag tag-decided">DECIDED</span> Keep the feature folders (they work). Delete the empty <span class="fname">data/</span>, <span class="fname">domain/</span>, and <span class="fname">viewmodel/</span> folders under <span class="fname">feed/</span>. One convention, honestly applied, beats two conventions where one is fictional.</td>
+          </tr>
+          <tr>
+            <td>Move services to <span class="fname">lib/core/services/</span></td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> — raised twice in the same file, decided neither time</td>
+            <td><span class="pill pill-bad">No</span></td>
+            <td><span class="tag tag-decided">DECIDED</span> Keep <span class="fname">lib/services/</span>. Zero functional benefit, touches every import in the app. The question is closed.</td>
+          </tr>
+          <tr>
+            <td>Firestore converters / typed reads</td>
+            <td><span class="fname">core/firebase/converters.dart</span> scaffolded at commit 1</td>
+            <td><span class="pill pill-bad">No</span> — 0 bytes; every read is <code>Map&lt;String, dynamic&gt;</code></td>
+            <td><span class="tag tag-decided">DECIDED</span> Adopt incrementally, starting with <code>Event</code>, because <code>Event</code> carries the live crash path. See <a href="data-model.html#headline">data-model</a>.</td>
+          </tr>
+          <tr>
+            <td>Error boundaries and proper error handling</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("structural improvement, not done")</td>
+            <td><span class="pill pill-bad">No</span> — <span class="fname">core/errors/</span> is two empty files</td>
+            <td><span class="tag tag-decided">DECIDED</span> One <code>AppException</code> plus a rule that no <code>catch</code> block may be empty. Lands with M1.</td>
+          </tr>
+          <tr>
+            <td>Replace direct-Firebase with a frontend + API gateway</td>
+            <td><span class="fname">Ideas for Future.docx</span></td>
+            <td><span class="pill pill-bad">No</span></td>
+            <td><span class="tag tag-deferred">DEFERRED</span> (D1). Trigger: a second client that isn't Flutter, or Firestore read cost past $25/mo. Not a rewrite anyone should start from this codebase's current test coverage.</td>
+          </tr>
+          <tr>
+            <td>Multi-platform targets — web, macOS, Windows, Linux</td>
+            <td><span class="fname">Forge Proposal</span> ("deploy to mobile, desktop and web without extra code")</td>
+            <td><span class="pill pill-warn">Scaffolds exist</span> — <span class="fname">firebase_options.dart</span> configures web/macOS/Windows; Linux throws <code>UnsupportedError</code></td>
+            <td><span class="tag tag-decided">DECIDED</span> D3 — iOS + Android only. The other targets exist because Flutter generates them, not because a user asked. <span class="tag tag-deferred">DEFERRED</span> trigger: a gym admin asks to moderate from a desktop browser.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <div class="callout">
-      <strong><span class="tag tag-decided">DECIDED</span> Keep this pattern.</strong>
-      <p>Per brief &sect;7: "The dead clean-architecture scaffold was never used. Adopting it now is a rewrite with no payoff." View &#8594; free-function service &#8594; Firestore is the deliberate, permanent shape of this app, not a temporary state on the way to something else.</p>
+      <strong>The pattern to notice:</strong> every abandoned recommendation left behind an empty file rather than a decision. That is why <span class="fname">core/</span> is a directory tree of blanks. The fix is not to fill them all — it is to <em>delete the ones we have decided against</em> so the tree stops implying an architecture nobody is building.
     </div>
   </section>
 
-  <section id="dead-scaffold">
-    <h2>Dead scaffold warning</h2>
-    <p>A set of files across the tree are 0 bytes. They sit in directories named exactly the way a "proper" clean-architecture app would name them, which makes them look like abandoned work-in-progress. They are not in progress — nothing has touched them since the initial project scaffold commit.</p>
+  <section id="risks">
+    <h2>Known architectural risks</h2>
+    <p>Severity is about blast radius, not effort. Everything <span class="pill pill-bad">Critical</span> or <span class="pill pill-bad">High</span> is reachable with data the app itself writes.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Path</th><th>What it looks like</th></tr></thead>
+        <thead><tr><th>Risk</th><th>Severity</th><th>Why it happens</th><th>Fix shape</th><th>Milestone</th></tr></thead>
         <tbody>
-          <tr><td><span class="fname">features/feed/data/*</span> (feed_dto.dart, feed_repository.dart)</td><td>A repository/DTO layer for Feed.</td></tr>
-          <tr><td><span class="fname">features/feed/domain/*</span> (feed_filter.dart, feed_item.dart)</td><td>Domain models for Feed.</td></tr>
-          <tr><td><span class="fname">features/feed/presentation/viewmodel/*</span> (feed_state.dart, feed_viewmodel.dart, feed_card.dart)</td><td>A ViewModel layer for Feed.</td></tr>
-          <tr><td><span class="fname">core/errors/*.dart</span> (app_exception.dart, failure.dart)</td><td>A typed error/Result layer.</td></tr>
-          <tr><td><span class="fname">core/util/*.dart</span> (date_utils, extensions, validators)</td><td>Shared utility helpers.</td></tr>
-          <tr><td><span class="fname">app/di_providers.dart</span></td><td>A dependency-injection wiring point.</td></tr>
-          <tr><td>4 empty service files (<span class="fname">presence_service.dart</span>, <span class="fname">push_service.dart</span>, <span class="fname">link_preview_service.dart</span>, <span class="fname">moderation_service.dart</span>)</td><td>Presence, push, link unfurling, and moderation features.</td></tr>
+          <tr>
+            <td><strong><span class="fname">/users</span> is <code>allow read: if true</code></strong> — the whole user collection is world-readable, unauthenticated</td>
+            <td><span class="pill pill-bad">Critical</span></td>
+            <td>An inline rule comment justifies it: "needed for friend lists, gym lists". But the app only ever reads user docs while signed in — the rule is wider than any code path requires. No App Check, and the Firebase config is committed, so the project id is discoverable.</td>
+            <td>Require <code>request.auth != null</code> immediately. Then split the doc: public profile fields vs private <code>email</code>/<code>contactInfo</code>. Enable App Check in the same pass.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
+          <tr>
+            <td><strong><span class="fname">channelPosts</span> <code>allow update</code> is unconstrained</strong> — any joined member can rewrite any field of any post</td>
+            <td><span class="pill pill-bad">High</span></td>
+            <td>The rule was written to permit likes, but nothing narrows <code>affectedKeys()</code>. A member can overwrite another member's <code>content</code> — or their <code>authorUid</code>.</td>
+            <td>Constrain the member path to <code>hasOnly(['likeIds'])</code>. Give content edits to <code>resource.data.authorUid</code> only. Fix <code>isCurrentUserGymOwner</code> in the same change so authors can delete their own posts.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
+          <tr>
+            <td><strong>Event <code>startAt</code>/<code>endAt</code>: nullable on write, non-null cast on read</strong> — a live crash path</td>
+            <td><span class="pill pill-bad">High</span></td>
+            <td><code>createEvent</code> writes the fields as nullable; <code>events_service._mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. <code>strict-casts</code> is off, so it compiles clean. Any event saved without a start time crashes the calendar for its owner and everyone it is shared with.</td>
+            <td>Regression test first, then a typed <code>Event</code> model with a required <code>startAt</code> at the write boundary and a null-safe read. Add rule-level shape validation so bad docs can't be written at all.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
+          <tr>
+            <td><strong>No field validation in any security rule</strong>; client-supplied timestamps</td>
+            <td><span class="pill pill-bad">High</span></td>
+            <td>Not one rule checks a type, a length, or a required key. A client can write <code>accountType: 'gym'</code> onto its own user doc and instantly gain channel creation and DM-anyone privileges. <code>sentAt</code>/<code>createdAt</code> are <code>Timestamp.now()</code> from the device, so ordering is spoofable.</td>
+            <td>Shape validation on <code>users</code>, <code>events</code>, <code>channelPosts</code>, and <code>messages</code>. Make <code>accountType</code> immutable after create. Validate <code>createdAt == request.time</code>.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
+          <tr>
+            <td><strong>Storage has no size or MIME cap; CORS is <code>origin: ["*"]</code></strong></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><span class="fname">storage.rules</span> allows any owner write of any size. <span class="fname">storage-cors.json</span> exposes <code>Authorization</code> to every origin.</td>
+            <td>Add <code>request.resource.size &lt; 5 * 1024 * 1024</code> and a <code>contentType.matches('image/.*')</code> check. Narrow CORS to the app origins that actually need it.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
+          <tr>
+            <td><strong>Calendar opens <code>2&times;(friends + gyms) + 1</code> live listeners</strong></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><code>events_service._mergeEventStreams</code> is a hand-rolled merger that fans out two snapshot listeners per friend and two per joined gym, deduping and sorting in Dart. <code>getNextWorkoutEventForUser</code> builds the entire 60-day range stream just to take <code>.first</code>.</td>
+            <td>Replace the fan-out with one collection-group query over <code>events</code> windowed by date. If that can't satisfy the visibility rules, cap concurrent listeners and page the rest.</td>
+            <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>threshold:</em> a user with &gt;15 friends+gyms, or Firestore reads past 50k/day</td>
+          </tr>
+          <tr>
+            <td><strong>N+1 sequential fetches throughout</strong></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><code>friends_service.getFriendIdsWithNames</code>, <code>gyms_service</code> member profiles, and <span class="fname">profile_page</span>'s friends/gyms lists all loop <code>.get()</code> one doc at a time. <code>getIncomingFriendRequestsStream</code> runs an <code>asyncMap</code> with one <code>.get()</code> per thread <em>on every snapshot</em>. <span class="fname">social_page</span> still queries every joined gym for a tab that was deleted.</td>
+            <td>Batch with <code>whereIn</code> chunks. Lean on the names already denormalised onto the docs instead of re-fetching. Delete the dead <code>_loadMessagesList</code> call outright — that one is free.</td>
+            <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>except</em> the dead query, which goes in <a href="../04-plan/milestones.html#m2">M2</a></td>
+          </tr>
+          <tr>
+            <td><strong>Search is <code>limit(100)</code> + in-memory <code>contains()</code></strong> — silently breaks past 100 users</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><code>search_service</code> reads the first 100 user docs Firestore happens to return and filters in Dart. No query, no index, no ordering, no pagination. Users beyond that window are unfindable, with no error. <code>displayNameLower</code> is written at signup precisely for this and never queried.</td>
+            <td>Prefix range query on <code>displayNameLower</code> (<code>&gt;= q</code>, <code>&lt; q + ''</code>) with a real limit and pagination. The field already exists — this is a small change, and it is invisible until the day it isn't.</td>
+            <td><a href="../04-plan/milestones.html#m3">M3</a> — before the beta cohort can exceed 100 accounts</td>
+          </tr>
+          <tr>
+            <td><strong>No abstraction over Firestore anywhere</strong> — no seam for tests or backend swap</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>14 of 15 services are top-level free functions calling <code>FirebaseAuth.instance.currentUser</code> and <code>FirestoreRefs</code> directly. There is nothing to substitute in a test.</td>
+            <td>Not a rewrite. As each service is next touched, give its Firestore handle a default parameter so a test can pass a fake. Incremental, one file at a time.</td>
+            <td><a href="../04-plan/milestones.html#m2">M2</a> onward, opportunistically</td>
+          </tr>
+          <tr>
+            <td><strong>Two competing repetition mechanisms</strong> — events expand recurrence client-side, Plans materialise real docs</td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><code>events_service._expandDocToEventsForRange</code> renders N occurrences from one stored doc. <code>plans_service</code> writes N actual event documents, capped at 250 on create and 180 on update. Nothing reconciles them; an event can be both recurring and plan-generated.</td>
+            <td>Pick one. <span class="tag tag-deferred">DEFERRED</span> — trigger: the first bug report where a recurring event and a plan instance both appear on the same day.</td>
+            <td><a href="../04-plan/milestones.html#m6">M6</a></td>
+          </tr>
+          <tr>
+            <td><strong>DM rules make 3&ndash;4 <code>get()</code> calls per message write</strong></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><code>dmAllowedBetween()</code> reads the thread, both user docs, and sometimes a membership array. Each is a billed read and counts against Firestore's 10-<code>get()</code>-per-evaluation ceiling. It is close to the limit already.</td>
+            <td>Denormalise the permission answer onto the thread doc at creation time, so the rule reads one document instead of four.</td>
+            <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>threshold:</em> the first <code>resource-exhausted</code> rule error</td>
+          </tr>
+          <tr>
+            <td><strong>Message read is allowed when the thread doc does not exist</strong></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td>A race-condition escape hatch at <span class="fname">firestore.rules</span> line 161. Threads are <code>delete: if false</code>, which narrows the window, but the clause is a hole by construction.</td>
+            <td>Remove the <code>!exists(...)</code> branch. If thread creation genuinely races message creation, fix it with a batched write instead of a rule exemption.</td>
+            <td><a href="../04-plan/milestones.html#m1">M1</a></td>
+          </tr>
         </tbody>
       </table>
     </div>
-    <div class="callout warn">
-      <strong>Treat these as NOT STARTED, not partially started.</strong>
-      <p>Per brief &sect;7, Milestone 0 deletes all of this so the repo stops implying work exists where it doesn't. Do not resume "finishing" any of these files as if picking up mid-implementation — there is no partial implementation to continue.</p>
-    </div>
   </section>
 
-  <section id="routing">
-    <h2>Routing</h2>
-    <p>Navigation runs on <code>go_router</code>, defined in <span class="fname">app/router.dart</span>. A top-level <code>redirect</code> gates every route on <code>FirebaseAuth.instance.currentUser</code> — logged out goes to login/register, logged in enters a <code>ShellRoute</code> with a persistent bottom nav.</p>
+  <section id="not-building">
+    <h2>What we are deliberately NOT building</h2>
+    <p>Solo developer, free tier, boring tools. Each of these is a real architecture that a bigger team would want, and each has a named trigger — none is silently dropped.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Detail</th><th>Notes</th></tr></thead>
+        <thead><tr><th>Not building</th><th>One line</th><th>Trigger that would change it</th></tr></thead>
         <tbody>
-          <tr><td>Auth gate</td><td>Top-level <code>redirect</code> checks <code>FirebaseAuth.instance.currentUser</code>; unauthenticated users cannot reach any route inside the shell.</td></tr>
-          <tr><td>Shell</td><td><code>ShellRoute</code> wraps Feed, Calendar, Social, Profile behind one persistent bottom nav bar.</td></tr>
-          <tr><td>Transitions</td><td>Custom slide-transition logic keyed off a hand-maintained route-order map.</td></tr>
-          <tr><td>Deep links</td><td>Query params drive calendar focus (<code>focusOwner</code>, <code>focusEvent</code>) and event edit (<code>edit</code>).</td></tr>
+          <tr>
+            <td><strong>A backend service of our own</strong></td>
+            <td>The Flutter client talks to Firebase directly and will keep doing so; there is no server to write, deploy, or page someone about.</td>
+            <td>A second client that isn't Flutter, or Firestore read cost past $25/mo (D1). Cloud Functions specifically also requires the Blaze plan, i.e. a card on file.</td>
+          </tr>
+          <tr>
+            <td><strong>Microservices</strong></td>
+            <td>There is no service to split. One app, one Firebase project.</td>
+            <td>Never, at this size. If the backend above ever gets built, it starts as one process.</td>
+          </tr>
+          <tr>
+            <td><strong>A caching layer</strong></td>
+            <td>Firestore's SDK already caches locally; the three hand-rolled avatar caches in <span class="fname">profile_avatar_service</span> are the maximum caching this app gets.</td>
+            <td>A measured read-cost problem that batching and query fixes did not solve. Measure first — the N+1 loops are the actual cost, not the absence of a cache.</td>
+          </tr>
+          <tr>
+            <td><strong>An offline-first sync engine</strong></td>
+            <td>Firestore's default offline persistence is on and that is the whole strategy. We are not writing conflict resolution, an outbox, or a mutation queue.</td>
+            <td>Beta feedback showing users actually lose work in the gym's dead zones. Until then the gap is a <em>UI</em> gap — deliberate offline/empty/error states — not a sync-engine gap.</td>
+          </tr>
         </tbody>
       </table>
     </div>
-  </section>
-
-  <section id="duplication">
-    <h2>Known duplication worth knowing</h2>
-    <p><code>_mergeEventStreams</code> (<span class="fname">events_service.dart:450-497</span>) and <code>_mergeUpdateStreams</code> (<span class="fname">updates_service.dart:50-82</span>) are near-identical hand-rolled multi-stream mergers — each subscribes N per-friend/per-gym Firestore streams, buffers the latest value per index, and re-sorts client-side on every emission.</p>
-    <p>They were written twice, not shared. A bug fix to one (say, a subscription leak on cancel) has to be applied to the other by hand or it drifts. See <a href="conventions.html">conventions.html</a> for how to treat this pattern going forward.</p>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
     <ol>
-      <li>Do not resume any file listed under Dead scaffold warning as if it were in-progress work — confirm with Milestone 0 status before touching them.</li>
-      <li>See <a href="data-model.html">data-model.html</a> for the full collection-by-collection Firestore shape referenced by these services.</li>
-      <li>See <a href="conventions.html">conventions.html</a> before adding a new feature, so it lands in the flat View &#8594; service pattern rather than reviving the dead layering.</li>
+      <li><strong>Delete the ten files we have decided against</strong> — <span class="fname">di_providers.dart</span>, the seven feed MVVM files, <span class="fname">presence_service.dart</span>, <span class="fname">link_preview_service.dart</span>. One commit, no behaviour change, and the directory tree stops lying. This is M2 work.</li>
+      <li>Read <a href="data-model.html">data-model.html</a> next — the <code>Event</code> crash path in the risks table above is the same finding as the typed-model headline there, and they get fixed together.</li>
+      <li>Confirm or overturn <span class="tag tag-proposed">PROPOSED</span> <strong>D5</strong> (no Riverpod migration) before any M5 work is scoped. Everything in the "as-intended" table hangs off it.</li>
     </ol>
+    <p class="small muted">Related: <a href="conventions.html">conventions.html</a> · <a href="../01-product/features.html">product features</a> · <a href="../03-services/firebase.html">Firebase runbook</a> · <a href="../04-plan/milestones.html">milestones</a> · <a href="../index.html">docs hub</a></p>
   </section>
 
 </main>
@@ -190,6 +499,9 @@ nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('c
   nav.classList.remove('open');
   requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad:true, theme:'dark'});</script>
 
 </body>
 </html>

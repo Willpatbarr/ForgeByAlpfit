@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#why-short">Why this is short</a>
+    <a href="#reading">Reading order</a>
+    <a href="#access">Access they need</a>
+    <a href="#day-one">Day one</a>
+    <a href="#first-task">Their first useful task</a>
+    <a href="#landmines">Landmines</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Runbooks</div>
+    <h1>Onboarding a Second Person</h1>
+    <div class="whatthisis"><strong>What this is:</strong> what someone other than William needs on day one &mdash; reading order, access, a first task, and the four things in this repo that will actively mislead them. Short on purpose.</div>
+  </header>
+
+  <section id="why-short">
+    <h2>Why this page is short</h2>
+    <div class="callout">
+      <strong>There is no second person, and there may never be one.</strong> Per <a href="../01-product/decisions.html">D6</a>, Forge is a solo project with real external users as the target &mdash; a teammate is a "maybe," not a plan. This page exists so that <em>if</em> someone shows up, half a day isn't lost to orientation. It is deliberately not a handbook. Don't grow it until a real person is actually reading it.
+    </div>
+    <p class="small muted">The same page is useful for one other case: William coming back to this repo after three months away. The landmines section in particular is written for that.</p>
+  </section>
+
+  <section id="reading">
+    <h2>Reading order</h2>
+    <p>Top to bottom. Roughly 45 minutes end to end; the first four are the 15-minute version.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>Page</th><th>Why it's at this position</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><a href="../01-product/vision.html">01-product/vision.html</a></td><td>What Forge is and who it's for. Without this, every technical decision below reads as arbitrary.</td></tr>
+          <tr><td>2</td><td><a href="../04-plan/milestones.html">04-plan/milestones.html</a></td><td>What's being built now and in what order. Read the summary table; skip the detail sections until you're assigned one.</td></tr>
+          <tr><td>3</td><td><a href="../02-architecture/overview.html">02-architecture/overview.html</a></td><td>How the app is put together &mdash; and, critically, which parts of the folder structure are empty scaffolding rather than work in progress.</td></tr>
+          <tr><td>4</td><td><a href="../01-product/features.html">01-product/features.html</a></td><td>What is genuinely built vs. what looks built. This is the page that stops you demoing a fake screen.</td></tr>
+          <tr><td>5</td><td><a href="local-setup.html">05-runbooks/local-setup.html</a></td><td>Get it running. Do this before reading any code.</td></tr>
+          <tr><td>6</td><td><a href="../02-architecture/data-model.html">02-architecture/data-model.html</a></td><td>Every Firestore collection and field. Only one entity has a model class; everything else is untyped maps, so this page <em>is</em> the schema.</td></tr>
+          <tr><td>7</td><td><a href="../01-product/decisions.html">01-product/decisions.html</a></td><td>Why things are the way they are, and which calls are still open. Read before proposing a rewrite of anything.</td></tr>
+          <tr><td>8</td><td><a href="../02-architecture/conventions.html">02-architecture/conventions.html</a></td><td>How to write code that matches what's here &mdash; including which existing patterns not to copy.</td></tr>
+          <tr><td>9</td><td><a href="deploy.html">05-runbooks/deploy.html</a></td><td>Read before your first merge, not before your first commit.</td></tr>
+          <tr><td>10</td><td><a href="../00-source/contradictions.html">00-source/contradictions.html</a></td><td>Optional, but it's the fastest way to understand why the original documents can't be trusted as a spec.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="access">
+    <h2>Access they need</h2>
+    <p>Request in this order &mdash; the first two block everything else. Seat costs are from the service runbooks.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Service</th><th>What to grant</th><th>Seat cost</th><th>Granted by</th><th>Runbook</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>GitHub</strong></td>
+            <td>Collaborator on the private <span class="fname">ForgeByAlpfit</span> repo. Write access.</td>
+            <td><span class="pill pill-good">$0</span> &mdash; unlimited collaborators on private repos, free plan</td>
+            <td>William, repo Settings &rarr; Collaborators</td>
+            <td><a href="../03-services/github.html">github.html</a></td>
+          </tr>
+          <tr>
+            <td><strong>Firebase</strong></td>
+            <td>IAM role on project <span class="fname">forge-by-alpfit</span>. <strong>Editor</strong> for someone writing code; <strong>Viewer</strong> if they only need to read data. Reserve <strong>Owner</strong> for William &mdash; Owner can delete the project.</td>
+            <td><span class="pill pill-good">$0</span> &mdash; Firebase does not charge per seat</td>
+            <td>William, Firebase console &rarr; Users and permissions</td>
+            <td><a href="../03-services/firebase.html">firebase.html</a></td>
+          </tr>
+          <tr>
+            <td><strong>Linear</strong></td>
+            <td>Member of the <strong>ForgeAlt</strong> team.</td>
+            <td><span class="pill pill-good">$0</span> on the free plan, which caps at 250 issues and 2 teams &mdash; watch the issue cap, not the seat count</td>
+            <td>William, workspace settings</td>
+            <td><a href="../03-services/linear.html">linear.html</a></td>
+          </tr>
+          <tr>
+            <td><strong>App Store Connect</strong></td>
+            <td>Only once <a href="../04-plan/milestones.html#m3">M3</a> exists. <strong>Developer</strong> role to build and upload; <strong>App Manager</strong> to manage TestFlight groups. Not <strong>Admin</strong>, and never <strong>Account Holder</strong>.</td>
+            <td><span class="pill pill-good">$0 per seat</span> &mdash; the cost is the $99/year membership itself, not the person</td>
+            <td>William, App Store Connect &rarr; Users and Access</td>
+            <td><a href="../03-services/apple-developer.html">apple-developer.html</a></td>
+          </tr>
+          <tr>
+            <td><strong>Google Play Console</strong></td>
+            <td>Only once M3 exists. Release-manager permissions scoped to the internal testing track.</td>
+            <td><span class="pill pill-good">$0 per seat</span> &mdash; the cost is the $25 one-time registration</td>
+            <td>William, Play Console &rarr; Users and permissions</td>
+            <td><a href="../03-services/google-play.html">google-play.html</a></td>
+          </tr>
+          <tr>
+            <td><strong>Cloudflare</strong></td>
+            <td>Only if they'll touch the docs site deploy. Usually unnecessary &mdash; pushing to <span class="fname">main</span> is enough to publish.</td>
+            <td><span class="pill pill-good">$0</span></td>
+            <td>William</td>
+            <td><a href="../03-services/cloudflare-pages.html">cloudflare-pages.html</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>There is no staging environment.</strong> Firebase access is access to the live project with real user data in it. Anyone with Editor can delete a collection. Say this out loud when you grant the role &mdash; a separate staging project is <a href="../04-plan/milestones.html#not-in-plan">deferred</a>, and its trigger is literally "the first time a test wipes real user data."
+    </div>
+  </section>
+
+  <section id="day-one">
+    <h2>Day one, in order</h2>
+    <ol class="steps">
+      <li>Read pages 1&ndash;4 of the <a href="#reading">reading order</a>. Fifteen minutes. Do not skip to the code.</li>
+      <li>Get GitHub and Firebase access. Everything else can wait.</li>
+      <li>Follow <a href="local-setup.html">local-setup.html</a> end to end, including all four verification checks. Don't stop at "it compiled."
+        <br><span class="verify">Done when: you registered a throwaway account, created an event, force-quit the app, reopened it, and the event was still there.</span>
+      </li>
+      <li>Read <a href="#landmines">the landmines</a> below. This is the section that saves you a wasted afternoon.</li>
+      <li>Take the first task.</li>
+    </ol>
+  </section>
+
+  <section id="first-task">
+    <h2>Their first useful task</h2>
+    <div class="prio prio-must">
+      <h3>Write the Firestore rules test that proves <span class="fname">/users</span> is closed</h3>
+      <p>From <a href="../04-plan/milestones.html#m1">Milestone 1</a>. It's the right first task for four reasons:</p>
+      <ul>
+        <li>It is <strong>self-contained</strong> &mdash; the emulator, one rules file, one test file. No need to understand the UI.</li>
+        <li>It forces you to <strong>read <span class="fname">firestore.rules</span> carefully</strong>, which is the highest-leverage 206 lines in the project.</li>
+        <li>It creates the <span class="fname">test/</span> directory, which <strong>does not exist</strong>. You'll be the person who added testing to this project, which is worth more than any feature.</li>
+        <li>It fails first. Write the test, watch it pass against today's <span class="fname">allow read: if true</span> (proving the harness works), then fix the rule and watch it flip.</li>
+      </ul>
+    </div>
+    <p class="small muted">If that person is more product than infrastructure, the alternate first task is "Wire the calendar filter popup to real friends, gyms, and self" from <a href="../04-plan/milestones.html#m2">M2</a> &mdash; visible, self-contained, and it deletes fake data from a shipping screen.</p>
+  </section>
+
+  <section id="landmines">
+    <h2>Landmines &mdash; what will actively mislead you</h2>
+
+    <div class="prio prio-must">
+      <h3>1. Four stale status documents that describe a different app</h3>
+      <p>These live in <span class="fname">forge_senior_project_version/</span> (<span class="fname">app/</span> after <a href="../01-product/decisions.html#proposed">D7</a>). All four were written in February 2026 and never touched again, while roughly the entire build happened after them. <strong>Do not read them as documentation.</strong> They are conversation transcripts frozen mid-session.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>File</th><th>What it wrongly tells you</th></tr></thead>
+          <tbody>
+            <tr><td><span class="fname">PROJECT_STATUS.md</span></td><td>Calls the app "Production-Ready Core" and lists <span class="fname">auth_service.dart</span> and <span class="fname">search_service.dart</span> as empty. Both are fully implemented. Its own file counts contradict its own lists. <strong>The single most misleading file in the repo.</strong></td></tr>
+            <tr><td><span class="fname">PROJECT_SUMMARY.md</span></td><td>Lists "service layer", "state management" and "backend integration" as <em>Planned</em>. All three are substantially done. Describes a pre-backend app.</td></tr>
+            <tr><td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td><td>Reports three routing/dependency bugs that were fixed long ago, and recommends a Riverpod migration that was recorded and abandoned. See <a href="../01-product/decisions.html#proposed">D5</a> before acting on it.</td></tr>
+            <tr><td><span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span></td><td>Says "we are building the login screen", that <span class="fname">auth_service.dart</span> is empty, and that <span class="fname">main.dart</span> calls <span class="fname">signInAnonymously()</span>. Every one of those is obsolete.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">A fifth file, <span class="fname">FIRESTORE_RULES_SETUP.md</span>, is the only one that was ever updated &mdash; and it is worse, because it looks current. It contains a stale copy of the security rules. Deploying from it would reopen closed holes. See the warning in <a href="deploy.html#firestore-rules">deploy</a>. All five are deleted in <a href="../04-plan/milestones.html#m2">M2</a>.</p>
+    </div>
+
+    <div class="prio prio-must">
+      <h3>2. Twenty-one zero-byte Dart files</h3>
+      <p>21 of the 58 <span class="fname">.dart</span> files in <span class="fname">lib/</span> are <strong>0 bytes</strong> &mdash; including all of <span class="fname">core/errors/</span>, all of <span class="fname">core/util/</span>, all of <span class="fname">core/constants/</span> except one, and the <em>entire</em> feed MVVM layer (<span class="fname">data/</span>, <span class="fname">domain/</span>, <span class="fname">presentation/viewmodel/</span>).</p>
+      <p>The folder tree therefore implies a clean-architecture codebase that does not exist. There are no error types, no validators, no date utilities, no Firestore converters, and no dependency injection. <strong>Do not open one of these files and start "finishing" it as if picking up mid-implementation.</strong> There is no partial implementation to continue. Four service files are also empty and each represents a missing capability, not a stub: <span class="fname">moderation_service.dart</span>, <span class="fname">push_service.dart</span>, <span class="fname">presence_service.dart</span>, <span class="fname">link_preview_service.dart</span>.</p>
+    </div>
+
+    <div class="prio prio-important">
+      <h3>3. Screens that look finished and aren't</h3>
+      <p>A grep for <span class="fname">TODO</span> across <span class="fname">lib/</span> returns <strong>two hits, both in dead code</strong>. The incompleteness here is invisible to tooling, which is exactly why it catches people. Assume nothing is real until you've watched it write to Firestore.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Surface</th><th>What's actually happening</th></tr></thead>
+          <tbody>
+            <tr><td>Calendar filter popup</td><td>Entirely fake. Hardcoded "Friend 1", "Ethan", "Gym 1". The filter state is never read by any query.</td></tr>
+            <tr><td>DM event RSVP (Attend / Decline)</td><td>Animates convincingly, writes nothing. Local-only state, lost on navigation. The inviter never finds out.</td></tr>
+            <tr><td>Create hub item detail</td><td>A literal stub reading "Details for this item will open here when connected to your data."</td></tr>
+            <tr><td>Create hub sections</td><td>Four of twelve are <span class="fname">const []</span> &mdash; permanently empty by construction, not empty because you have no data. "Popular" sections just show your own items; there is no popularity signal anywhere.</td></tr>
+            <tr><td>Feed comment sheet</td><td>The <strong>Done</strong> button discards what you typed. Only the keyboard submit action posts.</td></tr>
+            <tr><td>"View in Workouts Screen" button</td><td><span class="fname">onPressed</span> body is a single comment.</td></tr>
+            <tr><td>Channel post moderation</td><td>The owner check is <span class="fname">uid == gymUid</span>, so a post's own author cannot delete their own post.</td></tr>
+            <tr><td>Profile save</td><td>Failures are swallowed by <span class="fname">catch (_) {}</span> and reported to the user as success.</td></tr>
+            <tr><td>A gym channel error state</td><td>Ships Firebase CLI instructions to end users, telling them to run <span class="fname">firebase deploy</span>.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small muted">Full list with file references: <a href="../01-product/features.html">features.html</a>. All of it is <a href="../04-plan/milestones.html#m2">Milestone 2</a>.</p>
+    </div>
+
+    <div class="prio prio-important">
+      <h3>4. Three things that are true and sound alarming</h3>
+      <ul>
+        <li><strong>The user table is world-readable right now.</strong> <span class="fname">allow read: if true</span> on <span class="fname">/users</span>. Don't panic and don't "just fix it" without reading <a href="../04-plan/milestones.html#m1">M1</a> first &mdash; several screens read user docs and the fix needs a test around it.</li>
+          <li><strong>Firebase config files are committed to git. That is fine.</strong> Firebase client config identifies the project; it is not a credential. Nothing needs rotating. The real exposure is the rules file, not the config. Do not start a key-rotation exercise.</li>
+        <li><strong><span class="fname">flutter analyze</span> is clean and it means nothing.</strong> <span class="fname">analysis_options.yaml</span> is one line with <span class="fname">strict-casts</span> off. Never cite a clean analyze as evidence about this codebase until M1 turns strictness on.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li><strong>If you are the new person:</strong> read pages 1&ndash;4 of the <a href="#reading">reading order</a>, then run <a href="local-setup.html">local-setup.html</a> to the end, then take <a href="#first-task">the first task</a>.</li>
+      <li><strong>If you are William granting access:</strong> GitHub collaborator and Firebase Editor first &mdash; both are $0 and both unblock everything. Leave the store accounts until <a href="../04-plan/milestones.html#m3">M3</a>.</li>
+      <li><strong>Either way:</strong> the fastest permanent fix for landmine #1 is to delete the five stale markdown files. It's an <a href="../04-plan/milestones.html#m2">M2</a> issue and it takes about a minute.</li>
+    </ol>
+    <p class="small muted">Related: <a href="local-setup.html">local setup</a> &middot; <a href="deploy.html">deploy</a> &middot; <a href="../04-plan/milestones.html">milestones</a> &middot; <a href="../03-services/index.html">service map</a> &middot; <a href="../index.html">docs hub</a></p>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

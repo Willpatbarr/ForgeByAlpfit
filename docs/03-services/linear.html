@@ -14,15 +14,16 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#what-why">What &amp; why</a>
-    <a href="#trigger">Adoption trigger</a>
-    <a href="#free-tier">Free tier reality</a>
-    <a href="#setup">Setup steps</a>
-    <a href="#secrets">Secrets &amp; config</a>
-    <a href="#escape">Escape hatch</a>
-    <a href="#cost">Cost &amp; scale</a>
-    <a href="#teammate">Teammate delta</a>
+    <a href="#what-why">1. What &amp; why</a>
+    <a href="#adoption-trigger">2. Adoption trigger</a>
+    <a href="#free-tier">3. Free tier reality</a>
+    <a href="#setup-steps">4. Setup steps</a>
+    <a href="#secrets-config">5. Secrets &amp; config</a>
+    <a href="#escape-hatch">6. Escape hatch</a>
+    <a href="#cost-scale">7. Cost &amp; scale</a>
+    <a href="#teammate-delta">8. Teammate delta</a>
     <a href="#next">What to do next</a>
+    <a href="index.html">&larr; Service map</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -30,123 +31,153 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 03-services / Linear</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Linear</div>
     <h1>Linear <span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span></h1>
-    <div class="whatthisis"><strong>What this is:</strong> the single write target for all Forge planning — issues, statuses, and labels live here, not in GitHub Issues.</div>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for the work tracker. Linear's <strong>ForgeAlt</strong> team is where every issue in this plan lives. The one number to remember: the free plan stops you creating issues at <strong>250</strong>, and this plan will generate a lot of issues.</div>
   </header>
 
   <section id="what-why">
-    <h2>What &amp; why</h2>
-    <p>Linear is William's planning UI: every task, bug, and improvement for Forge is tracked here as an issue. It was chosen because it is already William's standing tool, the workspace and team already exist, and it keeps planning cleanly separated from GitHub's code-and-docs role.</p>
+    <h2>1. What &amp; why</h2>
+    <p>Linear holds the project, milestones, documents, and issues for Forge in the <strong>ForgeAlt</strong> team — so that "what am I doing next" has exactly one answer that isn't a markdown file going stale. That last part is not hypothetical: this repo already contains four status documents that all describe a version of the app that stopped existing months ago.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Alternative</th><th>Why it lost</th></tr></thead>
+        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
         <tbody>
-          <tr><td>GitHub Issues</td><td>Would duplicate Linear if both were written to. Per the brief (§9 Q4), GitHub Issues stays the read side, not the write target — Linear writes are one-way unless sync is later enabled.</td></tr>
-          <tr><td>A plain text/markdown TODO file</td><td>No statuses, labels, or multi-team structure; does not scale past a solo dev's memory.</td></tr>
+          <tr><td>GitHub Issues <span class="faint small">(free, already in the repo)</span></td><td>Genuinely the frugal answer, and it loses only because <a href="../01-product/decisions.html">D10</a> is <span class="tag tag-locked">LOCKED</span> — Linear is where his work already lives, and splitting a solo developer's attention across two trackers is how both go stale.</td></tr>
+          <tr><td>Jira</td><td>Ceremony built for teams of thirty, aimed at a team of one.</td></tr>
+          <tr><td>Notion / a markdown TODO file</td><td>This project has already run the experiment. Four stale status files is the result.</td></tr>
         </tbody>
       </table>
     </div>
+    <p><strong>Why Linear wins:</strong> it is already the place he works, it is free at this size, and keyboard-first triage suits someone who will abandon a tracker that costs friction.</p>
   </section>
 
-  <section id="trigger">
-    <h2>Adoption trigger</h2>
-    <p><span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span> — already adopted. Workspace <code>WillieWorkspace</code> exists; team <strong>ForgeByAlpfit</strong> already exists (created 2026-08-15).</p>
-    <p>It is T0 because planning work starts immediately, same reasoning as GitHub for code — there is no lower tier for "where does the work get tracked."</p>
+  <section id="adoption-trigger">
+    <h2>2. Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>When</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>Already adopted — workspace and ForgeAlt team exist</td>
+            <td>D10 <span class="tag tag-locked">LOCKED</span>. The plan in <a href="../04-plan/milestones.html">04-plan</a> is only useful if its items live somewhere he actually looks.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>When NOT to add more Linear:</strong> no Cycles, no estimates, no velocity, no triage rotation, no automations, no roadmap views. All of that is instrumentation for coordinating people, and there is one person. Projects + milestones + issues + three statuses is the entire T0 surface. Adding sprint ceremony to a solo project is the fastest way to make the tracker feel like homework and get abandoned.</div>
   </section>
 
   <section id="free-tier">
-    <h2>Free tier reality</h2>
+    <h2>3. Free tier reality</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Limit</th><th>Value</th></tr></thead>
+        <thead><tr><th>Limit</th><th>Free plan</th><th>What happens at the edge</th></tr></thead>
         <tbody>
-          <tr><td>Issues</td><td><strong>250 issues</strong> on the free plan.</td></tr>
-          <tr><td>Members</td><td>Unlimited, free.</td></tr>
-          <tr><td>Teams</td><td>2 teams.</td></tr>
-          <tr><td>What happens when exceeded</td><td>Verify at signup — but treat the 250-issue cap as the real constraint on this plan, since it is the only hard number in play.</td></tr>
-          <tr><td>First paid tier cost</td><td>Verify at signup.</td></tr>
+          <tr><td><strong>Issues</strong></td><td><strong>250</strong></td><td><span class="pill pill-bad">Hard stop on creation.</span> Linear's wording: "If you have over 250 issues, you will no longer be able to create new issues." Existing issues keep working. <strong>This is the binding constraint and it arrives suddenly.</strong></td></tr>
+          <tr><td>Members</td><td><strong>Unlimited</strong></td><td>No cap, no seat cost. <span class="faint small">(This corrects a common belief that Free is capped at 10 members — it is not.)</span></td></tr>
+          <tr><td>Teams</td><td><strong>2</strong></td><td>ForgeAlt is one. One spare.</td></tr>
+          <tr><td>File upload size</td><td>10 MB</td><td>Larger attachments rejected. Fine for screenshots; not fine for a video repro.</td></tr>
+          <tr><td>History / archive retention</td><td><span class="faint small">Not listed on Linear's pricing page — <strong>unverified</strong>, check at <a href="https://linear.app/pricing">linear.app/pricing</a> before relying on long-term history.</span></td><td>—</td></tr>
+          <tr><td><strong>First paid tier</strong></td><td><strong>Basic — $10 / user / month, billed yearly</strong>. Unlimited issues, unlimited file uploads, 5 teams.</td><td>Monthly-billing price is not published on Linear's own page — <strong>unverified</strong>; third-party sources say $12, do not quote it.</td></tr>
         </tbody>
       </table>
     </div>
-    <div class="callout warn">
-      <strong>Watch this number.</strong> 250 issues is not a lot for an actively worked solo project. Whether archived issues still count against the cap until deleted is <strong>not yet determined — needs verification at signup</strong>; do not assume archiving alone frees up room.
-    </div>
+    <div class="callout warn"><strong>No surprise-bill risk — but a surprise <em>wall</em>.</strong> Linear Free cannot charge you. What it can do is refuse a new issue at the exact moment you are trying to write down a bug you just found. The intake report alone lists ~20 ship blockers, ~14 named stubs, and 21 empty files; a fully decomposed plan for this app plausibly runs 150–250 issues. <strong>Budget the 250, don't discover it.</strong></div>
+    <p><strong>How to stay under 250 without paying:</strong> write issues at milestone granularity, not at line-of-code granularity — "Fix the four hollow calendar surfaces" is one issue with a checklist, not four. Archive aggressively; <em>verify whether archived issues still count toward the 250</em>, because Linear's pricing page doesn't say and that single fact decides whether archiving is a real escape valve. If the answer is no, $10/user/month billed yearly is the cheapest unblock in this entire plan.</p>
   </section>
 
-  <section id="setup">
-    <h2>Setup steps</h2>
+  <section id="setup-steps">
+    <h2>4. Setup steps</h2>
+    <p class="muted">Steps 1–3 are already done. The rest is the shape the plan expects.</p>
     <ol class="steps">
-      <li>Confirm workspace <code>WillieWorkspace</code> and team <strong>ForgeByAlpfit</strong> exist. They already do.</li>
-      <li>Confirm default statuses are in place: Backlog, Todo, In Progress, Done, Canceled, Duplicate. These are Linear's defaults and require no setup.</li>
-      <li>Confirm default labels exist: Feature, Bug, Improvement.</li>
-      <li>Add the plan's area and tier labels on top of the defaults (for example, <code>T0</code>/<code>T1</code>/<code>T2</code> matching this doc set's tier system). Label taxonomy is cheap to add now, painful to retrofit onto 200+ existing issues later — do this before the issue count grows.</li>
-      <li>Leave GitHub Issues Sync off unless a deliberate decision is made to turn it on (see Escape hatch and Teammate delta below for why).</li>
-      <li><span class="verify">Verify:</span> create one test issue in the ForgeByAlpfit team, confirm it lands in Backlog with the Feature/Bug/Improvement label options available, then delete the test issue.</li>
+      <li><strong>Linear account</strong> and workspace exist. <span class="pill pill-good">Done</span></li>
+      <li><strong>ForgeAlt team</strong> created. <span class="pill pill-good">Done</span> <span class="pill pill-warn">Sticky</span> — the team <em>key</em> (the <code>FOR-123</code> prefix on every issue) is what shows up in every branch name, commit message, and link. Changing it later re-labels everything.</li>
+      <li><strong>Confirm the team count is 2 or fewer</strong> — Free allows two teams, and it is easy to spend the second one on an experiment.</li>
+      <li><strong>Create the Forge project</strong> inside ForgeAlt, with milestones matching <a href="../04-plan/milestones.html">04-plan</a>: M1 Lock the doors · M2 Make "done" true · M3 Ship to a device that isn't his · M4 Beta-ready · M5 The Rec Center beta · M6 When it hurts. <span class="faint small">Per D10 the main agent does this, not the doc set.</span></li>
+      <li><strong>Keep the workflow to three states</strong> — Todo / In Progress / Done. Delete or ignore the rest. Every extra state is a decision he has to make on every issue forever.</li>
+      <li><strong>Add labels that map to this plan's vocabulary, and no others:</strong> <code>T0</code> / <code>T1</code> / <code>T2</code> for tier, and <code>security</code> / <code>store-blocker</code> / <code>stub</code> / <code>cost</code> for kind. Four label groups is plenty.</li>
+      <li><strong>Connect GitHub</strong> (Settings → Integrations → GitHub) so <code>FOR-123</code> in a branch or PR title auto-links. This is the one integration worth the two minutes; it is also the only one.</li>
+      <li><strong>Turn off email notifications you won't read.</strong> A solo tracker that emails you about your own actions trains you to ignore it.</li>
+      <li><span class="verify">Verify:</span> create a throwaway issue, put its ID in a git branch name, push, and confirm the branch shows up linked on the Linear issue. Then check the issue count in the team settings so you know how much of the 250 is already spent. Both of those, not just "the issue saved".</li>
     </ol>
+    <div class="callout warn"><strong>Painful to change later:</strong> the workspace URL slug and the ForgeAlt team key. Both appear in every issue ID and every shared link. Everything else in Linear is cheap to rearrange.</div>
   </section>
 
-  <section id="secrets">
-    <h2>Secrets &amp; config</h2>
+  <section id="secrets-config">
+    <h2>5. Secrets &amp; config</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Client-safe / server-only</th><th>Local vs production</th></tr></thead>
+        <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production / CI</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>Linear API key (if ever used for automation)</td><td>Server-only — never client-safe.</td><td>Would be the same key for local scripts and any production automation; scope it narrowly if created.</td></tr>
+          <tr><td>Linear login</td><td><span class="pill pill-bad">YES</span> — it is an account credential</td><td>Password manager. Not in the repo, not in a note file.</td><td>n/a</td><td>n/a</td></tr>
+          <tr><td>Linear <strong>API key</strong> <span class="faint small">(Settings → Security &amp; access → Personal API keys)</span></td><td><span class="pill pill-bad">YES</span> — server-only, full read/write to the workspace as you</td><td>Env var outside the repo; never in Dart source</td><td>Only if a script or CI ever touches Linear — none does today</td><td><code>LINEAR_API_KEY=</code></td></tr>
+          <tr><td>GitHub integration OAuth grant</td><td><span class="pill pill-good">No file</span> — brokered by Linear, no token you hold</td><td>—</td><td>—</td><td>n/a</td></tr>
+          <tr><td>Issue contents</td><td><span class="pill pill-warn">Treat as sensitive</span> — security issues describe unfixed vulnerabilities</td><td>—</td><td>—</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
-    <p>No Linear credentials are part of the Forge app itself today, so no <code>.env.example</code> entry exists for Linear. If an API key is ever generated for automation, it is never committed — real secrets are not committed to this repository, full stop.</p>
+    <p><strong>Never commit a real secret.</strong> Linear contributes nothing to the Flutter app's build — <strong>no Linear key belongs anywhere in <code class="fname">lib/</code>, ever</strong>, and there is no such thing as a client-safe Linear key. If a script ever needs one, it reads it from the environment and <code class="fname">.env.example</code> carries the empty placeholder.</p>
+    <p class="small muted">One privacy note worth stating: the M1 issue describing <code>allow read: if true</code> on <code>/users</code> is a written description of an unpatched PII leak. Keep the workspace private, don't paste that issue into a public thread, and close it before showing the board to anyone outside the project.</p>
   </section>
 
-  <section id="escape">
-    <h2>Escape hatch</h2>
-    <p><span class="pill pill-good">Lock-in: low</span> — CSV export and a documented API cover a full migration.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>What lives only here</th><th>How to export</th><th>Migration cost</th></tr></thead>
-        <tbody>
-          <tr><td>Issues, statuses, labels, history</td><td>CSV export from workspace settings, or the Linear API for a structured pull.</td><td>Low — both paths are documented and complete enough to rebuild a task list elsewhere.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="cost">
-    <h2>Cost &amp; scale checkpoints</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Users</th><th>Cost</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td>~10</td><td>$0</td><td>App user count does not move Linear's bill; issue count does. Well under 250 at this stage.</td></tr>
-          <tr><td>~100</td><td>$0, watch issue count</td><td>Beta feedback (Milestone 3) will generate issues faster — check the 250 cap here.</td></tr>
-          <tr><td>~1,000</td><td>Verify at signup if the 250-issue cap is hit</td><td>The trigger to re-evaluate is the issue count, not the user count.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="teammate">
-    <h2>Teammate delta</h2>
+  <section id="escape-hatch">
+    <h2>6. Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: LOW</span></p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Seat cost for another member</td><td>$0 — unlimited members on the free plan.</td></tr>
-          <tr><td>Permission model</td><td>Workspace/team roles set per member in Linear's admin settings.</td></tr>
-          <tr><td>Does free tier allow another member</td><td>Yes, with no seat limit — the constraint to watch is issue count (250), not members.</td></tr>
+          <tr><td>What data lives only here?</td><td>Issue titles, descriptions, comments, milestones, and project documents. That is real — it is the thinking behind the plan — but it is <em>text about</em> the app, never the app itself and never user data.</td></tr>
+          <tr><td>How do I export?</td><td>Workspace settings → Import / Export → CSV export of all issues. The GraphQL API (<code>api.linear.app/graphql</code>) gets everything including comments and documents if CSV is too lossy.</td></tr>
+          <tr><td>What does migrating cost?</td><td><strong>An hour.</strong> Export CSV, import to GitHub Issues or Jira, accept that comment threading and issue IDs get mangled. Nothing breaks; no code references Linear.</td></tr>
+          <tr><td>The real risk</td><td>Not lock-in — <strong>abandonment</strong>. The failure mode for a solo tracker is that it quietly stops being updated and becomes the fifth stale status document in this project. That is why the setup above is deliberately minimal.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>7. Cost &amp; scale checkpoints</h2>
+    <p class="muted">Linear's cost scales with <em>issues and people</em>, not app users — so the honest table tracks issue count alongside the user milestones.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
+        <tbody>
+          <tr><td><strong>~10 users</strong> <span class="faint small">(today; ~50–100 issues as the plan lands)</span></td><td><strong>$0</strong></td><td>Nothing. Comfortably inside 250 issues and 2 teams.</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta, M5)</span></td><td><strong>$0</strong> — or <strong>$10/mo</strong> if the cap hits</td><td><strong>This is where the 250-issue wall most likely lands.</strong> Beta feedback is a bug-report firehose, and every crash report someone sends becomes an issue. Nothing degrades — issue creation simply refuses. Mitigate by triaging beta reports into a handful of parent issues instead of one issue per report.</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$10/mo</strong>, realistically</td><td>Issue volume at this scale makes Basic the sane choice regardless of the cap; at that point unlimited issues and 5 teams cost roughly a third of what <a href="firebase.html#cost-scale">Firestore</a> costs at the same user count. Note Linear bills <em>per user</em>, so this is $10/mo solo and $20/mo with a teammate.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate-delta">
+    <h2>8. Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Does the free tier allow another member?</td><td><strong>Yes — Free allows unlimited members.</strong> Seats are not the constraint; the 250 issues are.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0 on Free.</strong> On Basic it is $10 per person per month billed yearly, so a second person doubles the bill the moment you upgrade.</td></tr>
+          <tr><td>Permission model</td><td>Workspace-level roles (Admin / Member / Guest) plus team membership. A Guest sees only the teams you add them to — the right setting for a designer or a Rec Center contact who should see the beta board and nothing else.</td></tr>
+          <tr><td>What actually changes</td><td>Two habits become mandatory: <strong>assignees</strong> (a solo board doesn't need them; a two-person board is chaos without them) and <strong>issue descriptions written for someone else</strong> — "fix the calendar thing" is fine when you are the only reader and useless the moment you aren't.</td></tr>
+          <tr><td>Counter-pressure</td><td>A second person roughly doubles issue creation rate, which pulls the 250-issue wall closer. Adding a teammate and staying on Free is possible but unlikely to last a month.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="next">
-    <h2>What To Do Next</h2>
-    <ol>
-      <li>Add the area and T0/T1/T2 tier labels on top of the default Feature/Bug/Improvement set before issue volume grows.</li>
-      <li>Track issue count against the 250 cap; verify at signup whether archived issues still count.</li>
-      <li>Leave GitHub Issues Sync off — per brief §9 Q4, only Linear is written to, so if sync is enabled later issues will flow to GitHub automatically without duplication.</li>
+    <h2>What to do next</h2>
+    <div class="onesentence"><strong>Open ForgeAlt's team settings and read the current issue count against the 250 cap</strong> — before the plan's issues get created, so you know how much room the plan actually has.</div>
+    <ol class="todo">
+      <li>Then confirm whether <em>archived</em> issues still count toward the 250. That one answer decides whether Free is sustainable or whether Basic is inevitable.</li>
+      <li>Then connect the GitHub integration so <code>FOR-</code> branch names auto-link.</li>
+      <li>Keep the workflow at three states and resist every Linear feature that exists to coordinate a team.</li>
     </ol>
+    <p class="small"><a href="index.html">&larr; Back to the service map</a> · <a href="../index.html">&larr; Docs hub</a> · <a href="../04-plan/milestones.html">Milestones</a> · <a href="github.html">GitHub</a></p>
   </section>
 
 </main>

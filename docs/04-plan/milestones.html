@@ -14,14 +14,14 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#table">The editable table</a>
-    <a href="#m0">M0 Tell the truth</a>
+    <a href="#table">The table (edit this)</a>
     <a href="#m1">M1 Lock the doors</a>
-    <a href="#m2">M2 Ship-ready identity</a>
-    <a href="#m3">M3 Rec center beta</a>
-    <a href="#m4">M4 Know when it breaks</a>
-    <a href="#m5">M5 Earned features</a>
-    <a href="#sequencing">Why this order</a>
+    <a href="#m2">M2 Make "done" true</a>
+    <a href="#m3">M3 A device that isn't his</a>
+    <a href="#m4">M4 Beta-ready</a>
+    <a href="#m5">M5 The Rec Center beta</a>
+    <a href="#m6">M6 When it hurts</a>
+    <a href="#not-in-plan">Not in any milestone</a>
     <a href="#next">What to do next</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
@@ -30,267 +30,496 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / Plan / Milestones</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Plan</div>
     <h1>Milestones</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the whole roadmap as one editable table, followed by the detail behind each row. Rewrite the table in one pass &mdash; it is expected to change. The Linear issues were generated from this page, so edit here first.</div>
+    <div class="whatthisis"><strong>What this is:</strong> six milestones in the order they have to happen, each one a set of issues you can create in Linear tomorrow. The table below is the whole plan in one view — read it, rewrite it, then read the detail for whichever milestone you're actually starting.</div>
   </header>
 
-  <div class="onesentence">
-    The app is already built. These six milestones are about making it <strong>safe</strong>, then <strong>installable</strong>, then <strong>actually used by other people</strong> &mdash; in that order.
-  </div>
-
   <section id="table">
-    <h2>The editable table</h2>
-    <p>Sizes are S/M/L only. No dates, because you gave no deadlines and the course deadline has passed.</p>
+    <h2>The plan in one table</h2>
+
+    <div class="callout warn">
+      <strong>This table is meant to be rewritten.</strong> It is a first pass built from the code, not a commitment. Re-order it, merge milestones, cut M6 entirely — the point of putting it first is that you can rewrite the whole thing in one edit without reading six sections of prose. The detail sections below follow whatever this table says.
+    </div>
+
     <div class="tablewrap">
       <table>
         <thead>
-          <tr><th>#</th><th>Milestone</th><th>Tier</th><th>Goal</th><th>Size</th><th>Depends on</th></tr>
+          <tr><th>#</th><th>Milestone</th><th>Tier</th><th>One-line goal</th><th>Size</th><th>Depends on</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td><a href="#m0"><strong>M0</strong></a></td><td><strong>Tell the truth</strong></td>
+            <td><a href="#m1">M1</a></td>
+            <td><strong>Lock the doors</strong></td>
             <td><span class="tier tier-t0">T0 Now</span></td>
-            <td>Make the repo stop lying about itself</td>
-            <td><span class="pill">S</span></td><td>&mdash;</td>
+            <td>Nobody can read the user table, nothing crashes on a saved event, and there is a test suite that proves it.</td>
+            <td><span class="pill pill-bad">L</span></td>
+            <td class="faint">&mdash;</td>
           </tr>
           <tr>
-            <td><a href="#m1"><strong>M1</strong></a></td><td><strong>Lock the doors</strong></td>
+            <td><a href="#m2">M2</a></td>
+            <td><strong>Make "done" true</strong></td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>Every screen that looks finished actually works, and the repo stops advertising work that doesn't exist.</td>
+            <td><span class="pill pill-bad">L</span></td>
+            <td>M1</td>
+          </tr>
+          <tr>
+            <td><a href="#m3">M3</a></td>
+            <td><strong>Ship to a device that isn't his</strong></td>
             <td><span class="tier tier-t1">T1 Before first user</span></td>
-            <td>Nobody can scrape the user directory</td>
-            <td><span class="pill">M</span></td><td>M0</td>
+            <td>A real signed build installs on someone else's phone from TestFlight and Play internal testing.</td>
+            <td><span class="pill pill-warn">M</span></td>
+            <td>M2</td>
           </tr>
           <tr>
-            <td><a href="#m2"><strong>M2</strong></a></td><td><strong>Ship-ready identity</strong></td>
+            <td><a href="#m4">M4</a></td>
+            <td><strong>Beta-ready</strong></td>
             <td><span class="tier tier-t1">T1 Before first user</span></td>
-            <td>The app can legally and technically be installed by someone else</td>
-            <td><span class="pill">M</span></td><td>M1</td>
+            <td>A stranger can join, be safe, be reachable, and leave — deletion, moderation, privacy policy, push.</td>
+            <td><span class="pill pill-bad">L</span></td>
+            <td>M3</td>
           </tr>
           <tr>
-            <td><a href="#m3"><strong>M3</strong></a></td><td><strong>Rec center beta</strong></td>
+            <td><a href="#m5">M5</a></td>
+            <td><strong>The Rec Center beta</strong></td>
             <td><span class="tier tier-t1">T1 Before first user</span></td>
-            <td>Real people who aren't you are using it</td>
-            <td><span class="pill">M</span></td><td>M2</td>
+            <td>Actually run the beta: onboard people into a community that isn't empty, and measure whether it worked.</td>
+            <td><span class="pill pill-warn">M</span></td>
+            <td>M4</td>
           </tr>
           <tr>
-            <td><a href="#m4"><strong>M4</strong></a></td><td><strong>Know when it breaks</strong></td>
+            <td><a href="#m6">M6</a></td>
+            <td><strong>When it hurts</strong></td>
             <td><span class="tier tier-t2">T2 When it hurts</span></td>
-            <td>Failures reach you without a friend texting you</td>
-            <td><span class="pill">M</span></td><td>M3</td>
-          </tr>
-          <tr>
-            <td><a href="#m5"><strong>M5</strong></a></td><td><strong>Earned features</strong></td>
-            <td><span class="tier tier-t2">T2 When it hurts</span></td>
-            <td>Build what the beta proved was needed</td>
-            <td><span class="pill">L</span></td><td>M4</td>
+            <td>Scale and cost work, unlocked only by named thresholds — do not start any of it early.</td>
+            <td><span class="pill">S&ndash;L</span></td>
+            <td>M5 <span class="faint small">+ a threshold firing</span></td>
           </tr>
         </tbody>
       </table>
     </div>
-    <div class="callout">
-      <p><strong>The shape of this plan:</strong> there is no "build the app" milestone, because the app is built. Roughly 15,500 lines of working Dart already exist. What stands between you and real users is security, identity, and one unspecified workflow &mdash; not features.</p>
-    </div>
-  </section>
 
-  <section id="m0">
-    <h2>M0 &mdash; Tell the truth <span class="tier tier-t0">T0 Now</span></h2>
-    <p><strong>Goal:</strong> make the repository stop contradicting itself, so every later decision rests on something accurate.</p>
+    <p class="small muted">No dates. You gave no deadlines, so estimating them would be invention. Size is relative effort only: <strong>S</strong> = a sitting, <strong>M</strong> = a few sittings, <strong>L</strong> = a stretch of weeks at solo-dev pace.</p>
 
-    <h3>Definition of done</h3>
-    <ul class="todo">
-      <li>The five stale root <code>.md</code> docs are deleted or clearly marked superseded.</li>
-      <li>All 18 zero-byte scaffold files are deleted.</li>
-      <li>A root <code>.gitignore</code> exists and <code>.DS_Store</code> is untracked.</li>
-      <li>The <code>docs/</code> site renders and every page reaches the hub in one click.</li>
-      <li>No document in the repo contradicts the code.</li>
-    </ul>
+    <p class="small muted">A few other pages in this docs set still cite an earlier draft numbering (M0&ndash;M5, with a "Milestone 0 cleanup"). <strong>This page is the authority.</strong> The old M0 cleanup work now lives inside M1 and M2.</p>
 
-    <h3>What's in it</h3>
+    <h3>Why this order</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Work</th><th>Why</th></tr></thead>
+        <thead><tr><th>Sequencing rule</th><th>What it forced</th></tr></thead>
         <tbody>
-          <tr><td>Delete or supersede <span class="fname">PROJECT_STATUS.md</span>, <span class="fname">PROJECT_SUMMARY.md</span>, <span class="fname">ARCHITECTURE_ANALYSIS.md</span>, <span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span>, <span class="fname">FIRESTORE_RULES_SETUP.md</span></td><td>All five describe February. <span class="fname">FIRESTORE_RULES_SETUP.md</span> is the dangerous one &mdash; it holds an outdated rules copy that would reopen closed security holes if anyone restored from it.</td></tr>
-          <tr><td>Delete the 18 empty scaffold files</td><td><code>feed/data</code>, <code>feed/domain</code>, <code>feed/presentation/viewmodel</code>, <code>core/errors/*</code>, <code>core/util/*</code>, <code>app/di_providers.dart</code> and four empty service files are all 0 bytes. They look like work in progress. They are abandoned setup scaffold.</td></tr>
-          <tr><td>Root <code>.gitignore</code></td><td>The only <code>.gitignore</code> lives in the app subfolder, so <code>.DS_Store</code> is tracked at the root.</td></tr>
-          <tr><td>Wire up Cloudflare Pages for <code>docs/</code></td><td>Docs render on every push. See the <a href="../03-services/cloudflare-pages.html">runbook</a>.</td></tr>
+          <tr><td>Nothing ships on top of a PII leak</td><td>M1 is first and blocks everything. The <span class="fname">/users</span> read rule is the single highest-severity item in the project.</td></tr>
+          <tr><td>Something runnable as early as possible</td><td>The app already runs. So "runnable" here means <em>trustworthy</em> — M1 + M2 make the running app match what it claims, before a single dollar is spent on store accounts.</td></tr>
+          <tr><td>Fake surfaces are cheaper to fix than to explain</td><td>M2 sits before any external user, because a beta tester tapping a hardcoded "Friend 1" filter costs more credibility than it costs hours to fix.</td></tr>
+          <tr><td><span class="tag tag-proposed">PROPOSED</span> decisions sit behind the milestone that proves them</td><td>D5 (keep <span class="fname">setState</span>, no Riverpod) is tested by M2 &mdash; if wiring the calendar filter and RSVP persistence is miserable with <span class="fname">setState</span>, that is the evidence to revisit it. D7 (rename to <span class="fname">app/</span>) is tested by M3, the first milestone that touches every platform config file anyway.</td></tr>
+          <tr><td>Store accounts cost money and time</td><td>Apple ($99/yr) and Play ($25 one-time) are not paid until M3, and M3 does not start until the app is worth installing.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small muted">No services needed beyond what already exists.</p>
   </section>
 
   <section id="m1">
-    <h2>M1 &mdash; Lock the doors <span class="tier tier-t1">T1 Before first user</span></h2>
+    <h2>M1 &mdash; Lock the doors <span class="tier tier-t0">T0 Now</span> <span class="pill pill-bad">L</span></h2>
+
+    <div class="onesentence">Close the security holes, fix the one guaranteed crash path, and stand up the first tests &mdash; so that everything after this is built on something that can be trusted.</div>
+
     <div class="callout danger">
-      <p><strong>This is the milestone that actually blocks everything.</strong> Right now <code>firestore.rules:27</code> reads <code>allow read: if true</code> on the entire <code>users</code> collection. Every user's email and contact info is readable by anyone with the public web API key &mdash; which is committed in <code>lib/firebase_options.dart</code> and extractable from the deployed web bundle. You cannot invite real users onto this until it's closed.</p>
+      <strong>Nothing else ships before this.</strong> Today <span class="fname">firestore.rules</span> says <span class="fname">allow read: if true</span> on <span class="fname">/users</span>. Every user's email, contact info, friend list and gym list is readable by anyone with the project id, unauthenticated. That is a privacy incident waiting for its first real user, not a style nit.
     </div>
-    <p><strong>Goal:</strong> make the data layer safe for people who are not you.</p>
 
     <h3>Definition of done</h3>
-    <ul class="todo">
-      <li>An unauthenticated read of another user's <code>email</code> or <code>contactInfo</code> <strong>fails</strong>, proven by a written test script rather than by eyeballing.</li>
-      <li>App Check is enforced on Firestore and Storage.</li>
-      <li>The <code>directThreads</code> update rule is constrained to the specific fields the client actually writes.</li>
-      <li>A user can delete their account, and their owned data is gone afterwards.</li>
+    <ul>
+      <li>An unauthenticated client can no longer read any document under <span class="fname">/users</span> &mdash; verified by a failing-then-passing rules test, not by reading the rules file.</li>
+      <li>A signed-in gym member cannot modify any field of another member's channel post except <span class="fname">likeIds</span> &mdash; covered by a rules test.</li>
+      <li>A client cannot write <span class="fname">accountType: 'gym'</span> onto its own user doc.</li>
+      <li>Every write rule for <span class="fname">users</span>, <span class="fname">directThreads</span>, <span class="fname">goals</span> and <span class="fname">plans</span> validates field types and string lengths; timestamps are checked against <span class="fname">request.time</span> rather than trusted from the client.</li>
+      <li>Storage rejects an avatar upload over the size cap and rejects a non-image content type; <span class="fname">storage-cors.json</span> no longer contains <span class="fname">"origin": ["*"]</span>.</li>
+      <li>An event saved with no start time either cannot be saved, or renders without throwing &mdash; the unchecked <span class="fname">as Timestamp</span> cast in <span class="fname">events_service._mapDocToEvent</span> is gone.</li>
+      <li>A <span class="fname">test/</span> directory exists, <span class="fname">flutter test</span> runs green, and it contains at least: rules tests for every rule changed in this milestone, and unit tests for goal period rollover.</li>
+      <li><span class="fname">analysis_options.yaml</span> enables <span class="fname">strict-casts</span> and <span class="fname">flutter analyze</span> is clean <em>with that setting on</em>.</li>
+      <li>The tightened rules are actually deployed &mdash; <span class="fname">firebase deploy --only firestore:rules,storage</span> has been run and the console shows the new ruleset.</li>
     </ul>
 
     <h3>What's in it</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Work</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Area</th><th>Detail</th></tr></thead>
         <tbody>
-          <tr><td>Split the <code>users</code> read rule</td><td>Public-safe fields (<code>displayName</code>, <code>accountType</code>, <code>avatarUrl</code>) stay world-readable because search and friend lists need them. <code>email</code> and <code>contactInfo</code> gate behind owner-or-friend. The data model does not change.</td></tr>
-          <tr><td>Re-audit the call sites that assumed open reads</td><td><span class="fname">search_service.dart</span>, <span class="fname">friends_service.dart</span> and <span class="fname">gyms_service.dart</span> all currently rely on unrestricted reads. Tightening rules without checking these will break search.</td></tr>
-          <tr><td>Enable App Check</td><td>Monitoring mode first, then enforce. Enforcing before monitoring locks you out of your own app. See the <a href="../03-services/app-check.html">runbook</a>.</td></tr>
-          <tr><td>Tighten <code>directThreads</code> updates</td><td>Either participant can currently rewrite any field, including forging <code>lastMessage</code> independent of the real message log.</td></tr>
-          <tr><td>Account deletion, client-side</td><td>Best-effort delete of owned documents, then <code>user.delete()</code>. Deliberately not a Cloud Function &mdash; that would force the Blaze plan and a card on file. Non-atomic, and correct at this scale.</td></tr>
-          <tr><td>Remove the dead <code>user_preferences</code> rules</td><td>Rules exist for a collection no code ever touches.</td></tr>
+          <tr><td>Data model</td><td><a href="../02-architecture/data-model.html#users">users</a>, <a href="../02-architecture/data-model.html#events">events</a>, <a href="../02-architecture/data-model.html#threads">directThreads</a>, <a href="../02-architecture/data-model.html#dead-collection">the dead <span class="fname">user_preferences</span> ruleset</a></td></tr>
+          <tr><td>Services</td><td><a href="../03-services/firebase.html">Firebase</a> <span class="tier tier-t0">T0</span> &middot; <a href="../03-services/github.html">GitHub</a> <span class="tier tier-t0">T0</span> &middot; <a href="../03-services/linear.html">Linear</a> <span class="tier tier-t0">T0</span></td></tr>
+          <tr><td>Conventions</td><td><a href="../02-architecture/conventions.html">Conventions</a> gains its first enforceable rule: strict-casts on, no new unchecked casts.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small"><strong>Services:</strong> <a href="../03-services/app-check.html">Firebase App Check</a> gets set up here.</p>
+
+    <h3>The work &mdash; 14 issues</h3>
+    <ul class="todo">
+      <li>Restrict the <span class="fname">/users</span> read rule to authenticated users <span class="tier tier-t0">T0</span></li>
+      <li>Constrain the <span class="fname">channelPosts</span> update rule to <span class="fname">likeIds</span> only <span class="tier tier-t0">T0</span></li>
+      <li>Add field-shape validation and lock <span class="fname">accountType</span> in the users write rules <span class="tier tier-t0">T0</span></li>
+      <li>Remove the missing-thread read escape hatch on direct messages <span class="tier tier-t0">T0</span></li>
+      <li>Validate client-supplied timestamps against <span class="fname">request.time</span> <span class="tier tier-t0">T0</span></li>
+      <li>Harden <span class="fname">storage.rules</span> and <span class="fname">storage-cors.json</span> <span class="tier tier-t0">T0</span></li>
+      <li>Delete the dead <span class="fname">user_preferences</span> rules block <span class="tier tier-t0">T0</span></li>
+      <li>Write <span class="fname">startAt</span> and <span class="fname">endAt</span> as non-null and remove the unchecked cast <span class="tier tier-t0">T0</span></li>
+      <li>Create <span class="fname">test/</span> and add Firestore rules tests for every rule changed in M1 <span class="tier tier-t0">T0</span></li>
+      <li>Add unit tests for goal period rollover and completion math <span class="tier tier-t0">T0</span></li>
+      <li>Turn on <span class="fname">strict-casts</span> and fix every cast it breaks <span class="tier tier-t0">T0</span></li>
+      <li>Deploy the tightened rules and record who owns the Firebase console <span class="tier tier-t0">T0</span></li>
+      <li>Set the GitHub repo up as the source of record <span class="tier tier-t0">T0</span></li>
+      <li>Set up the Linear ForgeAlt project, milestones, and labels <span class="tier tier-t0">T0</span></li>
+    </ul>
+
+    <h3>Risks &mdash; what could make this bigger than it looks</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Tightening <span class="fname">/users</span> breaks screens you didn't expect</td><td>Search, friend lists, gym member lists, avatars and the social page all read user docs. The app only reads them while signed in, so an <span class="fname">if request.auth != null</span> floor <em>should</em> be invisible &mdash; but field-level gating of <span class="fname">email</span>/<span class="fname">contactInfo</span> is a bigger change and may need a public-safe projection.</td></tr>
+          <tr><td>The rules test harness is new ground</td><td>There is no <span class="fname">test/</span> directory at all and no CI. Standing up <span class="fname">@firebase/rules-unit-testing</span> against the emulator is its own half-day before the first assertion is written.</td></tr>
+          <tr><td><span class="fname">strict-casts</span> may surface more than the four known casts</td><td>The analyzer has been configured to find nothing (<span class="fname">flutter_lints</span> only). Turning it on is the first honest measurement of the codebase and the count is genuinely unknown until you run it.</td></tr>
+          <tr><td>Fixing nullable <span class="fname">startAt</span> may need a data migration</td><td>Events already written without a start time exist in the live project. Deciding between backfill, defaulting, or skipping them is a product call, not just a code change.</td></tr>
+          <tr><td>Rules tests will contradict the app</td><td>Expect at least one place where the app already relies on a permission that shouldn't exist. That is the point, but it turns a rules issue into an app issue mid-milestone.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section id="m2">
-    <h2>M2 &mdash; Ship-ready identity <span class="tier tier-t1">T1 Before first user</span></h2>
-    <p><strong>Goal:</strong> make the app something a stranger can legally and technically install.</p>
+    <h2>M2 &mdash; Make "done" true <span class="tier tier-t0">T0 Now</span> <span class="pill pill-bad">L</span></h2>
 
-    <h3>Definition of done</h3>
-    <ul class="todo">
-      <li>Real bundle IDs on Android and iOS, with Firebase apps re-registered and config regenerated.</li>
-      <li>App name, icon, and <code>web/index.html</code> are branded &mdash; no "A new Flutter project."</li>
-      <li>A privacy policy is published at a public URL.</li>
-      <li>An Android internal-testing track is live.</li>
-      <li>A branded web build is deployed and shareable by link.</li>
-    </ul>
+    <div class="onesentence">Kill every surface that looks finished and isn't, so that "the app works" becomes a true sentence rather than a demo-shaped one.</div>
 
     <div class="callout warn">
-      <p><strong>Do the bundle ID once and deliberately.</strong> Both platforms still carry the Flutter scaffold default <code>com.example.*</code>, which Google Play rejects outright. The application id can never be changed after first publish, and changing it now means re-registering the Firebase apps and regenerating <code>google-services.json</code>, <code>GoogleService-Info.plist</code> and <code>firebase_options.dart</code>. Suggested: <code>com.alpfit.forge</code>.</p>
+      <strong>Why this is a milestone and not polish.</strong> A grep for TODO across <span class="fname">lib/</span> returns two hits, both in dead code. The incompleteness here is invisible to tooling &mdash; it's hardcoded names in a filter popup, four sections that are <span class="fname">const []</span> by construction, a button whose body is a comment, and an RSVP chip that animates convincingly and writes nothing. These are the first things a beta tester touches.
     </div>
+
+    <h3>Definition of done</h3>
+    <ul>
+      <li>The calendar filter popup lists your real friends and real joined gyms, and unchecking one removes those events from the visible calendar.</li>
+      <li>Tapping an item in the Create hub opens a detail sheet with that item's real data &mdash; the string "when connected to your data" does not exist in the repo.</li>
+      <li>Tapping Attend on an event-invite DM, force-quitting the app, and reopening it shows Attend still selected, and the event owner can see the response.</li>
+      <li>Typing a comment in the feed and pressing <strong>Done</strong> posts it. (Today only the keyboard's submit action posts; Done discards.)</li>
+      <li>A channel post's author can delete their own post and their own comments without being the gym.</li>
+      <li>A profile save that fails shows an error and leaves the form dirty &mdash; no <span class="fname">catch (_) {}</span> remains in <span class="fname">profile_page.dart</span>.</li>
+      <li>Zero 0-byte <span class="fname">.dart</span> files remain in <span class="fname">lib/</span>: each of the 21 is either implemented or deleted, with the choice recorded.</li>
+      <li>The four stale status markdown files are deleted or replaced with a one-line pointer to this docs site.</li>
+      <li>A workout event saved with per-set reps and weight renders those weights when reopened from the calendar.</li>
+      <li>Editing a goal's name no longer resets <span class="fname">currentCheckupsCompleted</span> or clears <span class="fname">periodHistory</span>.</li>
+      <li>No screen renders Firebase CLI instructions to an end user.</li>
+      <li>Each fix above has at least one test or one written manual verification step in the issue.</li>
+    </ul>
 
     <h3>What's in it</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Work</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Area</th><th>Detail</th></tr></thead>
         <tbody>
-          <tr><td>Rebrand bundle IDs</td><td>Android <code>applicationId</code> and iOS <code>PRODUCT_BUNDLE_IDENTIFIER</code>. Re-register both Firebase apps.</td></tr>
-          <tr><td>App name, icon, web branding</td><td><span class="fname">web/index.html</span> still says "forge_senior_project_version" and "A new Flutter project" &mdash; on the one platform that has actually been deployed.</td></tr>
-          <tr><td>Privacy policy</td><td>Mandatory for Play, and for Apple later. Can live in <code>docs/</code> and be served by Cloudflare Pages.</td></tr>
-          <tr><td>Play Console setup</td><td>$25 one-time. Internal testing track needs no review wait. See the <a href="../03-services/google-play.html">runbook</a>.</td></tr>
-          <tr><td>Back up the upload keystore</td><td>Somewhere that is not the repository.</td></tr>
+          <tr><td>Features</td><td><a href="../01-product/features.html#must">Calendar source filtering, event detail preview, event RSVP, feed comments, gym post moderation basics</a> &mdash; all currently listed as built-but-hollow</td></tr>
+          <tr><td>Architecture</td><td><a href="../02-architecture/overview.html#dead-scaffold">The dead scaffold</a> &mdash; the empty <span class="fname">core/</span> tree and the empty feed MVVM layer get resolved here, one way or the other</td></tr>
+          <tr><td>Decisions proved</td><td><a href="../01-product/decisions.html#proposed">D5 <span class="tag tag-proposed">PROPOSED</span></a> &mdash; if persisting RSVP and wiring the calendar filter with <span class="fname">setState</span> is painful, this milestone is the evidence that reopens the Riverpod question</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small"><strong>Services:</strong> <a href="../03-services/google-play.html">Google Play Console</a> ($25 one-time, the only spend in the plan at this stage).</p>
+
+    <h3>The work &mdash; 13 issues</h3>
+    <ul class="todo">
+      <li>Wire the calendar filter popup to real friends, gyms, and self <span class="tier tier-t0">T0</span></li>
+      <li>Replace the Create hub detail stub with a real event detail sheet <span class="tier tier-t0">T0</span></li>
+      <li>Persist Attend/Decline RSVP on event-invite DMs <span class="tier tier-t0">T0</span></li>
+      <li>Fix the feed comment sheet so the Done button posts the comment <span class="tier tier-t0">T0</span></li>
+      <li>Let post and comment authors delete their own content <span class="tier tier-t0">T0</span></li>
+      <li>Stop swallowing profile save failures <span class="tier tier-t0">T0</span></li>
+      <li>Fill or delete the 21 zero-byte Dart files <span class="tier tier-t0">T0</span></li>
+      <li>Fill or remove the four permanently-empty Create hub sections <span class="tier tier-t0">T0</span></li>
+      <li>Delete the dead code, the dead buttons, and the four stale status docs <span class="tier tier-t0">T0</span></li>
+      <li>Replace the Firebase CLI error screen with a real error state <span class="tier tier-t0">T0</span></li>
+      <li>Fix the exercise set round-trip so weights survive save and reload <span class="tier tier-t0">T0</span></li>
+      <li>Stop goal edits from wiping <span class="fname">periodHistory</span> <span class="tier tier-t0">T0</span></li>
+      <li>Show a pending state after a friend request is sent <span class="tier tier-t0">T0</span></li>
+    </ul>
+
+    <h3>Risks &mdash; what could make this bigger than it looks</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>The calendar filter is not a UI fix</td><td><span class="fname">_filterStates</span> is never read by any query. Making it real means threading filter state into <span class="fname">_mergeEventStreams</span>, which already fans out 2 listeners per friend and 2 per gym. It is the most likely single issue to double in size.</td></tr>
+          <tr><td>Persisting RSVP means designing a schema that doesn't exist</td><td>There is no attendance field on events. Where responses live (on the event, on the invite DM, or a subcollection), who can write them, and what the inviter sees are all undecided &mdash; and each option needs a rules change on top of M1's work.</td></tr>
+          <tr><td>"Fill or delete" the 21 empty files is a decision, not a task</td><td>Deleting the feed MVVM layer is the honest move under D5, but it deletes the only clean-architecture skeleton in the repo. Expect a real argument with yourself; make the call once and write it in <a href="../01-product/decisions.html">decisions</a>.</td></tr>
+          <tr><td>The four empty hub sections may have no data to show</td><td>"From Your Gyms" and "From Your Friends" require sharing goals and plans across users &mdash; a feature that does not exist and has no rules. Removing the sections is the small fix; building them is a feature.</td></tr>
+          <tr><td>The exercise round-trip fix touches saved data</td><td>The creator writes <span class="fname">setDetails</span> while the reader looks for a top-level <span class="fname">weight</span> that is never written. Existing events are already in the old shape.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section id="m3">
-    <h2>M3 &mdash; Rec center beta <span class="tier tier-t1">T1 Before first user</span></h2>
-    <p><strong>Goal:</strong> real people who are not you are using the app. This is the milestone the whole plan is pointed at.</p>
-    <p>Your <span class="fname">Bigger Rec Manager Meeting</span> notes describe exactly this arrangement: a beta group split into <strong>"The Gym"</strong>, who host their own community and use it to communicate news and events, and <strong>"The User"</strong>, who participate in that community.</p>
+    <h2>M3 &mdash; Ship to a device that isn't his <span class="tier tier-t1">T1 Before first user</span> <span class="pill pill-warn">M</span></h2>
+
+    <div class="onesentence">Turn the project into a real app identity &mdash; real bundle IDs, real signing, real store accounts &mdash; so a build can install on somebody else's phone.</div>
+
+    <div class="callout">
+      <strong>This is the money milestone.</strong> $99/year Apple Developer Program plus $25 one-time Google Play. Do not pay either until M1 and M2 are done &mdash; a store account is worthless while the app you'd upload has a world-readable user table.
+    </div>
 
     <h3>Definition of done</h3>
-    <ul class="todo">
-      <li>The rec center has a gym account with a live community and at least one channel.</li>
-      <li>The gym-approval workflow for joining a community is specified and built.</li>
-      <li>Minimum moderation exists: report a post, and remove a member.</li>
-      <li>At least five people who are not you have signed up, joined, and posted.</li>
-      <li>A feedback channel exists and you have received feedback through it.</li>
+    <ul>
+      <li>Neither <span class="fname">com.example.forge_senior_project_version</span> nor <span class="fname">com.example.forgeSeniorProjectVersion</span> appears anywhere in the repo.</li>
+      <li><span class="fname">flutter build appbundle --release</span> produces an AAB signed with a real upload keystore, and the keystore + its password are stored somewhere that survives losing the laptop.</li>
+      <li><span class="fname">minSdk</span>, <span class="fname">targetSdk</span> and <span class="fname">compileSdk</span> are explicit numbers in <span class="fname">build.gradle.kts</span>, not inherited defaults.</li>
+      <li>The Android home-screen label and the iOS display name both read <strong>Forge</strong>, not the project slug.</li>
+      <li>Firebase Android and iOS apps are re-registered under the new bundle IDs and the regenerated <span class="fname">google-services.json</span> / <span class="fname">GoogleService-Info.plist</span> are committed.</li>
+      <li>One person who is not William has installed the app from TestFlight and signed in.</li>
+      <li>One person who is not William has installed the app from the Play internal testing track and signed in.</li>
+      <li>A deliberately-thrown test crash from a release build appears in the Crashlytics console.</li>
+      <li>App Check is enforced on Firestore and Storage, and an unattested request is rejected.</li>
+      <li>The docs site is live on a Cloudflare Pages URL and rebuilds on push to <span class="fname">main</span>.</li>
     </ul>
 
     <h3>What's in it</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Work</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Area</th><th>Detail</th></tr></thead>
         <tbody>
-          <tr><td><strong>Specify the gym-approval workflow</strong></td><td>Your spec asserts joining "may be instant or require approval, depending on the gym's configuration" &mdash; but this is never specified anywhere and is not built. It needs a gym-side setting, a pending-request state, and a way for the gym to see and act on requests.</td></tr>
-          <tr><td>Minimum viable moderation</td><td>Today a gym owner can delete posts and comments. There is no report, mute, or ban. Report plus remove is the floor for a public community.</td></tr>
-          <tr><td>Gym onboarding flow</td><td>Your spec flags this as "not fully defined at this time." A gym signing up needs a different path than a member.</td></tr>
-          <tr><td>Wire the two dead like/comment stubs</td><td><span class="fname">social_page.dart:1928</span> and <code>:1944</code> are no-op buttons. The functions they need already exist and work in the channel view.</td></tr>
-          <tr><td>Recruit and onboard testers</td><td>Web link is the lowest-friction channel; Android internal testing for anyone who wants the app installed.</td></tr>
+          <tr><td>Services</td><td><a href="../03-services/apple-developer.html">Apple Developer Program</a> <span class="tier tier-t1">T1</span> &middot; <a href="../03-services/google-play.html">Google Play Console</a> <span class="tier tier-t1">T1</span> &middot; <a href="../03-services/app-check.html">Firebase App Check</a> <span class="tier tier-t1">T1</span> &middot; <a href="../03-services/crashlytics.html">Firebase Crashlytics</a> <span class="tier tier-t1">T1</span> &middot; <a href="../03-services/cloudflare-pages.html">Cloudflare Pages</a> <span class="tier tier-t1">T1</span></td></tr>
+          <tr><td>Runbooks</td><td><a href="../05-runbooks/deploy.html">deploy.html</a> becomes executable for the first time &mdash; before M3 the store sections are theory</td></tr>
+          <tr><td>Decisions proved</td><td><a href="../01-product/decisions.html#proposed">D7 <span class="tag tag-proposed">PROPOSED</span></a> &mdash; the rename from <span class="fname">forge_senior_project_version/</span> to <span class="fname">app/</span> belongs here or nowhere, because this is the milestone that rewrites the platform config anyway</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The work &mdash; 10 issues</h3>
+    <ul class="todo">
+      <li>Replace the <span class="fname">com.example.*</span> bundle IDs on iOS and Android <span class="tier tier-t1">T1</span></li>
+      <li>Re-register the Firebase Android and iOS apps under the new bundle IDs <span class="tier tier-t1">T1</span></li>
+      <li>Configure Android release signing with a real upload keystore <span class="tier tier-t1">T1</span></li>
+      <li>Pin the Android SDK levels and fix the platform display names and orientations <span class="tier tier-t1">T1</span></li>
+      <li>Enroll in the Apple Developer Program <span class="tier tier-t1">T1</span></li>
+      <li>Create the Google Play Console account and the internal testing track <span class="tier tier-t1">T1</span></li>
+      <li>Ship the first TestFlight build to a device that isn't William's <span class="tier tier-t1">T1</span></li>
+      <li>Enable Firebase App Check on Firestore and Storage <span class="tier tier-t1">T1</span></li>
+      <li>Add Firebase Crashlytics and verify a forced crash reports <span class="tier tier-t1">T1</span></li>
+      <li>Publish the docs site on Cloudflare Pages <span class="tier tier-t1">T1</span></li>
+    </ul>
+
+    <h3>Risks &mdash; what could make this bigger than it looks</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Apple Developer enrollment is not instant</td><td>Identity verification can take days, and an individual enrollment needs a D-U-N-S number only if you enroll as an organization. Start the enrollment issue before you need it.</td></tr>
+          <tr><td>Changing the bundle ID invalidates the Firebase apps</td><td>New app registrations mean new <span class="fname">appId</span> values, regenerated config files, and a regenerated <span class="fname">firebase_options.dart</span>. Do it once, deliberately, and re-test sign-in on both platforms afterwards.</td></tr>
+          <tr><td>App Check will lock you out of your own app if enforced too early</td><td>Enforce in monitoring mode first, confirm real traffic is attesting, then enforce. Debug providers are needed for simulators and emulators.</td></tr>
+          <tr><td>First TestFlight submission usually fails once</td><td>Missing export compliance answers, missing privacy manifest entries, and unfilled usage descriptions are the standard first three rejections. Budget one round-trip.</td></tr>
+          <tr><td>Cloudflare Pages needs to know the docs live in a subdirectory</td><td>The site is <span class="fname">docs/</span> inside an app repo, not a repo root. Build output directory has to be set explicitly or you deploy an empty site.</td></tr>
+          <tr><td>The D7 rename touches every path in this docs set</td><td>If you do the rename here, do it as its own commit, and fix the paths in <a href="../05-runbooks/local-setup.html">local-setup</a> and <a href="../05-runbooks/deploy.html">deploy</a> in the same one.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="m4">
-    <h2>M4 &mdash; Know when it breaks <span class="tier tier-t2">T2 When it hurts</span></h2>
-    <p><strong>Goal:</strong> stop finding out about bugs by text message. The named threshold for this milestone is exactly that &mdash; <em>the first time a tester reports a bug you didn't already know about.</em></p>
+    <h2>M4 &mdash; Beta-ready <span class="tier tier-t1">T1 Before first user</span> <span class="pill pill-bad">L</span></h2>
+
+    <div class="onesentence">Build the things a user-generated-content social app legally and practically needs before strangers touch it &mdash; account deletion, moderation, a privacy policy, push, and gym approval.</div>
+
+    <div class="callout danger">
+      <strong>Two of these are hard App Store blockers, not nice-to-haves.</strong> Guideline 5.1.1(v) requires in-app account deletion for any app with account creation &mdash; and today <span class="fname">firestore.rules</span> explicitly denies user-doc delete. Guideline 1.2 requires a report/block mechanism for user-generated content &mdash; and <span class="fname">moderation_service.dart</span> is a 0-byte file. Neither one can be argued around in review.
+    </div>
 
     <h3>Definition of done</h3>
-    <ul class="todo">
-      <li>A deliberately-thrown test error from a production build appears in the error tracker.</li>
-      <li>Unit tests cover goal period rollover, recurrence expansion, and plan generation.</li>
-      <li>A Firestore export has been run once and the output verified.</li>
+    <ul>
+      <li>A user can delete their account from inside the app, and afterwards: their auth account is gone, their user doc is gone, their events/goals/plans are gone, their DM threads are gone or anonymised, and their avatar is removed from Storage.</li>
+      <li>Any post, comment, DM, or user profile can be reported from the UI, and the report lands somewhere a human will see it.</li>
+      <li>A blocked user's content disappears for the blocker and they cannot start a new DM thread.</li>
+      <li>A gym owner has a screen listing reported content in their community and can remove it.</li>
+      <li>A privacy policy and terms of service exist at public URLs, are linked from the app, and registration requires an explicit consent check.</li>
+      <li>Registration collects or confirms age eligibility.</li>
+      <li>A DM sent to a backgrounded device produces a push notification on both platforms; the same holds for an event invite and a channel post in a joined gym.</li>
+      <li>A user can turn each notification category off, and the setting survives a reinstall.</li>
+      <li>A gym can configure its community as open or approval-required, and an approval-required gym shows pending join requests it can accept or reject.</li>
+      <li>A user who forgot their password can reset it by email without contacting William.</li>
     </ul>
 
     <h3>What's in it</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Work</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Area</th><th>Detail</th></tr></thead>
         <tbody>
-          <tr><td>Error tracking</td><td><span class="tag tag-proposed">PROPOSED</span> Sentry over Crashlytics, because the beta runs on web and Crashlytics' Flutter web support is poor. See the <a href="../03-services/sentry.html">runbook</a>.</td></tr>
-          <tr><td>Tests on the date math only</td><td>Goal period rollover, recurrence expansion, and plan instance generation are the algorithmically dense functions where an off-by-one silently corrupts a user's streak or duplicates calendar events. Everything else is UI glue not worth a harness.</td></tr>
-          <tr><td>Backup / export</td><td>Prove you can get your data out before you need to. Also the escape hatch for the highest lock-in service in the stack.</td></tr>
+          <tr><td>Features</td><td><a href="../01-product/features.html#must">Account deletion, moderation, gym-approval workflow</a> &mdash; the three <em>Absent</em> must-haves</td></tr>
+          <tr><td>Services</td><td><a href="../03-services/cloud-messaging.html">Firebase Cloud Messaging</a> <span class="tier tier-t1">T1</span> &middot; <a href="../03-services/apple-developer.html">Apple Developer</a> (push capability + review) &middot; <a href="../03-services/cloudflare-pages.html">Cloudflare Pages</a> (hosts the policy URLs)</td></tr>
+          <tr><td>Data model</td><td>New: reports, blocks, join requests, device tokens, notification preferences. All of these need <a href="../02-architecture/data-model.html">data-model</a> entries and rules before they're built.</td></tr>
+          <tr><td>Decision context</td><td><a href="../01-product/decisions.html">D6 <span class="tag tag-decided">DECIDED</span></a> &mdash; real external users are the target, which is exactly why this milestone is T1 work and not paperwork</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small"><strong>Services:</strong> <a href="../03-services/sentry.html">Sentry</a>.</p>
+
+    <h3>The work &mdash; 8 issues</h3>
+    <ul class="todo">
+      <li>Build in-app account deletion with a full data cascade <span class="tier tier-t1">T1</span></li>
+      <li>Add report and block across posts, comments, DMs, and profiles <span class="tier tier-t1">T1</span></li>
+      <li>Give gym owners a moderation queue and takedown tooling <span class="tier tier-t1">T1</span></li>
+      <li>Publish the privacy policy and terms and gate registration on consent and age <span class="tier tier-t1">T1</span></li>
+      <li>Wire Firebase Cloud Messaging for DMs, invites, and channel posts <span class="tier tier-t1">T1</span></li>
+      <li>Add notification preferences and the OS permission prompt <span class="tier tier-t1">T1</span></li>
+      <li>Add gym join approval so a gym can accept or reject members <span class="tier tier-t1">T1</span></li>
+      <li>Add password reset and email verification <span class="tier tier-t1">T1</span></li>
+    </ul>
+
+    <h3>Risks &mdash; what could make this bigger than it looks</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Client-side account deletion cannot delete other people's data</td><td>Your uid appears in other users' <span class="fname">friendIds</span>, in gym <span class="fname">memberUserIds</span>, in DM threads, and as <span class="fname">authorUid</span> on posts. Rules currently permit only narrow cross-user diffs. Doing this without Cloud Functions is possible but has to be designed, and Functions requires the Blaze plan &mdash; a card on file. This is the single most likely item in the plan to force a service decision you've deferred.</td></tr>
+          <tr><td>FCM on iOS needs an APNs key from the Apple account</td><td>Push is blocked on M3 being finished, not just started. An APNs auth key, the push capability, and a real provisioning profile are all prerequisites.</td></tr>
+          <tr><td>"Moderation" is undefined in every source document</td><td>Your own notes say community management workflows are "not yet fully defined." Before writing code, write down the smallest version: report &rarr; gym owner sees it &rarr; gym owner removes it. Resist appeals, bans, and auto-filtering.</td></tr>
+          <tr><td>A privacy policy is a real document about real data</td><td>You store emails, contact info, DMs, photos, and gym membership. A template will not accurately describe that without editing. It also has to state the deletion path you just built.</td></tr>
+          <tr><td>Gym approval changes an existing join flow</td><td><span class="fname">addGym</span> joins instantly today and only the kick half exists. Adding approval means a pending state that both sides can see, and a rules change that M1 will already have tightened.</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section id="m5">
-    <h2>M5 &mdash; Earned features <span class="tier tier-t2">T2 When it hurts</span></h2>
-    <p><strong>Goal:</strong> build what the beta proved was needed &mdash; and nothing that it didn't.</p>
-    <div class="callout">
-      <p><strong>Nothing in this milestone starts until M3 feedback ranks it.</strong> That is the entire point of the milestone. This is a candidate pool, not a commitment, and it is expected to be mostly wrong until real users weigh in.</p>
+    <h2>M5 &mdash; The Rec Center beta <span class="tier tier-t1">T1 Before first user</span> <span class="pill pill-warn">M</span></h2>
+
+    <div class="onesentence">Actually run the beta &mdash; get real people into a community that isn't empty, keep a feedback channel open, and measure the one metric that says whether the thesis holds.</div>
+
+    <div class="callout warn">
+      <strong>The cold start is the product risk, not a marketing detail.</strong> Forge's value is a populated gym community. The first ten users open the app, see an empty channel, and leave. Nothing in any source document addresses this. Seeding content is a build task in this milestone, not something to improvise on launch day.
     </div>
 
-    <h3>Candidate pool</h3>
+    <h3>Definition of done</h3>
+    <ul>
+      <li>A brand-new user who installs the app is, within their first session, a member of the BYU-I Rec Center community without having to search for it.</li>
+      <li>The Rec Center community has named channels and at least a week of real posts before the first tester is invited.</li>
+      <li>There is a way to send feedback from inside the app that reaches William without him asking for it.</li>
+      <li>Five or more non-William users have signed up, joined the rec center's community, and posted &mdash; and everything they did is still there the next time they open the app. <span class="small muted">(The success bar from <a href="../01-product/vision.html#success">vision.html</a>.)</span></li>
+      <li>The number above is recorded from actual data, not estimated.</li>
+      <li>A written beta runbook exists covering recruiting, install support, what to do when someone reports a bug, and how the beta ends.</li>
+    </ul>
+
+    <h3>What's in it</h3>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Candidate</th><th>What would justify it</th></tr></thead>
+        <thead><tr><th>Area</th><th>Detail</th></tr></thead>
         <tbody>
-          <tr><td>Push notifications (FCM)</td><td>Retention is the problem worth solving. Several features in your notes assume notifications exist.</td></tr>
-          <tr><td>Groups</td><td>Testers ask for a way to share with a subset of friends. Listed as a must-have in one requirements doc but never built.</td></tr>
-          <tr><td>Active-workout screen</td><td>Testers actually work out with the app open. A spec already exists: timer, current set and exercise, adjust on the fly, Poppins with no bold.</td></tr>
-          <tr><td>Feed widget editor</td><td>Testers complain the feed shows the wrong things. Note the existing widget grid spec has overlapping coordinates and needs redesign first.</td></tr>
-          <tr><td>Typed models</td><td>A field-rename bug actually bites. Add types feature-by-feature, not as a sweep.</td></tr>
-          <tr><td>iOS release</td><td>Testers are iPhone-heavy. Costs $99/year &mdash; see the <a href="../03-services/apple-developer.html">runbook</a>.</td></tr>
+          <tr><td>Product</td><td><a href="../01-product/vision.html#success">What success looks like at beta</a> &mdash; the two-role gym/user cohort from the Rec Manager meeting</td></tr>
+          <tr><td>Services</td><td><a href="../03-services/apple-developer.html">TestFlight</a> and <a href="../03-services/google-play.html">Play internal testing</a> carry the distribution; <a href="../03-services/crashlytics.html">Crashlytics</a> is how you find out a tester crashed without them telling you</td></tr>
+          <tr><td>Source context</td><td><a href="../00-source/contradictions.html">The Rec Manager meeting note</a> is the only stakeholder record that exists, and it is an ask-list, not a set of agreed requirements &mdash; treat the arrangement as unconfirmed until someone at the Rec Center says yes in writing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The work &mdash; 5 issues</h3>
+    <ul class="todo">
+      <li>Build first-run onboarding that lands a new user in a gym community <span class="tier tier-t1">T1</span></li>
+      <li>Seed the Rec Center community with channels and starter content <span class="tier tier-t1">T1</span></li>
+      <li>Add an in-app feedback path that reaches William <span class="tier tier-t1">T1</span></li>
+      <li>Measure and record the beta success metric from vision.html <span class="tier tier-t1">T1</span></li>
+      <li>Write the beta operations runbook <span class="tier tier-t1">T1</span></li>
+    </ul>
+
+    <h3>Risks &mdash; what could make this bigger than it looks</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Risk</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>The Rec Center has never actually agreed to anything</td><td>The only stakeholder document is an agenda of things you wanted <em>from</em> them. There is no record of what they said. If they say no, M5 needs a different gym and the milestone is unblocked but delayed.</td></tr>
+          <tr><td>Seeding content needs a gym account someone will keep posting from</td><td>A seeded community that stops updating on day three is worse than none. Decide who posts and how often before recruiting testers.</td></tr>
+          <tr><td>Measuring the metric may need instrumentation you don't have</td><td>There is no analytics of any kind. Counting signups, joins and posts from Firestore by hand is fine for five users and stops being fine quickly &mdash; but adding an analytics service is a <a href="#not-in-plan">deferred</a> item, so plan to count manually.</td></tr>
+          <tr><td>Feedback volume is a support load on one person</td><td>A dozen testers generate more messages than you expect. The runbook exists so you can say "known, tracked, not now" instead of fixing everything live.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="sequencing">
-    <h2>Why this order</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Something runnable already exists</h3>
-        <p>The usual reason to sequence carefully &mdash; getting to a running app fast &mdash; is already satisfied. That frees the sequence to optimize for safety instead.</p>
-      </div>
-      <div class="card">
-        <h3>Security before identity</h3>
-        <p>M1 comes before M2 because there is no point making the app installable while its data layer leaks emails. Getting installed is what creates the exposure.</p>
-      </div>
-      <div class="card">
-        <h3>Identity before beta</h3>
-        <p>M2 before M3 because <code>com.example.*</code> cannot be distributed, and a beta with no privacy policy is a beta you have to redo.</p>
-      </div>
-      <div class="card">
-        <h3>Proposals deferred behind proof</h3>
-        <p>The iOS question sits in M5, behind the beta that answers it. The error-tracker choice sits in M4, after the beta reveals whether the surface is web or mobile.</p>
-      </div>
+  <section id="m6">
+    <h2>M6 &mdash; When it hurts <span class="tier tier-t2">T2 When it hurts</span> <span class="pill">S&ndash;L</span></h2>
+
+    <div class="onesentence">Scale, cost and typing work that is genuinely needed &mdash; but only after a named threshold fires, and not one day earlier.</div>
+
+    <div class="callout">
+      <strong>Do not start any of these because they feel overdue.</strong> Each row below has a trigger. If the trigger hasn't fired, the work is premature and the time is better spent on M2. Check the trigger, then start.
+    </div>
+
+    <h3>Definition of done</h3>
+    <p class="muted">There isn't one at the milestone level, because M6 is not a milestone you complete &mdash; it's a queue you pull from when a threshold fires. Each issue below carries its own trigger and its own done condition.</p>
+
+    <h3>The work &mdash; 5 issues, each gated</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Issue</th><th>Trigger that starts it</th><th>Done when</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Replace in-memory search with an indexed prefix query</td>
+            <td><strong>100 user documents exist.</strong> Search is <span class="fname">limit(100)</span> plus an in-memory <span class="fname">contains()</span>; user 101 is silently unfindable.</td>
+            <td>A user created after the 100th can be found by name, proven by a test that seeds 150 users.</td>
+          </tr>
+          <tr>
+            <td>Cut the calendar's listener fan-out and N+1 fetches</td>
+            <td><strong>Firestore reads pass $25/month</strong>, or a single user has 20+ friends and gyms combined.</td>
+            <td>Opening the calendar with 20 friends opens a bounded number of listeners, measured in the Firebase usage console before and after.</td>
+          </tr>
+          <tr>
+            <td>Replace the N+1 friend, gym, and member fetches with batched reads</td>
+            <td>Same billing trigger as above, or a visible load delay on the profile screen.</td>
+            <td>Loading a 30-friend list issues a bounded number of reads instead of 30 sequential ones.</td>
+          </tr>
+          <tr>
+            <td>Introduce typed models and Firestore converters beyond <span class="fname">Goal</span></td>
+            <td><strong>A data-shape bug reaches a beta user.</strong> Everything except <span class="fname">Goal</span> is an untyped <span class="fname">Map&lt;String, dynamic&gt;</span>; the exercise round-trip bug in M2 is exactly the class of failure this prevents.</td>
+            <td><span class="fname">Event</span> at minimum has a model class with <span class="fname">fromJson</span>/<span class="fname">toJson</span> and a converter, with tests.</td>
+          </tr>
+          <tr>
+            <td>Decide the monetization model</td>
+            <td><strong>Three separate gyms ask for something a free tier can't do.</strong> <a href="../01-product/decisions.html">D8 <span class="tag tag-deferred">DEFERRED</span></a>. The entire signal in ~20 source documents is one sentence about a paid premium gym tier.</td>
+            <td>A written decision exists naming what is paid, who pays, and through which provider &mdash; or a written decision to stay free.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Risks</h3>
+    <p class="muted">The only real risk in M6 is starting it early. Every item here is a legitimate improvement, which is exactly what makes it tempting before its trigger. The search fix in particular reads as urgent and is not &mdash; until the hundredth user exists, it is invisible.</p>
+  </section>
+
+  <section id="not-in-plan">
+    <h2>Not in any milestone</h2>
+    <p>Deliberately out of scope. Nothing here was forgotten &mdash; each row has the trigger that would put it back on the board.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Deferred scope</th><th>Status</th><th>Trigger that would revive it</th></tr></thead>
+        <tbody>
+          <tr><td>Web, macOS, Windows, Linux targets</td><td><span class="tag tag-deferred">DEFERRED</span> <span class="small faint">(D3)</span></td><td>A gym admin asks to moderate from a desktop browser. The scaffolds exist because Flutter generates them, not because a user asked; Linux currently throws <span class="fname">UnsupportedError</span> at startup.</td></tr>
+          <tr><td>Friend groups</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-deferred">DEFERRED</span></td><td>Beta feedback ranks it above something already in M2/M4. A must-have in one requirements doc and a stretch item in another; no model, collection, rules, or UI exists.</td></tr>
+          <tr><td>API gateway rewrite (lightweight client, storage abstracted)</td><td><span class="tag tag-deferred">DEFERRED</span> <span class="small faint">(D1)</span></td><td>A second client that isn't Flutter, or Firestore read cost past $25/month. Declared as a future direction in your own notes, which makes the current architecture known-provisional rather than wrong.</td></tr>
+          <tr><td>Cloud Functions / Firebase Blaze plan</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Server-side logic becomes unavoidable &mdash; most likely the account-deletion cascade in M4, or FCM fan-out at volume. Requires a card on file. <strong>Watch this one:</strong> M4 may force it.</td></tr>
+          <tr><td>Monetization of any kind</td><td><span class="tag tag-deferred">DEFERRED</span> <span class="small faint">(D8)</span></td><td>Three separate gyms ask for something a free tier can't do. Tracked as an M6 issue so it has a home, not because it's scheduled.</td></tr>
+          <tr><td>The trainer platform</td><td><span class="pill pill-bad">Cut</span> <span class="small faint">(D4)</span></td><td><strong>None.</strong> This is cut, not deferred. AlpFit's three-platform ambition is reduced to the consumer app plus the gym account type that already exists inside it.</td></tr>
+          <tr><td>Separate "gym software" product</td><td><span class="pill pill-bad">Cut</span> <span class="small faint">(D4)</span></td><td><strong>None.</strong> Gym capability lives as an account type in Forge.</td></tr>
+          <tr><td>Riverpod / Bloc / DI framework migration</td><td><span class="tag tag-proposed">PROPOSED</span> to skip <span class="small faint">(D5)</span></td><td>A second developer joins, or M2 proves a screen is genuinely untestable without it. Recommended twice in old docs, adopted zero times.</td></tr>
+          <tr><td>Live in-progress workout screen (timer, current set)</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A beta user asks for it. It has a 54-word spec in one orphan document and appears in no requirements list &mdash; the largest unattributed scope in the corpus.</td></tr>
+          <tr><td>Movement database, max tracking, movement insights, gym map discovery</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Nothing in the current plan. These appear only in the earliest brain-dump document and were silently dropped by every later doc. They also sit close to the anti-scope line: Forge does not compete on workout programming.</td></tr>
+          <tr><td>GitHub Actions CI beyond build + test</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A second developer, or the first time a broken build reaches a tester. The guardrail is "does it build and do the tests pass" &mdash; nothing more.</td></tr>
+          <tr><td>Analytics, A/B testing, Remote Config</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Enough users that behavioural questions can't be answered by asking them directly. At five beta users, ask them.</td></tr>
+          <tr><td>Separate staging Firebase project</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>The first time a test wipes real user data.</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
-    <ol>
-      <li><strong>Edit this table.</strong> Rewrite the six rows in one pass &mdash; rename them, reorder them, cut one. It is expected.</li>
-      <li>Confirm the three <span class="tag tag-proposed">PROPOSED</span> calls in the <a href="../01-product/decisions.html">decision log</a>, especially whether iOS should be deferred.</li>
-      <li>Start <strong>M0</strong>. It is an afternoon of deleting things, and it makes everything after it trustworthy.</li>
+    <ol class="steps">
+      <li><strong>Rewrite the table.</strong> Open <a href="#table">the summary table</a>, change the order, sizes and names to match how you actually want to work. Do that before any issue is created, because the issues inherit the milestone.</li>
+      <li><strong>Then start exactly one issue:</strong> "Restrict the <span class="fname">/users</span> read rule to authenticated users." It is the smallest issue in M1 and it closes the highest-severity item in the project. <span class="verify">Verify by opening the Firestore rules playground and confirming an unauthenticated read of a user doc is denied.</span></li>
+      <li>Leave every row in <a href="#not-in-plan">Not in any milestone</a> alone until its trigger fires. If you find yourself wanting to start one, that's the signal to re-read its trigger, not to start it.</li>
     </ol>
+    <p class="small muted">Related: <a href="../01-product/features.html">features</a> &middot; <a href="../01-product/decisions.html">decisions</a> &middot; <a href="../03-services/index.html">service map</a> &middot; <a href="../05-runbooks/local-setup.html">local setup</a> &middot; <a href="../index.html">docs hub</a></p>
   </section>
 
 </main>

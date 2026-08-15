@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Forge by AlpFit — Docs</title>
+<link rel="stylesheet" href="assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#status">Status &amp; next action</a>
+    <a href="#read-first">Read these first</a>
+    <a href="#milestones">Milestones</a>
+    <a href="#proposed">Needs your eye</a>
+    <a href="#everything">Every page</a>
+    <a href="#next">What to do next</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb">Forge docs</div>
+    <h1>Forge by AlpFit</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the front door to every planning document for Forge. Start at the status block, take the one next action, and use the link grid at the bottom to reach any page in one click.</div>
+  </header>
+
+  <section id="status">
+    <h2>Where the project stands</h2>
+
+    <div class="onesentence">Forge is a consumer mobile app (iOS + Android) for planning workouts <em>socially</em> around a physical gym &mdash; you join the community your gym hosts, add friends, and plan workouts together on a shared calendar. The thesis is that gym intimidation is a social problem, not a fitness one.</div>
+
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Is it built?</td>
+            <td><span class="pill pill-good">Substantially</span> &mdash; 58 Dart files, ~16,300 lines. Auth, feed, calendar with recurrence, event CRUD, goals, plans, friend requests, gym channels and DMs all run on live Firestore.</td>
+          </tr>
+          <tr>
+            <td>Is it shippable?</td>
+            <td><span class="pill pill-bad">No</span> &mdash; the entire user table is world-readable without authentication, there are zero tests, both bundle IDs are <span class="fname">com.example.*</span>, and release builds are signed with debug keys.</td>
+          </tr>
+          <tr>
+            <td>What's the actual risk?</td>
+            <td>Several screens look finished and aren't. A grep for <span class="fname">TODO</span> returns two hits, both in dead code &mdash; so the incompleteness is invisible to tooling and only visible by reading. See <a href="01-product/features.html">features</a>.</td>
+          </tr>
+          <tr>
+            <td>Who is it for, first?</td>
+            <td>A beta at the BYU-I Rec Center &mdash; real external users, which is what makes account deletion, moderation and a privacy policy real work rather than paperwork.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout danger">
+      <strong>The single next action:</strong> restrict the <span class="fname">/users</span> read rule in <span class="fname">firestore.rules</span> to authenticated users. Right now it says <span class="fname">allow read: if true</span>, which means every user's email, contact info, friend list and gym list is readable by anyone with the project id, signed in or not. It is the smallest issue in <a href="04-plan/milestones.html#m1">Milestone 1</a> and the highest-severity item in the project. Nothing else should start before it.
+    </div>
+  </section>
+
+  <section id="read-first">
+    <h2>Read these first &mdash; 15 minutes</h2>
+    <p>If you only have a quarter of an hour, these four in this order:</p>
+    <ol class="remember3">
+      <li><a href="01-product/vision.html"><strong>Vision</strong></a> &mdash; what Forge is, who it's for, and what's deliberately out of scope. Everything else reads as arbitrary without it.</li>
+      <li><a href="04-plan/milestones.html"><strong>Milestones</strong></a> &mdash; the whole plan in one table at the top of the page. Read the table; skip the detail until you're starting a milestone.</li>
+      <li><a href="01-product/features.html"><strong>Features</strong></a> &mdash; what is genuinely built versus what looks built. The page that stops you demoing a fake screen.</li>
+      <li><a href="01-product/decisions.html"><strong>Decisions</strong></a> &mdash; the ten standing calls and which of them are still open. Read before proposing a rewrite of anything.</li>
+    </ol>
+    <p class="small muted">Onboarding a second person? Use the longer reading order in <a href="05-runbooks/onboarding.html">onboarding.html</a> instead.</p>
+  </section>
+
+  <section id="milestones">
+    <h2>The plan</h2>
+    <p>Six milestones in dependency order. Full detail, definitions of done, and risks: <a href="04-plan/milestones.html">04-plan/milestones.html</a>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>#</th><th>Milestone</th><th>Tier</th><th>Goal</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><a href="04-plan/milestones.html#m1">M1</a></td>
+            <td><strong>Lock the doors</strong></td>
+            <td><span class="tier tier-t0">T0</span></td>
+            <td>Close the security holes, fix the crash path, stand up the first tests. Nothing ships before this.</td>
+          </tr>
+          <tr>
+            <td><a href="04-plan/milestones.html#m2">M2</a></td>
+            <td><strong>Make "done" true</strong></td>
+            <td><span class="tier tier-t0">T0</span></td>
+            <td>Kill the hollow surfaces so "the app works" becomes a true sentence.</td>
+          </tr>
+          <tr>
+            <td><a href="04-plan/milestones.html#m3">M3</a></td>
+            <td><strong>Ship to a device that isn't his</strong></td>
+            <td><span class="tier tier-t1">T1</span></td>
+            <td>Real bundle IDs, real signing, store accounts, TestFlight and Play internal testing.</td>
+          </tr>
+          <tr>
+            <td><a href="04-plan/milestones.html#m4">M4</a></td>
+            <td><strong>Beta-ready</strong></td>
+            <td><span class="tier tier-t1">T1</span></td>
+            <td>Account deletion, report/block/moderation, privacy policy, push, gym approval.</td>
+          </tr>
+          <tr>
+            <td><a href="04-plan/milestones.html#m5">M5</a></td>
+            <td><strong>The Rec Center beta</strong></td>
+            <td><span class="tier tier-t1">T1</span></td>
+            <td>Actually run it &mdash; onboarding, seeded content, a feedback loop, and the success metric.</td>
+          </tr>
+          <tr>
+            <td><a href="04-plan/milestones.html#m6">M6</a></td>
+            <td><strong>When it hurts</strong></td>
+            <td><span class="tier tier-t2">T2</span></td>
+            <td>Scale and cost work, each gated behind a named threshold. Do not start early.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted"><span class="tier tier-t0">T0 Now</span> = needed to build or run at all &middot; <span class="tier tier-t1">T1 Before first real user</span> = needed the moment someone who isn't William touches it &middot; <span class="tier tier-t2">T2 When it hurts</span> = only past a named threshold.</p>
+  </section>
+
+  <section id="proposed">
+    <h2>Needs your eye</h2>
+    <div class="callout warn">
+      <strong>Four <span class="tag tag-proposed">PROPOSED</span> calls are genuine coin-flips, not conclusions.</strong> They were decided one way to keep the plan coherent, and each is where your judgement should override it. Full context and the rest of the decision log: <a href="01-product/decisions.html">01-product/decisions.html</a>.
+      <ul>
+        <li><strong>D5 &mdash; keep <span class="fname">setState</span> + <span class="fname">StreamBuilder</span>; no Riverpod migration.</strong> The most reversible-but-expensive call in the plan. Riverpod was recommended twice in old docs and adopted zero times; a working app doesn't need rewriting for a solo dev. <a href="04-plan/milestones.html#m2">Milestone 2</a> is the evidence that would reopen it.</li>
+        <li><strong>D7 &mdash; rename <span class="fname">forge_senior_project_version/</span> to <span class="fname">app/</span>.</strong> Cheap now, annoying later. The directory name is a daily reminder of a finished class.</li>
+        <li><strong>The milestone table itself.</strong> It is a first pass built from the code, deliberately put at the top of <a href="04-plan/milestones.html#table">the plan page</a> so you can rewrite the whole thing in one edit.</li>
+        <li><strong>Whether M6 exists at all.</strong> Every item in it is gated behind a threshold that has not fired. Cutting it is a defensible call.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="everything">
+    <h2>Every page</h2>
+
+    <h3>00 &mdash; Source</h3>
+    <p class="small muted">The original documents, and what they contradict.</p>
+    <div class="grid">
+      <a class="card hublink" href="00-source/index.html">
+        <div class="t">Source index</div>
+        <div class="d">Every original .docx and status file, catalogued with its era and how much to trust it.</div>
+      </a>
+      <a class="card hublink" href="00-source/contradictions.html">
+        <div class="t">Contradictions ledger</div>
+        <div class="d">Where the notes disagree with themselves or with the code, and how each one was resolved.</div>
+      </a>
+    </div>
+
+    <h3>01 &mdash; Product</h3>
+    <p class="small muted">What Forge is, what it does, and why.</p>
+    <div class="grid">
+      <a class="card hublink" href="01-product/vision.html">
+        <div class="t">Vision</div>
+        <div class="d">The problem, the mission, who it's for, what's out of scope, and what success at beta looks like.</div>
+      </a>
+      <a class="card hublink" href="01-product/features.html">
+        <div class="t">Features</div>
+        <div class="d">Must-have / should-have / someday, each marked with what's actually built versus what only looks built.</div>
+      </a>
+      <a class="card hublink" href="01-product/decisions.html">
+        <div class="t">Decisions</div>
+        <div class="d">The standing calls D1&ndash;D10 with their tags, plus every item still open and its trigger.</div>
+      </a>
+    </div>
+
+    <h3>02 &mdash; Architecture</h3>
+    <p class="small muted">How the app is actually put together, from the code rather than the docs.</p>
+    <div class="grid">
+      <a class="card hublink" href="02-architecture/overview.html">
+        <div class="t">Overview</div>
+        <div class="d">Components, routing, the state-management pattern, and which folders are empty scaffolding.</div>
+      </a>
+      <a class="card hublink" href="02-architecture/data-model.html">
+        <div class="t">Data model</div>
+        <div class="d">Every Firestore collection and field. Only <span class="fname">Goal</span> has a model class, so this page is the schema.</div>
+      </a>
+      <a class="card hublink" href="02-architecture/conventions.html">
+        <div class="t">Conventions</div>
+        <div class="d">How to write code that matches what's here &mdash; including which existing patterns not to copy.</div>
+      </a>
+    </div>
+
+    <h3>03 &mdash; Services</h3>
+    <p class="small muted">Every third-party service, with its trigger tier, cost, and setup steps.</p>
+    <div class="grid">
+      <a class="card hublink" href="03-services/index.html">
+        <div class="t">Service map</div>
+        <div class="d">All nine services at a glance: trigger, cost, lock-in, status. Start here before any individual runbook.</div>
+      </a>
+      <a class="card hublink" href="03-services/firebase.html">
+        <div class="t">Firebase <span class="tier tier-t0">T0</span></div>
+        <div class="d">Auth, Firestore, Storage. The whole backend. Project <span class="fname">forge-by-alpfit</span>.</div>
+      </a>
+      <a class="card hublink" href="03-services/github.html">
+        <div class="t">GitHub <span class="tier tier-t0">T0</span></div>
+        <div class="d">The private repo, collaborator access, and why CI stays minimal.</div>
+      </a>
+      <a class="card hublink" href="03-services/linear.html">
+        <div class="t">Linear <span class="tier tier-t0">T0</span></div>
+        <div class="d">Where the work lives &mdash; the ForgeAlt team, its projects, milestones and issues.</div>
+      </a>
+      <a class="card hublink" href="03-services/app-check.html">
+        <div class="t">Firebase App Check <span class="tier tier-t1">T1</span></div>
+        <div class="d">Attestation on Firestore and Storage. Closes the scraping hole the rules alone can't.</div>
+      </a>
+      <a class="card hublink" href="03-services/cloud-messaging.html">
+        <div class="t">Firebase Cloud Messaging <span class="tier tier-t1">T1</span></div>
+        <div class="d">Push for DMs, event invites and channel posts. <span class="fname">push_service.dart</span> is currently a 0-byte file.</div>
+      </a>
+      <a class="card hublink" href="03-services/crashlytics.html">
+        <div class="t">Firebase Crashlytics <span class="tier tier-t1">T1</span></div>
+        <div class="d">Crash reporting, so a beta tester's crash reaches you without them texting you.</div>
+      </a>
+      <a class="card hublink" href="03-services/apple-developer.html">
+        <div class="t">Apple Developer Program <span class="tier tier-t1">T1</span></div>
+        <div class="d">$99/year. TestFlight, signing, and the two review guidelines that will block submission.</div>
+      </a>
+      <a class="card hublink" href="03-services/google-play.html">
+        <div class="t">Google Play Console <span class="tier tier-t1">T1</span></div>
+        <div class="d">$25 one-time. Internal testing track, upload keystore, and the <span class="fname">com.example.*</span> blocker.</div>
+      </a>
+      <a class="card hublink" href="03-services/cloudflare-pages.html">
+        <div class="t">Cloudflare Pages <span class="tier tier-t1">T1</span></div>
+        <div class="d">Hosts this docs site, built from <span class="fname">docs/</span> on every push to <span class="fname">main</span>.</div>
+      </a>
+    </div>
+
+    <h3>04 &mdash; Plan</h3>
+    <div class="grid">
+      <a class="card hublink" href="04-plan/milestones.html">
+        <div class="t">Milestones</div>
+        <div class="d">Six milestones, each with a definition of done, its issues, and what could make it bigger than it looks. Plus everything deliberately left out, with triggers.</div>
+      </a>
+    </div>
+
+    <h3>05 &mdash; Runbooks</h3>
+    <p class="small muted">Step-by-step operational procedures.</p>
+    <div class="grid">
+      <a class="card hublink" href="05-runbooks/local-setup.html">
+        <div class="t">Local setup</div>
+        <div class="d">Clone to running on a simulator, from zero &mdash; including the verification step that proves it worked.</div>
+      </a>
+      <a class="card hublink" href="05-runbooks/deploy.html">
+        <div class="t">Deploy</div>
+        <div class="d">How a change reaches production: the docs site, the Firestore rules deploy everyone forgets, and the app once M3 unblocks it.</div>
+      </a>
+      <a class="card hublink" href="05-runbooks/onboarding.html">
+        <div class="t">Onboarding</div>
+        <div class="d">What a second person needs on day one &mdash; reading order, access, first task, and the landmines that will mislead them.</div>
+      </a>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li><strong>Do the one thing in the red box above</strong> &mdash; restrict the <span class="fname">/users</span> read rule. It's the smallest issue in <a href="04-plan/milestones.html#m1">M1</a> and it closes the worst problem in the project.</li>
+      <li><strong>Then rewrite the milestone table</strong> at the top of <a href="04-plan/milestones.html#table">04-plan/milestones.html</a>. It was written to be edited in one pass, and the Linear issues inherit whatever it says.</li>
+      <li><strong>Then settle the two <span class="tag tag-proposed">PROPOSED</span> decisions</strong> in <a href="01-product/decisions.html">decisions.html</a> &mdash; D5 (Riverpod or not) and D7 (rename the app directory). Both get more expensive the longer they stay open.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

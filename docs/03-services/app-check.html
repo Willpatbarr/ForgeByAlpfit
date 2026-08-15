@@ -14,15 +14,16 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#what-why">What &amp; why</a>
-    <a href="#adoption-trigger">Adoption trigger</a>
-    <a href="#free-tier">Free tier reality</a>
-    <a href="#setup-steps">Setup steps</a>
-    <a href="#secrets-config">Secrets &amp; config</a>
-    <a href="#escape-hatch">Escape hatch</a>
-    <a href="#cost-scale">Cost &amp; scale</a>
-    <a href="#teammate-delta">Teammate delta</a>
+    <a href="#what-why">1. What &amp; why</a>
+    <a href="#adoption-trigger">2. Adoption trigger</a>
+    <a href="#free-tier">3. Free tier reality</a>
+    <a href="#setup-steps">4. Setup steps</a>
+    <a href="#secrets-config">5. Secrets &amp; config</a>
+    <a href="#escape-hatch">6. Escape hatch</a>
+    <a href="#cost-scale">7. Cost &amp; scale</a>
+    <a href="#teammate-delta">8. Teammate delta</a>
     <a href="#next">What to do next</a>
+    <a href="index.html">&larr; Service map</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -30,135 +31,159 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / Services / App Check</div>
-    <h1>Firebase App Check</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the setup, rollout order, and stakes for App Check — the toggle that closes Forge's open user-directory scraping hole before real users arrive.</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / App Check</div>
+    <h1>Firebase App Check <span class="tag tag-decided">DECIDED</span> <span class="tier tier-t1">T1 Before first real user</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for App Check — the free Firebase feature that makes Firestore and Storage refuse requests that don't come from the genuine Forge app. It is the <em>second</em> lock on the door. <strong>It is not a substitute for fixing <code>allow read: if true</code>, and this page will not let you pretend otherwise.</strong></div>
   </header>
 
   <section id="what-why">
-    <h2>What &amp; why</h2>
-    <p>App Check attests that a request hitting Firestore or Storage came from a genuine, unmodified build of the Forge app, not from a script holding a copied API key. For this app specifically, it closes a hole that exists right now: the web API key lives in <code>lib/firebase_options.dart</code>, is committed to the repo, and is extractable from the deployed web bundle — combined with the fully-open <code>users</code> read rule, anyone with that key can scrape the entire user directory (names, emails, contact info) today.</p>
+    <h2>1. What &amp; why</h2>
+    <p>App Check attests that a request to Firestore or Storage came from an unmodified build of Forge on a genuine device — using Apple's <strong>App Attest</strong> on iOS and Google's <strong>Play Integrity</strong> on Android — and lets the backend reject everything else. For Forge specifically it closes the "someone read the project ID out of the app binary and started scripting against my database" hole, which matters because Forge's Firestore is directly client-facing with no server in front of it.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Alternative considered</th><th>Why it lost</th></tr></thead>
+        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
         <tbody>
-          <tr><td>Do nothing, rely on key secrecy</td><td>The key isn't secret by design — access is meant to be governed by rules, not by hiding it. The as-built audit confirms the open <code>users</code> read rule plus the committed key is a real scraping vector today.</td></tr>
-          <tr><td>Custom server-side request validation</td><td>Would require standing up Cloud Functions, forcing the Blaze pay-as-you-go plan. The plan deliberately avoids Functions.</td></tr>
+          <tr><td><strong>Security rules alone</strong></td><td>Not actually an alternative — it's the layer underneath, and it's mandatory either way. Rules answer "is this user allowed?"; App Check answers "is this even the app?" You need both, and rules come first.</td></tr>
+          <tr><td>An API gateway in front of Firestore</td><td>Would work, and would also mean writing and hosting a server — the exact rewrite <a href="../01-product/decisions.html">D1</a> defers. App Check buys most of the benefit for an afternoon of work and $0.</td></tr>
+          <tr><td>Obfuscating the API key</td><td>Doesn't work. Firebase client config is extractable from any shipped binary by design; hiding it is theatre.</td></tr>
         </tbody>
       </table>
     </div>
-    <p><strong>Why App Check wins:</strong> it's the only fix that closes the hole without standing up a server.</p>
+    <p><strong>Why App Check wins:</strong> it is free, it is first-party, and it is the only thing on the list that reduces attack surface without adding a server.</p>
   </section>
 
   <section id="adoption-trigger">
-    <h2>Adoption trigger</h2>
+    <h2>2. Adoption trigger</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Tier</th><th>Span</th><th>Why this tier</th></tr></thead>
+        <thead><tr><th>Tier</th><th>When</th><th>Why this tier and not another</th></tr></thead>
         <tbody>
           <tr>
-            <td><span class="tier tier-t1">T1 Before first user</span></td>
-            <td>Before Milestone M2/M3 bring in anyone besides William</td>
-            <td>Milestone M1 ("Lock the doors") defines success partly as "App Check enforced on Firestore + Storage." Per the service table: "Closes the scraping hole. Without it, the committed web API key + open rules = the whole user directory is harvestable."</td>
+            <td><span class="tier tier-t1">T1 Before first real user</span></td>
+            <td>Before anyone who isn't him has the app on their phone — i.e. before <strong>M3, Ship to a device that isn't his</strong>, and hard-required by <strong>M4, Beta-ready</strong>.</td>
+            <td>The moment real people's emails and messages are in the database, "anyone with the project ID can script against it" stops being a theoretical finding. It is T1 rather than T0 only because it requires real bundle IDs and store registrations that don't exist yet.</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <div class="callout danger">
+      <strong>Do NOT set this up yet — and here is the specific reason.</strong> App Check enforcement depends on Android <strong>Play Integrity</strong> and iOS <strong>App Attest</strong>, and both are keyed to the app's real package name / bundle ID. Forge is still <code class="fname">com.example.forge_senior_project_version</code> and <code class="fname">com.example.forgeSeniorProjectVersion</code>. Configuring App Check before those are fixed means configuring it twice. <strong>Order: fix the rules (M1) → fix the bundle IDs (M2/M3) → then App Check.</strong>
+    </div>
+    <div class="callout danger">
+      <strong>The trap this page exists to prevent.</strong> App Check does <em>not</em> fix <code>allow read: if true</code> on <code>/users</code>. A rule that permits unauthenticated reads still permits them from an attested app — and getting an attested token is a matter of running the real app. <strong>App Check narrows <em>who can knock</em>. Rules decide <em>what opens</em>. Forge's door is currently unlocked, and App Check is a doorman, not a lock.</strong> Fix the rule first. If only one of the two ever gets done, it must be the rule.
+    </div>
   </section>
 
   <section id="free-tier">
-    <h2>Free tier reality</h2>
+    <h2>3. Free tier reality</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Plan</th><th>Limit</th><th>When exceeded</th></tr></thead>
+        <thead><tr><th>Item</th><th>Cost / limit</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td>Free</td><td>Unlimited</td><td>Not applicable — there is no usage cap to exceed.</td></tr>
-          <tr><td>First paid tier</td><td>App Check itself has none stated. The underlying attestation providers (e.g. reCAPTCHA Enterprise at very high web volume) may carry their own costs: verify at signup.</td><td>—</td></tr>
+          <tr><td><strong>App Check itself</strong></td><td><strong>No cost, on both Spark and Blaze.</strong> It is one of Firebase's always-free products and <strong>does not force a Blaze upgrade.</strong></td><td>n/a — there is no App Check meter</td></tr>
+          <tr><td><strong>Play Integrity API</strong> (Android attestation)</td><td>Default quota <strong>10,000 token requests/day</strong> and 10,000 server-side token decryptions/day. <strong>Classic requests and standard token preparations share one pool</strong> — they are not separate allowances.</td><td>Attestation starts failing. With enforcement on, that means <strong>Android users get denied</strong>. Quota increases require linking a Google Cloud project in Play Console and <strong>can take up to a week to approve</strong> — so request headroom <em>before</em> you need it.</td></tr>
+          <tr><td>Apple App Attest / DeviceCheck</td><td>No published Apple charge; part of the OS.</td><td>—</td></tr>
+          <tr><td>reCAPTCHA Enterprise (web)</td><td>Not needed — <a href="../01-product/decisions.html">D3</a> cuts web as a target.</td><td>—</td></tr>
+          <tr><td>First paid tier</td><td><strong>There isn't one for App Check.</strong> Play Integrity's docs state no pricing at all; whether standard vs classic requests differ in cost is <span class="pill pill-warn">unverified</span> — verify at <a href="https://developer.android.com/google/play/integrity/setup">developer.android.com/google/play/integrity/setup</a>.</td><td>—</td></tr>
         </tbody>
       </table>
     </div>
+    <div class="callout"><strong>No surprise-bill risk.</strong> App Check cannot generate a bill. The failure mode is the opposite: <strong>a quota stop that locks out real users.</strong> 10,000 Play Integrity requests/day is generous for a beta but it is a real ceiling, and unlike a bill it fails closed. Note also that App Check token TTL is a lever — shorter TTLs mean more re-attestation and faster quota burn. Leave the default alone.</div>
   </section>
 
   <section id="setup-steps">
-    <h2>Setup steps</h2>
+    <h2>4. Setup steps</h2>
+    <p class="muted">Nothing here is done. <strong>Prerequisites:</strong> real bundle IDs on both platforms, an <a href="apple-developer.html">Apple Developer Program</a> membership (App Attest needs a real App ID), and a <a href="google-play.html">Play Console</a> app entry (Play Integrity is linked through it). That dependency chain is why this is T1, not T0.</p>
     <ol class="steps">
-      <li>In the Firebase console, open App Check and register each app — Android, iOS, web — against an attestation provider.</li>
-      <li>Android: Play Integrity API as the provider.</li>
-      <li>iOS: DeviceCheck / App Attest as the provider.</li>
-      <li>Web: create a reCAPTCHA Enterprise site key and wire it into the App Check web initialization.</li>
-      <li>Enable the debug provider for local development and generate a debug token. This is the step that trips people up — without it, a local or emulator build cannot reach Firestore at all once App Check is anything but fully open.</li>
-      <li>Add each developer's debug token to the App Check allow-list in the console; a token is per machine, not shared.</li>
-      <li>Deploy Firestore + Storage enforcement in <strong>monitoring/unenforced mode</strong> first — requests are scored but never blocked.</li>
-      <li><span class="verify">Verify:</span> open the App Check metrics tab, confirm the real app's requests show as verified, then only after that flip Firestore + Storage enforcement on.</li>
+      <li><strong>Fix the security rules first.</strong> <code>allow read: if true</code> on <code>/users</code>, unconstrained <code>channelPosts</code> update, no field validation. Do not start this runbook until M1 is closed. App Check on top of open rules is a false sense of safety.</li>
+      <li><strong>Set real bundle IDs</strong> — Android <code>applicationId</code> and iOS bundle identifier, replacing <code class="fname">com.example.*</code>. Re-register both apps in the Firebase console and regenerate <code class="fname">google-services.json</code>, <code class="fname">GoogleService-Info.plist</code>, and <code class="fname">firebase_options.dart</code> with <code>flutterfire configure</code>.</li>
+      <li><strong>Add the package:</strong> <code>flutter pub add firebase_app_check</code>. This is a new dependency — the pubspec currently has 8 direct runtime deps and none of them is this.</li>
+      <li><strong>Android — enable Play Integrity.</strong> Firebase console → App Check → register the Android app with the <strong>Play Integrity</strong> provider. The app must exist in Play Console and be linked to the Firebase project. Add the SHA-256 signing certificate fingerprint of the <em>upload/release</em> key to the Firebase Android app — <strong>this will not work with the debug key the release build is currently signed with</strong>, so the <a href="google-play.html">Play signing work</a> has to land first.</li>
+      <li><strong>iOS — enable App Attest.</strong> Firebase console → App Check → register the iOS app with the <strong>App Attest</strong> provider. In Xcode, add the <em>App Attest</em> capability to the Runner target. Requires iOS 14+ and a real provisioning profile from a paid Apple Developer account.</li>
+      <li><strong>Initialise in Dart</strong>, immediately after <code>Firebase.initializeApp()</code> in <code class="fname">main.dart</code> and <strong>before any Firestore call</strong>: <code>FirebaseAppCheck.instance.activate(appleProvider: AppleProvider.appAttest, androidProvider: AndroidProvider.playIntegrity)</code>. Ordering matters — a Firestore call that fires before activation goes out unattested.</li>
+      <li><strong>Register debug tokens for local development.</strong> In debug builds use <code>AppleProvider.debug</code> / <code>AndroidProvider.debug</code>, read the token the SDK prints to the console, and paste it into Firebase console → App Check → the app → Manage debug tokens. <strong>Without this, enforcing App Check locks him out of his own simulator.</strong></li>
+      <li><strong>Run in monitoring mode for at least a week.</strong> Firebase console → App Check → APIs tab shows the ratio of verified vs unverified requests per API. <strong>Do not enforce until that number is near 100% verified.</strong></li>
+      <li><strong>Enforce, one API at a time:</strong> Cloud Firestore first, then Cloud Storage. Enforcement is per-API and reversible.</li>
+      <li><span class="verify">Verify — three checks, not one:</span>
+        <br>(a) <strong>Positive:</strong> the real app on a real device still reads the feed and uploads an avatar after enforcement is on.
+        <br>(b) <strong>Negative:</strong> hit the Firestore REST endpoint for <code>users/{uid}</code> with <code>curl</code> and the project's web API key, from outside the app, and confirm it is now <strong>rejected</strong>. This is the whole point of the feature; if this call still succeeds, App Check is not doing anything.
+        <br>(c) <strong>Console:</strong> the App Check metrics page shows unverified requests being <em>denied</em> rather than merely counted.</li>
     </ol>
-    <div class="callout warn"><strong>Rollout order matters:</strong> register apps &rarr; run in monitoring/unenforced mode &rarr; check the metrics tab &rarr; only then enforce. Enforcing before monitoring can lock William out of his own app, with no warning it was about to happen.</div>
+    <div class="callout warn"><strong>Painful to change later:</strong> the SHA-256 signing fingerprint registered for Play Integrity is tied to the signing key. If the upload keystore is ever lost or rotated, App Check on Android breaks until the new fingerprint is registered — one more reason the <a href="google-play.html">Android keystore backup</a> matters. Also: <strong>enforcing before older installed builds are updated locks those users out.</strong> With no users yet, now is the cheapest possible moment to turn it on; after the beta it becomes a coordinated rollout.</div>
   </section>
 
   <section id="secrets-config">
-    <h2>Secrets &amp; config</h2>
+    <h2>5. Secrets &amp; config</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Client-safe?</th><th>Local</th><th>Production</th></tr></thead>
+        <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>reCAPTCHA Enterprise site key (web)</td><td>Yes — client-side by design, same category as the Firebase web API key</td><td>Same value used everywhere</td><td>Same value used everywhere</td></tr>
-          <tr><td>Debug token (per developer)</td><td>No — must never ship in a production build</td><td>Kept per developer machine, not committed</td><td>Never present; only listed in the console's debug-token allow-list</td></tr>
-          <tr><td>Play Integrity / DeviceCheck credentials</td><td>Managed by Google Play Console / Apple Developer accounts, not app-side values</td><td>N/A</td><td>N/A</td></tr>
+          <tr><td>App Check provider settings</td><td><span class="pill pill-good">No</span> — console-side configuration, no key file</td><td>Firebase console</td><td>Firebase console</td><td>n/a</td></tr>
+          <tr><td>The <code>activate()</code> call in <code class="fname">main.dart</code></td><td><span class="pill pill-good">No</span> — plain code, commit it</td><td>Committed</td><td>Compiled in</td><td>n/a</td></tr>
+          <tr><td><strong>App Check debug tokens</strong></td><td><span class="pill pill-bad">YES — a real secret.</span> A debug token <strong>bypasses attestation entirely</strong>. Anyone holding one can make requests that look like the genuine app.</td><td>Console-registered; keep in a password manager, <strong>never in the repo</strong> and never in a commit message or screenshot</td><td>Never — debug providers must not ship in a release build</td><td><code>APP_CHECK_DEBUG_TOKEN=</code></td></tr>
+          <tr><td>SHA-256 signing fingerprint</td><td><span class="pill pill-good">No</span> — a public fingerprint, not the key. <span class="faint small">The <em>keystore</em> it derives from is very much a secret.</span></td><td>Firebase console</td><td>Firebase console</td><td>n/a</td></tr>
+          <tr><td>App Attest / Play Integrity keys</td><td><span class="pill pill-good">Not yours to hold</span> — managed by Apple and Google, no file to leak</td><td>—</td><td>—</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
-    <p>App Check itself introduces no server secret — it is a console configuration plus a client SDK call, not a custom backend. The one value that must stay out of any committed file is the debug token: a leaked debug token would let anyone bypass enforcement entirely, defeating the point. If it needs a placeholder anywhere, <code>.env.example</code> should show the variable name only, never a real token.</p>
+    <p><strong>Never commit a real secret.</strong> App Check adds exactly one to the project — the debug token — and it is easy to leak precisely because it looks like harmless developer noise printed to a console log. Treat a leaked debug token as an incident: delete it in the Firebase console, which revokes it immediately.</p>
+    <p class="small muted">Reminder from the <a href="firebase.html#secrets-config">Firebase runbook</a>: <code class="fname">firebase_options.dart</code>, <code class="fname">google-services.json</code>, and <code class="fname">GoogleService-Info.plist</code> are <em>client config, not secrets</em>. App Check is precisely the mechanism that makes shipping them safe.</p>
   </section>
 
   <section id="escape-hatch">
-    <h2>Escape hatch</h2>
-    <p><span class="pill pill-good">LOW lock-in</span></p>
+    <h2>6. Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: LOW</span></p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Data that lives only here</td><td>None persistent. App Check issues short-lived tokens per request; nothing beyond the provider registrations lives in its config.</td></tr>
-          <tr><td>Export</td><td>Not applicable — there is nothing to export.</td></tr>
-          <tr><td>Migrating off</td><td>Disable enforcement in the Firebase console (a toggle) and remove the client SDK init call.</td></tr>
+          <tr><td>What data lives only here?</td><td><strong>None.</strong> App Check stores no application data. It emits verification metrics, which are diagnostics, not records.</td></tr>
+          <tr><td>How do I export?</td><td>Nothing to export.</td></tr>
+          <tr><td>What does leaving cost?</td><td><strong>Minutes.</strong> Turn enforcement off in the console (instant, reversible), remove one <code>activate()</code> call, drop one dependency. No data migration, no user impact.</td></tr>
+          <tr><td>The honest caveat</td><td>App Check's lock-in is low because it is <em>inside</em> Firebase, and Firebase is <a href="firebase.html#escape-hatch">high lock-in</a>. Leaving Firebase makes App Check irrelevant rather than expensive — the cost shows up on Firebase's bill, not this one.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="cost-scale">
-    <h2>Cost &amp; scale checkpoints</h2>
+    <h2>7. Cost &amp; scale checkpoints</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Users</th><th>What happens</th></tr></thead>
+        <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td>~10</td><td>No cost impact — free and unlimited regardless of scale. Debug-token management is trivial at this size.</td></tr>
-          <tr><td>~100</td><td>Still no cost impact. Metrics on the App Check dashboard start becoming statistically meaningful — worth a spot-check that enforcement is still behaving as expected.</td></tr>
-          <tr><td>~1,000</td><td>Still no cost impact from App Check itself. This is a good point to re-verify the metrics tab shows the expected verified/unverified split before assuming the configuration from launch is still correct.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing. Trivially inside the 10,000/day Play Integrity quota. This is the cheapest moment to turn enforcement on, because locking out a stale build affects nobody.</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(Rec Center beta)</span></td><td><strong>$0</strong></td><td>Still fine. App Check tokens are cached and refreshed on a TTL, not minted per request, so 100 users is on the order of a few hundred attestations a day against a 10,000 ceiling. The real risk at this scale is <em>operational</em>: enforcing mid-beta while testers are on an older build locks them out and looks like an outage.</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong></td><td>Play Integrity's 10,000/day shared pool becomes worth watching — roughly 10 attestations per user per day is the budget, which is comfortable but no longer enormous. <strong>Request a quota increase before you need it</strong>, since approval can take a week. Note App Check adds no Firestore reads and therefore no <a href="firebase.html#cost-scale">Firestore cost</a>; it is one of the few things on this map that gets safer as it scales rather than more expensive.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="teammate-delta">
-    <h2>Teammate delta</h2>
+    <h2>8. Teammate delta</h2>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Seat cost</td><td>None — free regardless of team size.</td></tr>
-          <tr><td>Permission model</td><td>Same Firebase project IAM as the rest of Firebase; App Check config is part of the project, not a separate account.</td></tr>
-          <tr><td>Does the free tier allow a second member?</td><td>Yes, but each new developer needs their own debug token added to the console allow-list before their local build can reach Firestore.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0.</strong> App Check has no seats; it inherits <a href="firebase.html#teammate-delta">Firebase project IAM</a>.</td></tr>
+          <tr><td>Permission model</td><td>Anyone with Editor or Owner on <code>forge-by-alpfit</code> can toggle enforcement and manage debug tokens. Toggling enforcement is a production-affecting action — worth keeping to one person even though the console won't stop the other.</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, with no limit — same as Firebase.</td></tr>
+          <tr><td>What actually changes</td><td><strong>Every developer needs their own debug token</strong>, registered per machine and per simulator. This is the single most common way App Check ruins a new teammate's first day: they clone the repo, run the app, and every Firestore call is denied with an unhelpful error. Put "register your App Check debug token" in the onboarding steps, and note that debug tokens are individual secrets — do not share one between people.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="next">
-    <h2>What To Do Next</h2>
-    <ol>
-      <li>Register all three app platforms in App Check and turn on monitoring mode before anyone else touches the app.</li>
-      <li>Check the metrics tab and confirm real traffic verifies before flipping enforcement on.</li>
-      <li>Once enforced, re-test the login and feed flows described in <a href="firebase.html">firebase.html</a> to confirm normal app use still works end to end.</li>
+    <h2>What to do next</h2>
+    <div class="onesentence"><strong>Do nothing on App Check yet — go close M1 first.</strong> Fix <code>allow read: if true</code> on <code>/users</code> in <code class="fname">firestore.rules</code> and deploy it. App Check is the second lock and it is worthless while the first one is open.</div>
+    <ol class="todo">
+      <li>Then fix the <code class="fname">com.example.*</code> bundle IDs (M2/M3) — App Check cannot be configured correctly before they are real.</li>
+      <li>Then work this runbook top to bottom, and stay in <strong>monitoring mode for a week</strong> before enforcing.</li>
+      <li>Register a debug token on day one of the work, so enforcement never locks him out of his own simulator.</li>
     </ol>
+    <p class="small"><a href="index.html">&larr; Back to the service map</a> · <a href="../index.html">&larr; Docs hub</a> · <a href="firebase.html">Firebase</a> · <a href="google-play.html">Google Play</a> · <a href="apple-developer.html">Apple Developer</a></p>
   </section>
 
 </main>

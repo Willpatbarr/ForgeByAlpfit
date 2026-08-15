@@ -14,10 +14,12 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
+    <a href="#paths">Where the app lives</a>
     <a href="#prereqs">Prerequisites</a>
-    <a href="#steps">Setup steps</a>
-    <a href="#firebase-config">Firebase config already committed</a>
-    <a href="#repo-size">Repo size after building</a>
+    <a href="#steps">Clone to running</a>
+    <a href="#verify">Proving it worked</a>
+    <a href="#firebase-config">Firebase config in the repo</a>
+    <a href="#trouble">Troubleshooting</a>
     <a href="#next">What to do next</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
@@ -26,102 +28,249 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 05-runbooks / Local Setup</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Runbooks</div>
     <h1>Local Setup</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the exact steps from a fresh clone to a running app on your machine, fastest path first — read this before touching anything else.</div>
+    <div class="whatthisis"><strong>What this is:</strong> clone to a running app on a simulator, from a machine with nothing installed. Follow the numbered steps in order; step 11 is the one that proves it actually worked.</div>
   </header>
 
-  <section id="prereqs">
-    <h2>Prerequisites</h2>
+  <section id="paths">
+    <h2>Where the app lives (read this first)</h2>
+
+    <div class="callout warn">
+      <strong>The Flutter app is not at the repo root.</strong> It is in <span class="fname">forge_senior_project_version/</span>. Decision <a href="../01-product/decisions.html#proposed">D7 <span class="tag tag-proposed">PROPOSED</span></a> renames that directory to <span class="fname">app/</span>. Every command below runs from the app directory, so it survives the rename &mdash; <span class="fname">cd</span> into whichever one exists.
+    </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Requirement</th><th>Detail</th></tr></thead>
+        <thead><tr><th>What</th><th>Path today</th><th>Path after D7</th></tr></thead>
         <tbody>
-          <tr><td>Flutter SDK</td><td>Install the Flutter SDK for your platform (includes the Dart SDK). Chrome is the target for the fastest run, so a Flutter install with web support enabled is what you need.</td></tr>
-          <tr><td>Dart constraint</td><td><code>^3.9.2</code> — from <code>pubspec.yaml:7</code> (<code>environment: sdk: ^3.9.2</code>). Whatever Flutter version you install must ship a Dart SDK satisfying this.</td></tr>
-          <tr><td>Chrome</td><td>Required for the <code>flutter run -d chrome</code> path below.</td></tr>
-          <tr><td>Git</td><td>To clone the repo.</td></tr>
+          <tr><td>Repo root</td><td><span class="fname">ForgeByAlpfit/</span></td><td>unchanged</td></tr>
+          <tr><td>Flutter app</td><td><span class="fname">ForgeByAlpfit/forge_senior_project_version/</span></td><td><span class="fname">ForgeByAlpfit/app/</span></td></tr>
+          <tr><td><span class="fname">pubspec.yaml</span></td><td><span class="fname">forge_senior_project_version/pubspec.yaml</span></td><td><span class="fname">app/pubspec.yaml</span></td></tr>
+          <tr><td>Firestore rules &amp; indexes</td><td><span class="fname">forge_senior_project_version/firestore.rules</span></td><td><span class="fname">app/firestore.rules</span></td></tr>
+          <tr><td>This docs site</td><td><span class="fname">ForgeByAlpfit/docs/</span></td><td>unchanged</td></tr>
         </tbody>
       </table>
     </div>
+
+    <p class="small muted">Shorthand used below: <strong><span class="fname">$APP</span></strong> means the app directory &mdash; <span class="fname">forge_senior_project_version/</span> today, <span class="fname">app/</span> after the rename.</p>
+  </section>
+
+  <section id="prereqs">
+    <h2>Prerequisites</h2>
+    <p>Versions come from <span class="fname">pubspec.yaml</span> and <span class="fname">pubspec.lock</span> in the repo, not from a preference.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tool</th><th>Version needed</th><th>Why that version</th><th>Where it's needed</th></tr></thead>
+        <tbody>
+          <tr><td>Flutter SDK</td><td><strong>&ge; 3.38.0</strong>, stable channel</td><td><span class="fname">pubspec.lock</span> records the resolved Flutter constraint as <span class="fname">&gt;=3.38.0</span>; <span class="fname">.metadata</span> records the stable channel.</td><td>Always</td></tr>
+          <tr><td>Dart SDK</td><td><strong>^3.9.2</strong> (resolves to 3.10.x)</td><td><span class="fname">pubspec.yaml</span> <span class="fname">environment: sdk: ^3.9.2</span>. Ships with Flutter &mdash; you do not install it separately.</td><td>Always</td></tr>
+          <tr><td>Xcode</td><td>Current App Store release + Command Line Tools</td><td>iOS simulator builds and CocoaPods integration.</td><td>iOS only, macOS only</td></tr>
+          <tr><td>CocoaPods</td><td>Any recent (<span class="fname">sudo gem install cocoapods</span> or Homebrew)</td><td>The Firebase iOS SDKs come in through Pods; <span class="fname">ios/Podfile</span> exists in the repo.</td><td>iOS only</td></tr>
+          <tr><td>Android Studio</td><td>Current release, with the Android SDK + an emulator image</td><td>Android builds, <span class="fname">adb</span>, and the AVD you'll run on.</td><td>Android only</td></tr>
+          <tr><td>Java / JDK</td><td>Whatever Android Studio bundles</td><td>Gradle. Don't install a separate JDK unless <span class="fname">flutter doctor</span> asks.</td><td>Android only</td></tr>
+          <tr><td>Git</td><td>Any</td><td>Cloning.</td><td>Always</td></tr>
+          <tr><td>Firebase CLI</td><td>Any recent</td><td>Only needed to deploy rules and indexes &mdash; see <a href="deploy.html#firestore-rules">deploy</a>. Not needed to run the app.</td><td>Optional</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">You do <strong>not</strong> need: a Firebase service-account key, an Apple Developer account, a Google Play account, or any environment variables. None of those are required to run locally &mdash; they belong to <a href="../04-plan/milestones.html#m3">Milestone 3</a>.</p>
   </section>
 
   <section id="steps">
-    <h2>Setup steps</h2>
+    <h2>Clone to running</h2>
     <ol class="steps">
       <li>
-        Install the Flutter SDK following Google's official install guide for your OS, then confirm it's on your <code>PATH</code>.
-        <pre><code>flutter --version</code></pre>
-        <span class="verify">Verify:</span> the printed Dart SDK version satisfies <code>^3.9.2</code> (i.e. is 3.9.2 or newer, below 4.0.0).
+        <strong>Install Flutter</strong> on the stable channel and put it on your <span class="fname">PATH</span>. On macOS the least painful route is the official tarball from flutter.dev, unzipped somewhere permanent like <span class="fname">~/development/flutter</span>. Avoid installing Flutter through Homebrew &mdash; upgrades fight with <span class="fname">flutter upgrade</span>.
       </li>
       <li>
-        Run Flutter's own environment doctor and resolve anything it flags as missing for your target platform (Chrome/web at minimum).
-        <pre><code>flutter doctor</code></pre>
-        <span class="verify">Verify:</span> the Chrome line shows a checkmark. Android/iOS toolchain warnings can be ignored if you only intend to run on web today.
+        <strong>Confirm the version.</strong>
+        <div class="fname">flutter --version</div>
+        You want Flutter <strong>3.38.0 or newer</strong> on <strong>stable</strong>, carrying Dart <strong>3.10 or newer</strong>. If it's older, run <span class="fname">flutter channel stable &amp;&amp; flutter upgrade</span>. If it's much newer and something breaks later, that's a real possibility to note &mdash; nothing in this repo pins an upper bound.
       </li>
       <li>
-        Clone the repository.
-        <pre><code>git clone https://github.com/Willpatbarr/ForgeByAlpfit.git</code></pre>
-        <span class="verify">Verify:</span> a <code>ForgeByAlpfit/</code> directory now exists with a <code>forge_senior_project_version/</code> subfolder inside it.
+        <strong>Run <span class="fname">flutter doctor</span>.</strong>
+        <div class="fname">flutter doctor -v</div>
+        Fix everything that isn't a green check for the platform you intend to run on. You can ignore red marks for Chrome/web, Linux and Windows toolchains &mdash; per <a href="../01-product/decisions.html">D3</a>, iOS and Android are the only supported targets.
+        <br><span class="verify">Done when: the Flutter, Xcode (or Android toolchain), and connected-device lines are all green.</span>
       </li>
       <li>
-        <strong>Change into the app root — it is a subfolder of the repo, not the repo root.</strong> This is the step people skip and then get confusing "no pubspec.yaml found" errors from.
-        <pre><code>cd ForgeByAlpfit/forge_senior_project_version</code></pre>
-        <span class="verify">Verify:</span> <code>ls pubspec.yaml</code> succeeds from your current directory.
+        <strong>Accept the Android licences</strong> (Android only).
+        <div class="fname">flutter doctor --android-licenses</div>
+        Answer <span class="fname">y</span> to every prompt. Skipping this is the most common reason a first Android build fails at Gradle.
       </li>
       <li>
-        Fetch Dart/Flutter package dependencies.
-        <pre><code>flutter pub get</code></pre>
-        <span class="verify">Verify:</span> command exits with no red error text; a <code>.dart_tool/</code> directory now exists.
+        <strong>Clone the repo.</strong>
+        <div class="fname">git clone &lt;the ForgeByAlpfit repo URL&gt; &amp;&amp; cd ForgeByAlpfit</div>
+        The repo is private &mdash; you need to be a GitHub collaborator first. See <a href="../03-services/github.html">github.html</a> and <a href="onboarding.html">onboarding</a>.
       </li>
       <li>
-        Run the app in Chrome — the fastest path to something on screen, no platform-specific build tooling required.
-        <pre><code>flutter run -d chrome</code></pre>
-        <span class="verify">Verify:</span> Chrome opens automatically and the Forge login/register screen renders.
+        <strong>Move into the app directory.</strong>
+        <div class="fname">cd forge_senior_project_version&nbsp;&nbsp;<span class="faint"># or: cd app</span></div>
+        Every remaining command runs from here. <span class="fname">flutter</span> commands run from the repo root will fail with "no pubspec.yaml found" &mdash; there is no pubspec at the root.
+      </li>
+      <li>
+        <strong>Fetch packages.</strong>
+        <div class="fname">flutter pub get</div>
+        Eight direct runtime dependencies, all public on pub.dev. No private package registry, no auth token, no <span class="fname">.env</span> file.
+        <br><span class="verify">Done when: it prints "Got dependencies!" and <span class="fname">.dart_tool/</span> appears.</span>
+      </li>
+      <li>
+        <strong>Install iOS pods</strong> (iOS only).
+        <div class="fname">cd ios &amp;&amp; pod install &amp;&amp; cd ..</div>
+        Usually <span class="fname">flutter run</span> does this for you. Do it manually the first time so pod failures show up here rather than buried in a build log. On Apple Silicon, if it fails, try <span class="fname">arch -x86_64 pod install</span>.
+      </li>
+      <li>
+        <strong>Confirm you have Firebase project access.</strong> The app talks to the live Firebase project <span class="fname">forge-by-alpfit</span>. You do not need credentials to <em>build</em> &mdash; the config is already committed (see <a href="#firebase-config">below</a>) &mdash; but you cannot see data, read rules, or debug an auth failure without console access. Ask William to add your Google account to the project. Details and the role to ask for: <a href="../03-services/firebase.html">firebase.html</a>.
+        <br><span class="small muted">Anything you create while running locally lands in the <strong>real, shared project</strong>. There is no staging project &mdash; that's a <a href="../04-plan/milestones.html#not-in-plan">deferred</a> item. Use a throwaway account, not a real user's.</span>
+      </li>
+      <li>
+        <strong>Start a device and run.</strong>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Target</th><th>Start the device</th><th>Run</th></tr></thead>
+            <tbody>
+              <tr><td>iOS simulator</td><td><span class="fname">open -a Simulator</span></td><td><span class="fname">flutter run -d iPhone</span></td></tr>
+              <tr><td>Android emulator</td><td><span class="fname">flutter emulators --launch &lt;id&gt;</span> (list with <span class="fname">flutter emulators</span>)</td><td><span class="fname">flutter run -d emulator-5554</span></td></tr>
+              <tr><td>Either, interactively</td><td>&mdash;</td><td><span class="fname">flutter devices</span> then <span class="fname">flutter run</span> and pick</td></tr>
+            </tbody>
+          </table>
+        </div>
+        First Android build pulls the whole Gradle toolchain and can take 10&ndash;15 minutes. First iOS build compiles the Firebase pods and is similarly slow. Neither is a hang.
+        <br><span class="verify">Done when: the app launches to the <strong>Login</strong> screen &mdash; not the Feed. The router redirects unauthenticated users to <span class="fname">/login</span>.</span>
+      </li>
+      <li>
+        <strong>Prove it worked &mdash; the real verification.</strong> See <a href="#verify">the next section</a>. Building is not the same as working; the app can compile perfectly and still fail at the first Firestore read.
       </li>
     </ol>
   </section>
 
-  <section id="firebase-config">
-    <h2>Firebase config already committed</h2>
-    <p>No separate Firebase setup step is needed to run locally. <code>lib/firebase_options.dart</code>, <code>android/app/google-services.json</code>, and <code>ios/Runner/GoogleService-Info.plist</code> are already committed to the repo and point at the real <code>forge-by-alpfit</code> Firebase project.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>File</th><th>What it actually is</th></tr></thead>
-        <tbody>
-          <tr><td><code>lib/firebase_options.dart</code></td><td>Client identifiers, including the web API key. Not a server secret by design — Firebase web API keys are meant to be embedded in shipped clients.</td></tr>
-          <tr><td><code>android/app/google-services.json</code></td><td>Android client registration for project <code>forge-by-alpfit</code>.</td></tr>
-          <tr><td><code>ios/Runner/GoogleService-Info.plist</code></td><td>iOS client registration for the same project.</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p>What actually governs who can read or write data is <strong>Firestore security rules</strong>, not secrecy of these files. Anyone with the API key can only do what the rules allow — see <a href="deploy.html#firestore-rules">deploy.html</a> for the current state of those rules, including a known open hole being fixed in Milestone 1.</p>
-    <div class="callout warn">
-      <strong>Footgun: local runs hit the real production Firestore.</strong> There is no Firebase emulator configured and no separate development project. Every write you make while developing locally — test events, test goals, test messages — lands in the same Firestore data real users would eventually see. There is no sandbox to break instead.
+  <section id="verify">
+    <h2>Proving it worked</h2>
+    <p>A green build proves the toolchain. It proves nothing about Firebase. Do all four:</p>
+    <ol class="steps">
+      <li>
+        <strong>Register a throwaway account.</strong> On the Login screen tap through to Register, choose account type <strong>User</strong>, and sign up with an address you don't care about. Password must be at least 6 characters.
+        <br><span class="verify">Verified when: registration succeeds and you land on the Feed, and a new document appears under <span class="fname">users/</span> in the Firestore console.</span>
+      </li>
+      <li>
+        <strong>See the Feed render.</strong> It will be sparse on a brand-new account &mdash; that is correct, not broken. What matters is that it renders without a red error screen and without an infinite spinner.
+        <br><span class="verify">Verified when: the Feed's cards draw and the bottom navigation shows all five tabs.</span>
+      </li>
+      <li>
+        <strong>Write something.</strong> Tap Create, make a basic event with a title, a start time and an end time, and save it.
+        <br><span class="verify">Verified when: the event appears on the Calendar tab <em>and</em> a document appears under <span class="fname">users/&lt;your uid&gt;/events/</span> in the Firestore console. This is the step that proves auth, rules and Firestore writes are all working together.</span>
+      </li>
+      <li>
+        <strong>Restart and confirm persistence.</strong> Fully quit the app on the simulator and relaunch.
+        <br><span class="verify">Verified when: you're still signed in and the event you created is still on the calendar. This mirrors the project's own definition of a fulfilled requirement &mdash; data correctly saved and displayed <em>across app restarts</em>.</span>
+      </li>
+    </ol>
+    <div class="callout">
+      <strong>Set expectations before you go exploring.</strong> Several screens look finished and are not &mdash; the calendar filter popup shows hardcoded names, the DM Attend/Decline chips don't persist, and four sections of the Create hub are empty by construction. That is <a href="../04-plan/milestones.html#m2">Milestone 2</a>, not a broken install. Full list: <a href="../01-product/features.html">features</a>.
     </div>
   </section>
 
-  <section id="repo-size">
-    <h2>Repo size after building</h2>
+  <section id="firebase-config">
+    <h2>Firebase config already in the repo</h2>
+    <p>You don't need to generate or download anything. These files are committed and git-tracked:</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Directory</th><th>Size</th><th>Note</th></tr></thead>
+        <thead><tr><th>File</th><th>Covers</th></tr></thead>
         <tbody>
-          <tr><td><code>forge_senior_project_version/build/</code></td><td>1.7 GB</td><td>Created by <code>flutter run</code> / <code>flutter build</code>. Not in git — ignored.</td></tr>
-          <tr><td><code>forge_senior_project_version/.dart_tool/</code></td><td>621 MB</td><td>Created by <code>flutter pub get</code>. Not in git — ignored via the root <code>.gitignore</code>.</td></tr>
+          <tr><td><span class="fname">$APP/lib/firebase_options.dart</span></td><td>Generated by FlutterFire; carries web, android, ios, macos and windows configs. <span class="fname">linux</span> throws <span class="fname">UnsupportedError</span> &mdash; expected, Linux is not a target.</td></tr>
+          <tr><td><span class="fname">$APP/android/app/google-services.json</span></td><td>Android</td></tr>
+          <tr><td><span class="fname">$APP/ios/Runner/GoogleService-Info.plist</span></td><td>iOS</td></tr>
+          <tr><td><span class="fname">$APP/macos/Runner/GoogleService-Info.plist</span></td><td>macOS (scaffold only, not a supported target)</td></tr>
+          <tr><td><span class="fname">$APP/firebase.json</span></td><td>Points the Firebase CLI at <span class="fname">firestore.rules</span>, <span class="fname">firestore.indexes.json</span>, <span class="fname">storage.rules</span></td></tr>
         </tbody>
       </table>
     </div>
-    <p>A fresh <code>git clone</code> is small. The first <code>flutter pub get</code> and <code>flutter run</code> grow the working copy by roughly 2.3 GB combined — budget disk space accordingly before you start.</p>
+    <div class="callout">
+      <strong>These are not leaked secrets.</strong> Firebase client config identifies the project; it is not a credential. Committing it is normal and correct for a Firebase client app, and there is nothing to rotate. What actually controls access is <span class="fname">firestore.rules</span> &mdash; and <strong>that</strong> file currently has a real hole, which is why <a href="../04-plan/milestones.html#m1">Milestone 1</a> exists. Fix the rules; leave the config alone.
+    </div>
+  </section>
+
+  <section id="trouble">
+    <h2>Troubleshooting</h2>
+    <p>The failures you will actually hit, in rough order of likelihood.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Symptom</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="fname">Could not find a file named "pubspec.yaml"</span></td>
+            <td>You're at the repo root. There is no pubspec there.</td>
+            <td><span class="fname">cd forge_senior_project_version</span> (or <span class="fname">cd app</span>).</td>
+          </tr>
+          <tr>
+            <td><span class="fname">The current Dart SDK version is X. Because … requires SDK version ^3.9.2</span></td>
+            <td>Flutter is older than 3.38.</td>
+            <td><span class="fname">flutter channel stable &amp;&amp; flutter upgrade</span>, then <span class="fname">flutter pub get</span> again.</td>
+          </tr>
+          <tr>
+            <td>Gradle fails with a licence error on the first Android build</td>
+            <td>Android SDK licences not accepted.</td>
+            <td><span class="fname">flutter doctor --android-licenses</span>, accept all, rebuild.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">pod install</span> fails, or iOS build errors inside a Firebase pod</td>
+            <td>Stale Pods, or CocoaPods repo out of date.</td>
+            <td><span class="fname">cd ios &amp;&amp; pod repo update &amp;&amp; pod install</span>. If it persists: delete <span class="fname">ios/Pods</span> and <span class="fname">ios/Podfile.lock</span>, then <span class="fname">flutter clean &amp;&amp; flutter pub get</span> and retry.</td>
+          </tr>
+          <tr>
+            <td>App builds, launches, then shows a red error screen on the Feed</td>
+            <td>Almost always a missing Firestore composite index, or the nullable-<span class="fname">startAt</span> crash path.</td>
+            <td>Read the console output &mdash; Firestore prints a "create index" URL. For the crash: an event saved without a start time hits an unchecked <span class="fname">as Timestamp</span> cast. That's a known defect, fixed in <a href="../04-plan/milestones.html#m1">M1</a>.</td>
+          </tr>
+          <tr>
+            <td>A gym channel screen tells you to run <span class="fname">firebase deploy --only firestore:indexes</span></td>
+            <td>Not a joke &mdash; the app ships developer CLI instructions as end-user UI when an index is missing.</td>
+            <td>Deploy the indexes (<a href="deploy.html#firestore-rules">deploy</a>). Then note that removing that screen is an <a href="../04-plan/milestones.html#m2">M2</a> issue.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">PERMISSION_DENIED</span> reading or writing Firestore</td>
+            <td>Your local rules and the deployed rules have diverged, or you're signed out.</td>
+            <td>Check you're actually authenticated. Then compare <span class="fname">$APP/firestore.rules</span> with the ruleset shown in the Firebase console &mdash; the repo file is the source of truth; the console may be behind. See <a href="deploy.html#firestore-rules">deploy</a>.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">MissingPluginException</span> from <span class="fname">image_picker</span> on web</td>
+            <td>Known; the repo carries a conditional-import shim (<span class="fname">register_web_image_picker.dart</span>) for exactly this.</td>
+            <td>Don't chase it. Web is not a supported target (<a href="../01-product/decisions.html">D3</a>). Run on a simulator instead.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">flutter analyze</span> is clean but the code is clearly not</td>
+            <td>Correct, and it's the problem. <span class="fname">analysis_options.yaml</span> is one line, with <span class="fname">strict-casts</span> off.</td>
+            <td>Don't cite a clean analyze as evidence of anything until <a href="../04-plan/milestones.html#m1">M1</a> turns <span class="fname">strict-casts</span> on.</td>
+          </tr>
+          <tr>
+            <td><span class="fname">flutter test</span> says no tests found</td>
+            <td>Correct. There is no <span class="fname">test/</span> directory anywhere in the project.</td>
+            <td>Creating it is the first testing issue in <a href="../04-plan/milestones.html#m1">M1</a>.</td>
+          </tr>
+          <tr>
+            <td>Build succeeds but the app on device is named <span class="fname">forge_senior_project_version</span></td>
+            <td>Correct today. Both platforms still carry scaffold identifiers and <span class="fname">com.example.*</span> bundle IDs.</td>
+            <td>Fixed in <a href="../04-plan/milestones.html#m3">M3</a>. Don't patch it ad hoc &mdash; changing the bundle ID requires re-registering the Firebase apps.</td>
+          </tr>
+          <tr>
+            <td>Everything is weird after switching branches</td>
+            <td>Stale build artifacts.</td>
+            <td><span class="fname">flutter clean &amp;&amp; flutter pub get</span>, and on iOS delete <span class="fname">ios/Pods</span> too.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
     <ol>
-      <li>Run the six setup steps above in order; do not skip the <code>cd forge_senior_project_version</code> step.</li>
-      <li>Remember every local write hits production Firestore — do not use throwaway-looking test data you'd mind other people seeing.</li>
-      <li>Once the app runs, read <a href="deploy.html">deploy.html</a> before attempting to ship any change you make.</li>
+      <li>Complete all four checks in <a href="#verify">Proving it worked</a> &mdash; especially the restart. Building is not working.</li>
+      <li>Read <a href="../02-architecture/overview.html">the architecture overview</a> before opening any file, so you don't mistake the empty <span class="fname">core/</span> scaffold for work in progress.</li>
+      <li>When you're ready to push a change out, go to <a href="deploy.html">deploy.html</a> &mdash; and note that the Firestore rules deploy is separate from any app build and is the one people forget.</li>
     </ol>
+    <p class="small muted">Related: <a href="onboarding.html">onboarding</a> &middot; <a href="deploy.html">deploy</a> &middot; <a href="../03-services/firebase.html">Firebase runbook</a> &middot; <a href="../04-plan/milestones.html">milestones</a> &middot; <a href="../index.html">docs hub</a></p>
   </section>
 
 </main>

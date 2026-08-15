@@ -14,15 +14,16 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#what-why">What &amp; why</a>
-    <a href="#trigger">Adoption trigger</a>
-    <a href="#free-tier">Free tier reality</a>
-    <a href="#setup">Setup steps</a>
-    <a href="#secrets">Secrets &amp; config</a>
-    <a href="#escape">Escape hatch</a>
-    <a href="#cost">Cost &amp; scale</a>
-    <a href="#teammate">Teammate delta</a>
+    <a href="#what-why">1. What &amp; why</a>
+    <a href="#adoption-trigger">2. Adoption trigger</a>
+    <a href="#free-tier">3. Free tier reality</a>
+    <a href="#setup-steps">4. Setup steps</a>
+    <a href="#secrets-config">5. Secrets &amp; config</a>
+    <a href="#escape-hatch">6. Escape hatch</a>
+    <a href="#cost-scale">7. Cost &amp; scale</a>
+    <a href="#teammate-delta">8. Teammate delta</a>
     <a href="#next">What to do next</a>
+    <a href="index.html">&larr; Service map</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -30,125 +31,187 @@
 <main>
 
   <header class="pagehead">
-    <div class="crumb"><a href="../index.html">Forge docs</a> / 03-services / GitHub</div>
-    <h1>GitHub <span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span></h1>
-    <div class="whatthisis"><strong>What this is:</strong> where Forge's code and this <code>docs/</code> folder live, and nowhere else — for how the project is planned, see <a href="linear.html">linear.html</a>.</div>
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / GitHub</div>
+    <h1>GitHub <span class="tag tag-decided">DECIDED</span> <span class="tier tier-t0">T0 Now</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for the code host — the private repo (already exists) and GitHub Actions for build + test (does not exist yet). The one urgent item here is confirming the repo is actually private, because the committed Firebase config plus <code>allow read: if true</code> means a public repo is a live data exposure.</div>
   </header>
 
   <section id="what-why">
-    <h2>What &amp; why</h2>
-    <p>GitHub hosts the private Forge repository — the source of truth for every line of Dart and every doc in this folder. It was chosen because it is where the repo already lives, has zero migration cost, and gives unlimited private-repo collaborators for free.</p>
+    <h2>1. What &amp; why</h2>
+    <p>GitHub stores the only copy of Forge's source that isn't on his laptop, at <a href="https://github.com/Willpatbarr/ForgeByAlpfit"><code class="fname">github.com/Willpatbarr/ForgeByAlpfit</code></a>. Later it runs the CI that answers the only two questions worth automating for a solo developer: <em>does it build</em> and <em>do the tests pass</em>.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Alternative</th><th>Why it lost</th></tr></thead>
+        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
         <tbody>
-          <tr><td>GitLab</td><td>No reason to move — repo already exists on GitHub, and moving is pure cost with no benefit.</td></tr>
-          <tr><td>Self-hosted git (Gitea, etc.)</td><td>Adds server maintenance for a solo dev with zero users. Rejected as premature per the brief's service table.</td></tr>
+          <tr><td>GitLab</td><td>More CI minutes on the free tier, but he already has a GitHub account and the repo already lives there — moving buys nothing.</td></tr>
+          <tr><td>Codemagic / Bitrise <span class="faint small">(Flutter-specialist CI)</span></td><td>Genuinely better at Flutter mobile builds, but a second vendor and a second config file for a project that doesn't yet have <em>one</em> test to run.</td></tr>
+          <tr><td>No CI at all, just push</td><td>Viable today and honestly close to correct — but the moment a build breaks on a tester's device instead of his, "it built on my machine" stops being an answer.</td></tr>
         </tbody>
       </table>
     </div>
+    <p><strong>Why GitHub wins:</strong> the repo is already there, Actions is in the same box with nothing extra to sign up for, and the free private-repo tier is genuinely unlimited.</p>
   </section>
 
-  <section id="trigger">
-    <h2>Adoption trigger</h2>
-    <p><span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span> — already adopted, not a future decision. The repo <code>Willpatbarr/ForgeByAlpfit</code> already exists, is private, has Issues enabled, and defaults to branch <code>main</code>.</p>
-    <p>It is T0 because the code has to live somewhere from day one; there is no lower tier for "where is the source code."</p>
+  <section id="adoption-trigger">
+    <h2>2. Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Piece</th><th>Tier</th><th>Trigger</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>The private repo</strong></td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>Already done. Source control is not optional.</td>
+          </tr>
+          <tr>
+            <td><strong>Actions: build check</strong></td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>Cheap, one file, and it catches the class of breakage that <code>flutter analyze</code> provably cannot — the analyzer here is <code>flutter_lints</code> with <code>strict-casts</code> off, so it finds almost nothing.</td>
+          </tr>
+          <tr>
+            <td><strong>Actions: test run</strong></td>
+            <td><span class="tier tier-t0">T0 Now</span> <span class="faint small">(blocked)</span></td>
+            <td>Blocked on there being a test. <strong>There is no <code class="fname">test/</code> directory and zero test files.</strong> Add the workflow now with the test step in it; it will pass trivially and start meaning something the day the first test lands (M2).</td>
+          </tr>
+          <tr>
+            <td><strong>Actions: iOS/Android release builds</strong></td>
+            <td><span class="tier tier-t2">T2 When it hurts</span></td>
+            <td><strong>Named threshold: when manual builds become the release bottleneck — realistically past weekly releases.</strong> macOS runners cost ~10× Linux minutes, so this genuinely spends the free budget. Do not build it now.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout"><strong>When NOT to set this up yet:</strong> no branch protection rulesets, no required reviewers, no CODEOWNERS, no release automation, no matrix builds across three OSes. All of that is ceremony for a team of one. A single workflow file with <code>flutter pub get</code> / <code>flutter analyze</code> / <code>flutter test</code> / <code>flutter build apk --debug</code> is the whole T0 ask.</div>
   </section>
 
   <section id="free-tier">
-    <h2>Free tier reality</h2>
+    <h2>3. Free tier reality</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Limit</th><th>Value</th></tr></thead>
+        <thead><tr><th>Item</th><th>GitHub Free</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td>Private repositories</td><td>Unlimited, free.</td></tr>
-          <tr><td>Collaborators on private repos</td><td>Unlimited, free.</td></tr>
-          <tr><td>GitHub Actions minutes</td><td>2,000 min/mo included on the free plan.</td></tr>
-          <tr><td>What happens when exceeded</td><td>Actions minutes: verify at signup. Storage/collaborators have no exceed case at this scale.</td></tr>
-          <tr><td>First paid tier</td><td>Verify at signup.</td></tr>
+          <tr><td>Private repositories</td><td><strong>Unlimited</strong>, with a reduced feature set <span class="faint small">(the omissions are team features — protected branches, code owners — none of which a solo dev needs)</span></td><td>n/a</td></tr>
+          <tr><td>Collaborators</td><td>Unlimited on public repos; listed as unlimited for private on the pricing page <span class="faint small">(the private-repo wording is less explicit than the public one — verify at <a href="https://github.com/pricing">github.com/pricing</a> if a teammate is imminent)</span></td><td>n/a</td></tr>
+          <tr><td><strong>Actions minutes (private repos)</strong></td><td><strong>2,000 minutes / month</strong></td><td><span class="pill pill-good">Hard stop, no bill.</span> GitHub's wording: "usage is blocked once you use up your quota." With no payment method on file there is <strong>no way to be charged</strong>.</td></tr>
+          <tr><td>Actions minutes (public repos)</td><td><strong>Free and unlimited</strong> on standard runners</td><td>n/a</td></tr>
+          <tr><td>Actions artifact storage</td><td>500 MB</td><td>Blocked, or $0.25/GB-month if billing is enabled</td></tr>
+          <tr><td>Actions cache storage</td><td>10 GB</td><td>Oldest entries evicted</td></tr>
+          <tr><td>Packages storage</td><td>500 MB <span class="faint small">(egress allowance not stated on the current docs pages — unverified)</span></td><td>Blocked</td></tr>
+          <tr><td>First paid tier</td><td><strong>GitHub Pro, $4/user/month</strong> — 3,000 Actions minutes, 1 GB artifact storage <span class="faint small">(confirm current price at <a href="https://github.com/pricing">github.com/pricing</a>)</span></td><td>—</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Forge currently has no workflows, so the Actions minute limit is not in play yet — see the CI note in Setup steps.</p>
+
+    <h3>Runner minute pricing — the part that actually matters</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Runner</th><th>Rate</th><th>Effective cost vs Linux</th></tr></thead>
+        <tbody>
+          <tr><td>Linux 2-core</td><td>$0.006 / min</td><td>baseline</td></tr>
+          <tr><td>Windows 2-core</td><td>$0.010 / min</td><td>~1.7×</td></tr>
+          <tr><td><strong>macOS 3–4 core (M1/Intel)</strong></td><td><strong>$0.062 / min</strong></td><td><strong>~10×</strong></td></tr>
+          <tr><td>macOS 5-core M2 Pro</td><td>$0.102 / min</td><td>~17×</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Rates from <a href="https://docs.github.com/en/billing/reference/actions-runner-pricing">docs.github.com/en/billing/reference/actions-runner-pricing</a>. GitHub no longer publishes the old "Windows 2× / macOS 10×" multiplier table; these are the current per-minute rates, and the ~10× for macOS is derived from them. <strong>The practical consequence:</strong> at macOS rates, 2,000 free minutes is only about <strong>194 minutes of actual macOS wall time per month</strong>. An iOS build takes 10–20 minutes. That is ~10–20 iOS CI builds a month, total. This is exactly why iOS release builds are T2 and stay on his Mac for now.</p>
+    <div class="callout"><strong>No surprise-bill risk here at all.</strong> Unlike <a href="firebase.html#budget-alerts">Firebase Blaze</a>, GitHub Free stops rather than charges. Do not attach a payment method "just in case" — the hard stop <em>is</em> the safety feature.</div>
   </section>
 
-  <section id="setup">
-    <h2>Setup steps</h2>
+  <section id="setup-steps">
+    <h2>4. Setup steps</h2>
     <ol class="steps">
-      <li>Confirm the repo exists: <code>Willpatbarr/ForgeByAlpfit</code>, private, default branch <code>main</code>. It already does — this is a status check, not a creation step.</li>
-      <li>Confirm Issues is enabled in repo settings. It is enabled, but per the brief, Issues stays empty on purpose — see below.</li>
-      <li>Do not create GitHub Actions workflows yet. There is deliberately no <code>.github/workflows</code> directory in this repo right now — this is a scoped deferral (see §4 "Rejected as premature" in the decision brief: CI is adopted only when a second developer joins, or a broken build first reaches a tester), not an oversight.</li>
-      <li>Keep <code>docs/</code> in this same repo — it is what Cloudflare Pages will build from. See <a href="cloudflare-pages.html">cloudflare-pages.html</a>.</li>
-      <li><span class="verify">Verify:</span> run <code>git clone https://github.com/Willpatbarr/ForgeByAlpfit.git</code> into a scratch directory and confirm the Flutter source and <code>docs/</code> both appear. If that clone works, GitHub is correctly set up as the code and docs home.</li>
+      <li><strong>GitHub account</strong> exists; repo exists at <code class="fname">Willpatbarr/ForgeByAlpfit</code>. <span class="pill pill-good">Done</span></li>
+      <li><strong>Confirm the repo is Private.</strong> Settings → General → scroll to Danger Zone → "Change repository visibility". <span class="pill pill-bad">Verify today</span> — see the callout below. Nothing else on this page matters until this is answered.</li>
+      <li><strong>Fix <code class="fname">.gitignore</code>.</strong> It is the stock Flutter template. It correctly ignores build output; it does <em>not</em> ignore <code class="fname">.env</code>, <code class="fname">*.jks</code>, <code class="fname">*.keystore</code>, <code class="fname">*.p8</code>, <code class="fname">*.p12</code>, or <code class="fname">*-service-account*.json</code>. Add those lines <em>before</em> the signing keys from <a href="google-play.html">Google Play</a> and <a href="apple-developer.html">Apple</a> ever land on disk. The Firebase config files stay tracked on purpose — see <a href="firebase.html#secrets-config">why</a>.</li>
+      <li><strong>Create <code class="fname">.github/workflows/ci.yml</code></strong> — the directory does not exist yet. One job, <code>ubuntu-latest</code>, triggered on push and pull_request:
+        <br><code>subosito/flutter-action</code> (pin the channel to <code>stable</code>) → <code>flutter pub get</code> → <code>flutter analyze</code> → <code>flutter test</code> → <code>flutter build apk --debug</code>.
+        <br>Set <code>working-directory: forge_senior_project_version</code> — the Flutter project is not at the repo root. <span class="pill pill-warn">Note</span> if <a href="../01-product/decisions.html">D7</a> (rename to <code class="fname">app/</code>) is accepted, this path changes with it.</li>
+      <li><strong>Stay on Linux runners.</strong> Do not add a <code>macos-latest</code> job. See the rate table above.</li>
+      <li><strong>Tighten the analyzer so CI means something.</strong> <code class="fname">analysis_options.yaml</code> is one line. Add <code>analyzer: language: strict-casts: true</code>. Without it, <code>flutter analyze</code> passes on the unchecked <code>as Timestamp</code> / <code>as List&lt;String&gt;</code> casts that are known crash paths — a green CI badge that proves nothing is worse than no badge.</li>
+      <li><strong>Add secrets only when needed</strong> at Settings → Secrets and variables → Actions. None are needed for a build-and-test workflow. See <a href="#secrets-config">Secrets &amp; config</a>.</li>
+      <li><span class="verify">Verify:</span> deliberately push a commit with a syntax error on a branch and confirm the Actions run goes <strong>red</strong>. Then revert and confirm it goes green. A workflow that has only ever passed has not been tested.</li>
     </ol>
-    <div class="callout warn">
-      <strong>Painful to change later:</strong> the default branch name (<code>main</code>) and repo visibility (private) are cheap to change now, expensive once CI, branch protection rules, or external collaborators depend on them. Decide those before adding either.
-    </div>
+    <div class="callout danger"><strong>Painful to change later / urgent:</strong> if <code class="fname">Willpatbarr/ForgeByAlpfit</code> is <strong>public</strong> right now, then the committed <code class="fname">google-services.json</code> plus <code class="fname">firestore.rules</code>' <code>allow read: if true</code> on <code>/users</code> means <em>anyone who found the repo can dump every user's email and contact info</em>. The config files are not the problem and rotating them is not the fix — <strong>fix the rule (M1) and flip the repo private.</strong> Also note: making a repo private does <em>not</em> retract forks or clones that already exist.</div>
+    <div class="callout warn"><strong>Also painful to change later:</strong> the repo name and owner appear in every clone URL, in the Cloudflare Pages build connection, and in any Linear/GitHub link. Renaming works (GitHub redirects) but re-breaks the Pages connection.</div>
   </section>
 
-  <section id="secrets">
-    <h2>Secrets &amp; config</h2>
+  <section id="secrets-config">
+    <h2>5. Secrets &amp; config</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Client-safe / server-only</th><th>Local vs production</th></tr></thead>
+        <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production / CI</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>Firebase web config keys</td><td>Client-safe by design (Firebase web API keys are not secrets), but still not committed as a convenience — see App Check note in the brief.</td><td>Same values used in both; scoping is enforced by security rules, not by hiding the key.</td></tr>
-          <tr><td>Any future GitHub Actions secrets</td><td>Server-only, would live in repo Settings &rarr; Secrets, never in a file.</td><td>N/A — no Actions workflows exist yet.</td></tr>
+          <tr><td>Repo source code</td><td><span class="pill pill-good">No</span></td><td>Working tree</td><td>GitHub</td><td>n/a</td></tr>
+          <tr><td>Firebase client config <span class="faint small">(3 files)</span></td><td><span class="pill pill-good">No</span> — client config, correctly committed <a href="firebase.html#secrets-config">(why)</a></td><td>Committed</td><td>Committed</td><td>n/a</td></tr>
+          <tr><td><code>GITHUB_TOKEN</code></td><td><span class="pill pill-good">No action needed</span> — injected per-run by Actions, scoped, expires</td><td>—</td><td>Automatic</td><td>n/a</td></tr>
+          <tr><td>Personal access token (PAT)</td><td><span class="pill pill-bad">YES</span></td><td>Git credential helper / keychain only</td><td>Never — use <code>GITHUB_TOKEN</code></td><td><code>GITHUB_PAT=</code></td></tr>
+          <tr><td>Android upload keystore + password <span class="faint small">(<a href="google-play.html">Play</a>)</span></td><td><span class="pill pill-bad">YES</span> — losing it means you can never update the app</td><td>Outside the repo, backed up offline</td><td>Base64 in an Actions secret, only when release CI exists (T2)</td><td><code>ANDROID_KEYSTORE_BASE64=</code><br><code>ANDROID_KEY_PASSWORD=</code></td></tr>
+          <tr><td>App Store Connect API key <code class="fname">.p8</code> <span class="faint small">(<a href="apple-developer.html">Apple</a>)</span></td><td><span class="pill pill-bad">YES</span> — downloadable exactly once</td><td>Outside the repo</td><td>Actions secret, T2 only</td><td><code>ASC_KEY_P8=</code></td></tr>
+          <tr><td>Firebase CI deploy token</td><td><span class="pill pill-bad">YES</span></td><td>Local login session</td><td>Actions secret, only if CI deploys rules</td><td><code>FIREBASE_TOKEN=</code></td></tr>
         </tbody>
       </table>
     </div>
-    <p>Real secrets are never committed to this repository. Nothing in this repo currently requires a <code>.env.example</code> for GitHub itself — that file, if needed, belongs to the app's own config, not to GitHub as a service.</p>
+    <p><strong>Never commit a real secret.</strong> Today the repo contains none — there is no CI, no signing config, and no service account. Every row in the "YES" half arrives later with <a href="apple-developer.html">Apple</a> and <a href="google-play.html">Google Play</a>, which is why step 3 above (fixing <code class="fname">.gitignore</code>) is worth doing <em>now</em>, while the cost of forgetting is still zero. Commit <code class="fname">.env.example</code> with empty values; keep <code class="fname">.env</code> out of git.</p>
+    <p class="small muted">Actions secrets are write-only once saved — GitHub masks them in logs, but a workflow can still <code>echo</code> a secret out if you write it that way. Never <code>echo</code> a secret, and never let a fork-triggered workflow read one.</p>
   </section>
 
-  <section id="escape">
-    <h2>Escape hatch</h2>
-    <p><span class="pill pill-good">Lock-in: low</span> — GitHub stores git history and Issues metadata, nothing Forge depends on structurally.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>What lives only here</th><th>How to export</th><th>Migration cost</th></tr></thead>
-        <tbody>
-          <tr><td>Git history (commits, branches, tags)</td><td><code>git clone --mirror</code> and push to any other git host.</td><td>Minutes. Git is portable by design.</td></tr>
-          <tr><td>Issues / milestones</td><td>N/A today — GitHub Issues holds zero issues and zero milestones by design, since Linear is the write target (see <a href="linear.html">linear.html</a>).</td><td>None — nothing to migrate.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="cost">
-    <h2>Cost &amp; scale checkpoints</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Users</th><th>Cost</th><th>Notes</th></tr></thead>
-        <tbody>
-          <tr><td>~10</td><td>$0</td><td>No change — GitHub cost is driven by collaborators and Actions minutes, not app users.</td></tr>
-          <tr><td>~100</td><td>$0</td><td>Still free. Watch for a first CI workflow being added around this point per the brief's CI trigger.</td></tr>
-          <tr><td>~1,000</td><td>Verify at signup</td><td>Only relevant if Actions usage grows; app user count itself does not move GitHub's bill.</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="teammate">
-    <h2>Teammate delta</h2>
+  <section id="escape-hatch">
+    <h2>6. Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: LOW</span></p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Seat cost for another member</td><td>$0 — unlimited collaborators on private repos on the free plan.</td></tr>
-          <tr><td>Permission model</td><td>Per-collaborator roles (Read / Triage / Write / Maintain / Admin), set in repo Settings &rarr; Collaborators.</td></tr>
-          <tr><td>Does free tier allow another member</td><td>Yes, with no seat limit and no cost.</td></tr>
+          <tr><td>What data lives only here?</td><td>Almost nothing. Git history is fully distributed — every clone is a complete copy. The GitHub-only data is Issues, PR discussion, Releases, and Actions run history. Forge uses <a href="linear.html">Linear</a> for issues, so GitHub-only data is close to zero.</td></tr>
+          <tr><td>How do I export?</td><td><code>git clone --mirror</code> gets everything that matters. Settings → Migrations, or the REST API, exports issues/PRs if they ever get used.</td></tr>
+          <tr><td>What does migrating cost?</td><td><strong>An afternoon.</strong> Push the mirror to GitLab/Codeberg, rewrite one workflow file into their CI syntax, reconnect Cloudflare Pages. Nothing in the Flutter code knows GitHub exists.</td></tr>
+          <tr><td>Sticky bits</td><td>Actions YAML is GitHub-specific (rewrite, not port). The Cloudflare Pages build connection is tied to the GitHub repo and has to be re-made.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>7. Cost &amp; scale checkpoints</h2>
+    <p class="muted">GitHub costs scale with <em>developers and CI activity</em>, not with app users. The user-count columns are here for consistency, and the honest answer in all three is "unchanged".</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
+        <tbody>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing. Perhaps 20–40 CI runs/month at ~5 min each on Linux ≈ 200 min, i.e. 10% of the free budget.</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(beta)</span></td><td><strong>$0</strong></td><td>Nothing from users. The pressure comes from <em>release cadence</em>: if beta feedback drives daily builds, 2,000 Linux minutes is still comfortable — roughly 400 five-minute runs.</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong>, unless macOS CI is added</td><td>Still nothing from user count. The only realistic way to blow the budget is adding a <code>macos-latest</code> iOS build job: at ~$0.062/min that is ~194 minutes of headroom, i.e. roughly a dozen iOS builds before the hard stop. If that becomes the bottleneck, GitHub Pro at $4/mo (3,000 min) is the cheapest fix — or keep iOS builds local.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate-delta">
+    <h2>8. Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Extra seat cost</td><td><strong>$0.</strong> Collaborators on a personal-account repo are free; GitHub Free's private repos are listed as unlimited-collaborator.</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes. Settings → Collaborators → Add people. No org, no billing, no seat count.</td></tr>
+          <tr><td>Permission model</td><td>Personal repos give collaborators a single level: <strong>write access to everything</strong>. There is no Read/Triage/Maintain gradation without moving to an Organization (also free). If a teammate should not be able to force-push <code>main</code>, that is the reason to create a free org.</td></tr>
+          <tr><td>What actually changes</td><td>Two things stop being optional: (1) branch protection on <code>main</code> — a GitHub Free feature for <em>public</em> repos, requiring an org or Pro for private ones, so <strong>verify before promising it</strong>; (2) the CI workflow, which stops being a nicety and becomes the shared definition of "not broken".</td></tr>
+          <tr><td>Actions minutes</td><td>Still 2,000/month — the budget is per <em>account owner</em>, not per person. Two developers pushing means the same pool drains twice as fast.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="next">
-    <h2>What To Do Next</h2>
-    <ol>
-      <li>Leave <code>.github/workflows</code> absent — do not add CI until the brief's trigger fires (a second developer, or a broken build reaching a tester).</li>
-      <li>Keep Issues empty; file all planning work in Linear instead (<a href="linear.html">linear.html</a>).</li>
-      <li>Re-run the clone verification step above the next time repo visibility or branch protection changes.</li>
+    <h2>What to do next</h2>
+    <div class="onesentence"><strong>Open <a href="https://github.com/Willpatbarr/ForgeByAlpfit/settings">the repo settings</a> and confirm visibility is Private.</strong> If it is public, that plus the open Firestore rule is a live PII exposure — treat it as M1, not as housekeeping.</div>
+    <ol class="todo">
+      <li>Then add <code class="fname">.github/workflows/ci.yml</code> with the five steps above, on <code>ubuntu-latest</code> only.</li>
+      <li>Then add the secret-file patterns to <code class="fname">.gitignore</code>, before any signing key exists to forget about.</li>
+      <li>Leave macOS CI alone until manual iOS builds are the actual bottleneck.</li>
     </ol>
+    <p class="small"><a href="index.html">&larr; Back to the service map</a> · <a href="../index.html">&larr; Docs hub</a> · <a href="firebase.html">Firebase</a> · <a href="linear.html">Linear</a></p>
   </section>
 
 </main>

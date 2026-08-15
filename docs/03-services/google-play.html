@@ -14,15 +14,16 @@
     stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
   <div class="skipto-menu">
     <div class="navlabel">Skip to</div>
-    <a href="#what-why">What &amp; why</a>
-    <a href="#trigger">Adoption trigger</a>
-    <a href="#free-tier">Free tier reality</a>
-    <a href="#setup">Setup steps</a>
-    <a href="#secrets">Secrets &amp; config</a>
-    <a href="#escape-hatch">Escape hatch</a>
-    <a href="#cost-scale">Cost &amp; scale</a>
-    <a href="#team-delta">Teammate delta</a>
+    <a href="#what-why">1. What &amp; why</a>
+    <a href="#adoption-trigger">2. Adoption trigger</a>
+    <a href="#free-tier">3. Free tier reality</a>
+    <a href="#setup-steps">4. Setup steps</a>
+    <a href="#secrets-config">5. Secrets &amp; config</a>
+    <a href="#escape-hatch">6. Escape hatch</a>
+    <a href="#cost-scale">7. Cost &amp; scale</a>
+    <a href="#teammate-delta">8. Teammate delta</a>
     <a href="#next">What to do next</a>
+    <a href="index.html">&larr; Service map</a>
     <a href="../index.html">&larr; Docs hub</a>
   </div>
 </nav>
@@ -31,129 +32,173 @@
 
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Google Play</div>
-    <h1>Google Play Console</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the runbook for the Android distribution channel — what it costs, what breaks if the setup order is wrong, and the exact steps to take before Android testers can install the app.</div>
+    <h1>Google Play Console <span class="tag tag-decided">DECIDED</span> <span class="tier tier-t1">T1 Before first real user</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for Android distribution — $25 once, then internal testing. Two things here have <em>calendar deadlines</em> rather than just requirements: the 12-testers-for-14-consecutive-days rule that gates production access, and the API level 36 target that becomes binding at the end of August 2026. Read <a href="#adoption-trigger">section 2</a> before planning the beta schedule.</div>
   </header>
 
-  <div class="callout danger">
-    <strong>Blocker, read first:</strong> the Android <code>applicationId</code> is still the Flutter scaffold default <code>com.example.forge_senior_project_version</code> (<code>android/app/build.gradle.kts</code>). Google Play rejects any <code>com.example.*</code> package outright. It must change to a real reverse-domain id (recommended: <code>com.alpfit.forge</code>) before any upload is possible, which means re-registering the Android app in Firebase and regenerating <code>google-services.json</code>.
-  </div>
-
   <section id="what-why">
-    <h2>What &amp; why</h2>
-    <p>Google Play Console is where the Android build gets signed, listed, and handed to testers without anyone sideloading an APK by hand. It's the cheapest real distribution channel available and its internal testing track skips the review queue entirely, which is the whole reason it works as the beta channel.</p>
+    <h2>1. What &amp; why</h2>
+    <p>Play Console is how Forge gets onto Android phones — first through the internal testing track (100 testers, builds live in minutes, minimal review), then eventually production. For the Rec Center beta it is the cheaper and faster half of the two stores: <strong>$25 once instead of $99/year, and internal-track builds appear in minutes instead of waiting on a review queue</strong>.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Option</th><th>Why it lost / won</th></tr></thead>
+        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
         <tbody>
-          <tr><td>Raw APK sideload (no store)</td><td>No review, no fee — but no update mechanism, no crash-free install link, and testers have to manually enable unknown sources. Fine for one device, not for a beta group.</td></tr>
-          <tr><td>Google Play Console</td><td><strong>Won.</strong> $25 one-time, and the internal testing track needs no review wait — an installable link goes out same-day, with automatic updates on later uploads.</td></tr>
+          <tr><td>Sideloading APKs directly to testers</td><td>Free and it does technically work — but it means asking gym members to enable "install unknown apps", it gives no update mechanism, and it makes a fitness app look like malware to the exact strangers you're trying to win over.</td></tr>
+          <tr><td>Firebase App Distribution</td><td>Genuinely good for pre-store builds and free — but it does not lead anywhere. Play Console is needed eventually regardless, and Play Integrity for <a href="app-check.html">App Check</a> is linked through it, so paying the $25 once collapses two steps into one.</td></tr>
+          <tr><td>Amazon Appstore / F-Droid</td><td>Wrong audience entirely for a US campus gym.</td></tr>
+          <tr><td>Android-only, skip Apple</td><td>A real budget option (see <a href="apple-developer.html">Apple</a>), but it excludes roughly half the target population from a study about social behaviour.</td></tr>
         </tbody>
       </table>
     </div>
+    <p><strong>Why Play wins:</strong> $25 one-time is the cheapest real distribution channel in the plan, and it is a prerequisite for Play Integrity anyway.</p>
   </section>
 
-  <section id="trigger">
-    <h2>Adoption trigger</h2>
-    <p><span class="tier tier-t1">T1 Before first user</span> — needed the moment anyone other than William is expected to install Android builds. This lines up with Milestone M2 ("Ship-ready identity"): real bundle IDs, re-registered Firebase apps, and the Android internal-testing track live are all part of that milestone's definition of done.</p>
+  <section id="adoption-trigger">
+    <h2>2. Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>When</th><th>Why this tier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-t1">T1 Before first real user</span></td>
+            <td>Register at <strong>M3, Ship to a device that isn't his</strong> — and register <em>early</em> within M3, because of the 14-day clock below.</td>
+            <td>$25 is small enough that the cost isn't the gate; the <strong>time-based requirements are</strong>. Registering early costs nothing extra and starts clocks that cannot be compressed later.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout danger">
+      <strong>The 12 × 14 rule — the deadline that will surprise him.</strong> Personal developer accounts created after <strong>13 November 2023</strong> must run a <strong>closed test with at least 12 testers opted in continuously for at least 14 consecutive days</strong> before they can even apply for production access. Production review then typically takes up to 7 days. <a href="https://support.google.com/googleplay/android-developer/answer/14151465">Google's requirements page</a>.
+      <ul>
+        <li>The 14 days are <strong>consecutive</strong>, and testers must stay opted in — someone leaving mid-window restarts the clock.</li>
+        <li><strong>Practical consequence: from a standing start, public Android launch is a minimum of ~3 weeks away, no matter how finished the app is.</strong> Register and run the closed test in parallel with development, not after it.</li>
+        <li>Applicability to <em>organization</em> accounts is <span class="pill pill-warn">unverified</span> — Google's page scopes the rule to personal accounts and is silent on orgs.</li>
+        <li>The reported reduction from 20 testers to 12 (Dec 2024) comes from third-party sources — <strong>re-check the current number in Play Console before counting on 12.</strong></li>
+      </ul>
+      <strong>Good news:</strong> the <em>internal</em> testing track (100 testers) has none of this. For the Rec Center beta, internal testing is the right track and the 12×14 rule does not apply.
+    </div>
+    <div class="callout danger">
+      <strong>The target-API deadline, which is live right now.</strong> As of <strong>31 August 2026</strong>, new apps and updates must target <strong>Android 16 / API 36</strong> or higher, with an extension available to 1 November 2026. Forge's <code class="fname">android/app/build.gradle.kts</code> sets <code>targetSdk = flutter.targetSdkVersion</code> — <strong>unpinned, whatever the toolchain happens to default to.</strong> Pin it explicitly and verify the value at <a href="https://developer.android.com/google/play/requirements/target-sdk">developer.android.com/google/play/requirements/target-sdk</a>, because "whatever Flutter defaults to" is not a plan you can audit.
+    </div>
+    <div class="callout"><strong>When NOT to set this up yet:</strong> not before the <a href="firebase.html">Firestore rules</a> are fixed, and not before the package name is real. Registering the account is harmless and can happen early; <em>creating the app entry</em> should wait until the package name is final, because it freezes on first publish.</div>
   </section>
 
   <section id="free-tier">
-    <h2>Free tier reality</h2>
+    <h2>3. Free tier reality</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Item</th><th>Reality</th></tr></thead>
         <tbody>
-          <tr><td>Registration fee</td><td><strong>$25, one-time.</strong> Not a subscription, not recurring — pay it once per developer account, ever.</td></tr>
-          <tr><td>Overage behavior</td><td>None to speak of. There is no usage meter on the Console itself; the $25 is a flat gate, not a tier with a ceiling.</td></tr>
-          <tr><td>First paid cost</td><td>The $25 registration fee itself — it's the whole bill for a free app distributed through Play.</td></tr>
-          <tr><td>Internal tester count, app size caps, track limits</td><td>Not stated in the brief. Verify at signup.</td></tr>
+          <tr><td><strong>Registration fee</strong></td><td><strong>US$25, one time, for the lifetime of the account.</strong> Not annual — this is the single cheapest committed cost in the plan. <a href="https://support.google.com/googleplay/android-developer/answer/6112435">Google's fee page</a>.</td></tr>
+          <tr><td>Free tier</td><td>Everything after the $25 is free: unlimited apps, unlimited updates, all testing tracks, Play App Signing, Data safety, and Play Integrity.</td></tr>
+          <tr><td>Internal testing track</td><td><strong>Up to 100 testers per app.</strong> Builds available "within minutes"; internal tests "may not be subject to the usual Play policy or security reviews". First store-listing publish can take up to 48 hours. <a href="https://support.google.com/googleplay/android-developer/answer/9845334">Internal testing</a>.</td></tr>
+          <tr><td>Closed / open testing</td><td>Free; closed testing is where the 12×14 requirement lives.</td></tr>
+          <tr><td>When exceeded / what goes wrong</td><td><span class="pill pill-warn">Not a bill — a block.</span> Play doesn't meter you; it <em>rejects</em> you. Policy violation, missing Data safety form, unpinned target API, or debug signing all mean the upload or the release is refused. There is no surprise-bill mechanism here at all.</td></tr>
+          <tr><td>Commission</td><td>15–30% on sales. Irrelevant — <a href="../01-product/decisions.html">D8</a> defers monetization; Forge is free with no IAP.</td></tr>
+          <tr><td>Play Integrity <span class="faint small">(used by <a href="app-check.html">App Check</a>)</span></td><td>Default quota 10,000 token requests/day, shared between classic and standard requests. No published price.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="setup">
-    <h2>Setup steps</h2>
+  <section id="setup-steps">
+    <h2>4. Setup steps</h2>
+    <p class="muted">Nothing here is done. The release build is debug-signed, the package name is the Flutter template default, and the app label is the raw project slug.</p>
     <ol class="steps">
-      <li>Change <code>applicationId</code> in <code>android/app/build.gradle.kts</code> from <code>com.example.forge_senior_project_version</code> to a real reverse-domain id, e.g. <code>com.alpfit.forge</code>. <strong>Painful to change later:</strong> this cannot move again after the first Play publish.</li>
-      <li>Re-register the Android app in the Firebase console under the new package name.</li>
-      <li>Download the regenerated <code>google-services.json</code> for the new package name and replace the committed one.</li>
-      <li>Create the Google Play Console account and pay the $25 one-time registration fee.</li>
-      <li>At first upload, enable Play App Signing — Google generates and holds the app signing key; the developer keeps only the upload key. <strong>Painful to change later:</strong> the signing setup is effectively permanent once the first release is live.</li>
-      <li>Generate the upload keystore locally and back it up somewhere that is not the repo (password manager, encrypted drive) — see <a href="#secrets">Secrets &amp; config</a>.</li>
-      <li>Publish a privacy policy at a public URL and complete the Data Safety form in Play Console. Both are mandatory before any track — including internal testing — can go live.</li>
-      <li>Create the internal testing track, upload the signed AAB, and add testers by email.</li>
-      <li><span class="verify">Verify:</span> install the app from the internal testing link on a real Android device and confirm it opens against live Firestore.</li>
+      <li><strong>Decide the package name.</strong> Current: <code class="fname">com.example.forge_senior_project_version</code> — Play rejects <code>com.example.*</code> outright. <span class="tag tag-proposed">PROPOSED</span> <code class="fname">com.alpfit.forge</code>, matching the iOS bundle ID for consistency. <strong>Confirm with William before it is typed anywhere.</strong> Change <code>applicationId</code> <em>and</em> <code>namespace</code> in <code class="fname">android/app/build.gradle.kts</code>, and move the Kotlin source directory to match.</li>
+      <li><strong>Register</strong> at <a href="https://play.google.com/console/signup">play.google.com/console/signup</a>, pay $25, choose a <strong>Personal</strong> account. Complete <strong>identity verification</strong> — Google requires it, and personal accounts also verify Android device access through the Play Console mobile app. Do this early; verification is not instant.</li>
+      <li><strong>Fix the app label.</strong> <code class="fname">AndroidManifest.xml</code> currently shows <code class="fname">forge_senior_project_version</code> on the home screen. Change it to <strong>Forge</strong>.</li>
+      <li><strong>Pin the SDK levels explicitly</strong> in <code class="fname">build.gradle.kts</code> — <code>minSdk</code>, <code>targetSdk</code>, <code>compileSdk</code> are all inherited from <code>flutter.*</code> today, so nobody can state what the app actually supports. Set <code>targetSdk</code> to the level Play currently requires (see the <a href="#adoption-trigger">deadline callout</a>) and pick a deliberate <code>minSdk</code> floor.</li>
+      <li><strong>Create the upload keystore and a real signing config.</strong> The release block currently reads <code>signingConfig = signingConfigs.getByName("debug")</code> — <strong>a debug-signed AAB cannot be uploaded to Play at all.</strong> Generate an RSA ≥2048 key into a <code class="fname">.jks</code>, put the credentials in <code class="fname">android/key.properties</code>, and reference it from a proper <code>release</code> signing config. <span class="pill pill-bad">Back the keystore up somewhere you will still have in five years.</span></li>
+      <li><strong>Add the permissions the app actually uses.</strong> <code class="fname">AndroidManifest.xml</code> declares none beyond the Flutter defaults despite using <code>image_picker</code>, and <a href="cloud-messaging.html">push</a> needs <code>POST_NOTIFICATIONS</code> on Android 13+.</li>
+      <li><strong>Re-register the Android app in Firebase</strong> under the new package name; regenerate <code class="fname">google-services.json</code> and <code class="fname">firebase_options.dart</code>. Add the release key's <strong>SHA-256 fingerprint</strong> to the Firebase Android app — <a href="app-check.html">App Check / Play Integrity</a> needs it.</li>
+      <li><strong>Create the app in Play Console.</strong> Play App Signing enrols new apps automatically with a Google-managed signing key; your <code class="fname">.jks</code> becomes the <em>upload</em> key. <span class="pill pill-bad">The package name freezes on first publish.</span></li>
+      <li><strong>Complete the App content section:</strong> privacy policy URL (hosted on <a href="cloudflare-pages.html">Cloudflare Pages</a>), <strong>Data safety form</strong>, content rating questionnaire, target audience, and ads declaration. Data safety must honestly cover email, display name, contact info, avatars, user content, and crash data.</li>
+      <li><strong>Satisfy the UGC policy.</strong> Play requires an <strong>in-app system for reporting and blocking</strong> objectionable content and users, plus terms of use the user accepts. <code class="fname">moderation_service.dart</code> is <strong>0 bytes</strong>. Same blocker as <a href="apple-developer.html">Apple guideline 1.2</a> — build it once, satisfy both. <a href="https://support.google.com/googleplay/android-developer/answer/9876937">Play UGC policy</a>.</li>
+      <li><strong>Satisfy the account-deletion policy.</strong> Play requires <strong>both</strong> an in-app path to delete the account and its data, <em>and</em> a <strong>web URL where deletion can be requested</strong> — declared in Data safety and shown on the store listing. <span class="pill pill-warn">Note the difference from Apple:</span> Apple wants it initiated in-app; Google wants in-app <em>and</em> a public web page. <strong>That web page is a concrete deliverable for <a href="cloudflare-pages.html">Cloudflare Pages</a>.</strong> <a href="https://support.google.com/googleplay/android-developer/answer/13327111">Play deletion policy</a>.</li>
+      <li><strong>Build and upload an AAB:</strong> <code>flutter build appbundle --release</code>, then upload to the <strong>Internal testing</strong> track and add testers by email or list.</li>
+      <li><span class="verify">Verify:</span> a person who is <strong>not him</strong> installs Forge from the Play internal-testing link on <strong>their own Android phone</strong>, registers, and creates a workout event — no ADB, no sideloading, no help. Separately confirm in Play Console that the upload was accepted with the <em>release</em> signing key, not a debug one. Both, not just the first.</li>
     </ol>
+    <div class="callout danger"><strong>Painful to change later — the permanent list.</strong> <strong>Package name</strong> (Android's own docs: don't change it after publishing, because Play treats a new one as an entirely new app — new listing, zero installs, zero reviews) · <strong>the upload keystore</strong> (<em>lose it and you can never ship an update</em>; Play App Signing makes upload-key reset possible but it is a support process, not a checkbox) · <strong>the Google account that owns the console</strong> · <strong>the developer name shown on the listing</strong>. Get the package name right in one pass — it also pins Firebase registration and App Check.</div>
   </section>
 
-  <section id="secrets">
-    <h2>Secrets &amp; config</h2>
+  <section id="secrets-config">
+    <h2>5. Secrets &amp; config</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Where it lives</th></tr></thead>
+        <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production / CI</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>Upload keystore (<code>.jks</code>) + its password</td><td>Local, backed up outside the repo. This is the most consequential secret on this page.</td></tr>
-          <tr><td><code>google-services.json</code> (post-rebrand)</td><td>Regenerated per-package config, not a bearer secret by itself, but tied to the real bundle id — don't commit stray copies from the old <code>com.example.*</code> registration.</td></tr>
-          <tr><td>Play Console account credentials</td><td>William's Google account; not stored in the repo.</td></tr>
+          <tr><td>Package name <code class="fname">com.alpfit.forge</code></td><td><span class="pill pill-good">No</span> — public, printed on the store listing</td><td>Committed in <code class="fname">build.gradle.kts</code></td><td>Ships in the app</td><td>n/a</td></tr>
+          <tr><td><code class="fname">google-services.json</code></td><td><span class="pill pill-good">No</span> — <a href="firebase.html#secrets-config">client config, correctly committed</a>. Do not let anyone talk you into gitignoring it.</td><td>Committed</td><td>Bundled</td><td>n/a</td></tr>
+          <tr><td>SHA-256 signing fingerprint</td><td><span class="pill pill-good">No</span> — a public hash, safe in the Firebase console</td><td>—</td><td>Firebase console</td><td>n/a</td></tr>
+          <tr><td><strong>Upload keystore</strong> (<code class="fname">.jks</code>)</td><td><span class="pill pill-bad">YES — the single most irreplaceable file in the project.</span> Lose it and updates stop.</td><td><strong>Outside the repo</strong>, plus an encrypted offline backup in a second location</td><td>Base64 in a GitHub Actions secret, only at T2</td><td><code>ANDROID_KEYSTORE_BASE64=</code></td></tr>
+          <tr><td><code class="fname">android/key.properties</code> (keystore + key passwords)</td><td><span class="pill pill-bad">YES</span></td><td><strong>Gitignored.</strong> This file is the classic accidental commit.</td><td>CI secrets</td><td><code>ANDROID_STORE_PASSWORD=</code><br><code>ANDROID_KEY_PASSWORD=</code><br><code>ANDROID_KEY_ALIAS=</code></td></tr>
+          <tr><td>Play Developer API service-account JSON <span class="faint small">(only if release upload is ever automated — T2)</span></td><td><span class="pill pill-bad">YES</span> — can publish releases as you</td><td>Outside the repo</td><td>GitHub Actions secret</td><td><code>PLAY_SERVICE_ACCOUNT_JSON=</code></td></tr>
+          <tr><td>Google account password / 2FA</td><td><span class="pill pill-bad">YES</span> — owns the console and the $25</td><td>Password manager + offline recovery codes</td><td>n/a</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Real secrets — the keystore file, its password, any Play Console API credentials added later — are never committed to the repo.</p>
+    <p><strong>Never commit a real secret.</strong> Add <code>*.jks</code>, <code>*.keystore</code>, and <code class="fname">android/key.properties</code> to <code class="fname">.gitignore</code> <em>before</em> generating the keystore — the stock Flutter <code class="fname">.gitignore</code> in this repo does not cover them, and a committed keystore in a repo that may be public is a genuine compromise. Commit <code class="fname">.env.example</code> with the empty names above.</p>
+    <div class="callout warn"><strong>The backup rule, stated once and bluntly:</strong> the <code class="fname">.jks</code> is not like other secrets. Leaking it is bad; <strong>losing it is worse</strong> — a lost signing key with no Play App Signing reset means the app can never be updated again and users must reinstall a new listing from scratch. Two copies, two places, today.</div>
   </section>
 
   <section id="escape-hatch">
-    <h2>Escape hatch</h2>
-    <p>Lock-in: <span class="pill pill-warn">Medium</span></p>
+    <h2>6. Escape hatch</h2>
+    <p><span class="pill pill-warn">Lock-in: MEDIUM</span> — lower than <a href="apple-developer.html#escape-hatch">Apple's</a>, because Android has real alternative channels.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>What lives only here</td><td>The Play Store listing, accumulated reviews, install stats, and — if Play App Signing is enabled — the app signing key itself, held by Google.</td></tr>
-          <tr><td>Export path</td><td>The Flutter codebase isn't locked to Play. Signed AAB/APK artifacts can still be built and distributed via the web build or direct APK if Play is abandoned.</td></tr>
-          <tr><td>Migration cost</td><td>Medium — rebuilding a distribution channel and losing the accumulated listing/reviews, not a code rewrite. The one true irreversible cost is the app identity itself (see the blocker callout above): the <code>applicationId</code> and the upload signing key can never be changed after first publish. Recovering from a lost upload key is possible via a Play App Signing key reset <em>only if</em> Play App Signing was enabled — without it, a lost key is unrecoverable and the app can never be updated again under that identity.</td></tr>
+          <tr><td>What data lives only here?</td><td>The store listing, install and rating statistics, tester lists, crash/ANR data (Android vitals), and the Google-managed app signing key. <strong>No user account data</strong> — that is all in <a href="firebase.html">Firebase</a>.</td></tr>
+          <tr><td>How do I export?</td><td>Statistics and reviews export as CSV or via the Play Developer API. Listing text and assets are your own. Under Play App Signing the <em>app signing key</em> is held by Google and is not exportable — that's the sticky bit.</td></tr>
+          <tr><td>What does leaving cost?</td><td><strong>Genuinely low.</strong> An AAB/APK can be distributed via Amazon Appstore, F-Droid, Samsung Galaxy Store, or direct download. You'd lose the install base and reviews, and users would need to reinstall from the new source — but Android does not forbid the exit the way iOS does.</td></tr>
+          <tr><td>What's actually sticky</td><td>The package name (a new one is a new app with zero history) and Play App Signing key custody. Both are recoverable-with-pain rather than fatal.</td></tr>
+          <tr><td>The $25</td><td>Non-refundable and one-time. It is a sunk cost small enough not to influence any decision.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="cost-scale">
-    <h2>Cost &amp; scale checkpoints</h2>
+    <h2>7. Cost &amp; scale checkpoints</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Scale</th><th>Expected Play cost</th></tr></thead>
+        <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td>~10 users</td><td>$0/month beyond the initial $25. Internal testing track is sufficient.</td></tr>
-          <tr><td>~100 users</td><td>Still $0/month from Play itself. May outgrow the internal track into closed/open testing (limits not stated in brief — verify at signup), but Play does not charge more for it.</td></tr>
-          <tr><td>~1,000 users</td><td>Still $0/month from Play — it does not meter usage for a free app. Any cost pressure at this scale comes from Firebase crossing its free tier, not from Play Console.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$25 once</strong>, then $0/mo</td><td>Nothing. Internal testing (100 testers) covers this with builds live in minutes and no policy review gate. The cheapest, fastest distribution in the entire plan.</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta)</span></td><td><strong>$0/mo</strong> — the $25 is already spent</td><td>Cost doesn't move. What breaks is the <strong>100-tester internal cap</strong>, which lands exactly here: a beta that grows past 100 must move to closed or open testing, and closed testing is where the <a href="#adoption-trigger">12×14 rule</a> lives. <strong>Plan that transition before you need it</strong>, because it is a 14-day minimum, not a button. Play policy review also becomes real at that point — the UGC and account-deletion requirements stop being theoretical.</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0/mo</strong> — Play's cost is flat and always was</td><td>Still no cost (no monetization, so no commission). Two non-cost pressures instead: <strong>Android vitals thresholds</strong> — Play demotes apps with bad crash and ANR rates in search rankings, which makes <a href="crashlytics.html">Crashlytics</a> and the known unchecked-cast crashes a <em>distribution</em> problem, not just a quality one; and <strong>moderation response time</strong>, since Play's UGC policy expects reports to actually be acted on.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <section id="team-delta">
-    <h2>Teammate delta</h2>
+  <section id="teammate-delta">
+    <h2>8. Teammate delta</h2>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Seat cost for a second person</td><td>Not stated in the brief. Verify at signup.</td></tr>
-          <tr><td>Permission model</td><td>Play Console supports adding users with scoped roles at the developer-account level; specific roles and limits not stated in brief — verify at signup.</td></tr>
-          <tr><td>Free-tier member limits</td><td>Not stated in the brief. Verify at signup.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0 — confirmed.</strong> Google's docs state an added user "doesn't need to pay the $25 registration fee". Only the account owner ever pays. <a href="https://support.google.com/googleplay/android-developer/answer/9844686">Play user permissions</a>.</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, with no documented cap on users.</td></tr>
+          <tr><td>Permission model</td><td>Two scopes: <strong>account-level</strong> permissions apply across all apps (creating draft apps is account-only), and <strong>app-level</strong> permissions apply to one app. Genuinely granular — you can grant "view app information" and "manage testing tracks" without granting release-to-production. Better than <a href="apple-developer.html#teammate-delta">Apple's fixed role list</a> for this purpose.</td></tr>
+          <tr><td>What actually changes</td><td>The keystore becomes a <em>shared</em> secret, which is the moment it most often leaks. Do not email it. Either keep releases with one person, or put the base64 keystore in a GitHub Actions secret and have CI sign — which is the T2 release-automation work, arriving early because a second person forced it.</td></tr>
+          <tr><td>Note vs Apple</td><td>Play needs no per-device provisioning and no certificate in a Keychain, so onboarding a second Android developer is dramatically easier than the iOS equivalent.</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
   <section id="next">
-    <h2>What To Do Next</h2>
-    <ol>
-      <li>Pick and lock the real Android package id (<code>com.alpfit.forge</code> recommended) before touching Play Console.</li>
-      <li>Re-register the Android Firebase app and regenerate <code>google-services.json</code> under that id.</li>
-      <li>Register the $25 Play Console account and enable Play App Signing on first upload.</li>
-      <li>Back up the upload keystore outside the repo, then publish the privacy policy and complete the Data Safety form.</li>
+    <h2>What to do next</h2>
+    <div class="onesentence"><strong>Replace the debug signing config with a real release keystore, and back that keystore up in two places</strong> — everything else on this page is blocked behind an AAB that Play will actually accept, and a lost keystore is the one mistake here with no recovery.</div>
+    <ol class="todo">
+      <li>Confirm the package name (<code class="fname">com.alpfit.forge</code> proposed) and change <code>applicationId</code> + <code>namespace</code> before creating the Play app entry — it freezes on first publish.</li>
+      <li>Pin <code>minSdk</code> / <code>targetSdk</code> / <code>compileSdk</code> explicitly and check the currently-required target API — the API 36 requirement lands 31 August 2026.</li>
+      <li>Register the $25 account early. Identity verification and the 12×14 closed-testing clock are time-based and cannot be compressed later.</li>
+      <li>Add <code>*.jks</code> and <code class="fname">android/key.properties</code> to <code class="fname">.gitignore</code> before generating anything.</li>
     </ol>
+    <p class="small"><a href="index.html">&larr; Back to the service map</a> · <a href="../index.html">&larr; Docs hub</a> · <a href="apple-developer.html">Apple Developer</a> · <a href="app-check.html">App Check</a> · <a href="cloudflare-pages.html">Privacy policy &amp; deletion URL</a></p>
   </section>
 
 </main>
