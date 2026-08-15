@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloudflare Pages — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup">Setup steps</a>
+    <a href="#secrets">Secrets &amp; config</a>
+    <a href="#escape">Escape hatch</a>
+    <a href="#cost">Cost &amp; scale</a>
+    <a href="#teammate">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 03-services / Cloudflare Pages</div>
+    <h1>Cloudflare Pages <span class="tier tier-t1">T1 Before first user</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> hosting for the <code>docs/</code> folder only, rendered as a static site on every push — it does not touch the Forge app, which stays on Firebase Hosting.</div>
+  </header>
+
+  <div class="callout danger">
+    <strong>Boundary, stated plainly:</strong> Cloudflare Pages serves this documentation site. The Forge <em>app</em> is served by Firebase Hosting, unchanged. These are two different deployments of two different things — do not point Cloudflare Pages at the Flutter build output, and do not point Firebase Hosting at <code>docs/</code>.
+  </div>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>Cloudflare Pages builds and serves the <code>docs/</code> folder as a static site whenever it changes on the connected GitHub branch. It was chosen because it matches William's standing setup across all his other projects — consistency across projects is explicitly worth more to him than picking the theoretically optimal host for this one folder.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative</th><th>Why it lost</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub Pages</td><td>Would work fine for this — plain static HTML, no build step needed either way — but it is not William's cross-project standard, and consistency won.</td></tr>
+          <tr><td>Local Caddy server</td><td>Fine for offline viewing on William's own machine, but produces no shareable URL, which defeats the point of a docs site other people can open.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2>Adoption trigger</h2>
+    <p><span class="tier tier-t1">T1 Before first user</span> — per the brief's service table, this is adopted at T1, alongside App Check and Sentry, ahead of the rec-center beta rather than on day one.</p>
+    <p>It is T1 and not T0 because the docs are useful to William solo without a public URL; a shareable URL matters once someone else (a stakeholder, a tester, a future collaborator) needs to read these docs.</p>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Limit</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Bandwidth</td><td>Unlimited, free.</td></tr>
+          <tr><td>Builds</td><td>500 builds/month, free.</td></tr>
+          <tr><td>What happens when exceeded</td><td>Verify at signup — 500 builds/mo is generous for a docs folder that changes far less often than the app code.</td></tr>
+          <tr><td>First paid tier cost</td><td>Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>In the Cloudflare dashboard, connect the GitHub repo <code>Willpatbarr/ForgeByAlpfit</code>.</li>
+      <li>Set the build output directory to <code>docs</code>.</li>
+      <li>Leave the build command empty — these are plain static HTML files, so no build step runs.</li>
+      <li>Select <code>main</code> as the production branch, matching the repo's default branch.</li>
+      <li>Do not change the output directory away from <code>docs</code> once a URL has been shared — changing it later breaks every link anyone has bookmarked.</li>
+      <li><span class="verify">Verify:</span> push a trivial change to any file under <code>docs/</code>, confirm a new Cloudflare Pages build triggers automatically, and open the deployed URL to confirm the change is live.</li>
+    </ol>
+  </section>
+
+  <section id="secrets">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Client-safe / server-only</th><th>Local vs production</th></tr></thead>
+        <tbody>
+          <tr><td>Cloudflare account / API token (if automating deploys)</td><td>Server-only.</td><td>No local equivalent needed — Cloudflare Pages builds directly from the GitHub connection, not from a local deploy step.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The <code>docs/</code> folder contains no application secrets, since it is plain static HTML with no build step and no runtime config. Nothing here requires a <code>.env.example</code> entry, and real secrets are never committed to this repository regardless.</p>
+  </section>
+
+  <section id="escape">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: very low</span> — the served content is static files already committed to git.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What lives only here</th><th>How to export</th><th>Migration cost</th></tr></thead>
+        <tbody>
+          <tr><td>Nothing — the deployed site is exactly the committed <code>docs/</code> folder</td><td>The files already exist in the repo; any static host (GitHub Pages, Netlify, S3, a local Caddy server) can serve the same folder.</td><td>Minutes — point a different host at <code>docs/</code>, no data migration involved.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>Cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>$0</td><td>Docs traffic is unrelated to app user count; bandwidth is unlimited regardless.</td></tr>
+          <tr><td>~100</td><td>$0</td><td>Still free — the only meter that could move is builds/month, and docs change infrequently.</td></tr>
+          <tr><td>~1,000</td><td>$0</td><td>No plausible path to hitting 500 builds/month from documentation edits alone.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost for another member</td><td>Verify at signup — Cloudflare's team-seat policy on the free plan is not stated in the brief.</td></tr>
+          <tr><td>Permission model</td><td>Verify at signup.</td></tr>
+          <tr><td>Does free tier allow another member</td><td>Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Connect the GitHub repo in Cloudflare Pages with output directory <code>docs</code> and no build command, per Setup steps above.</li>
+      <li>Run the push-and-verify check once connected, before treating the docs URL as shareable.</li>
+      <li>Keep this hosting decision scoped to <code>docs/</code> only — the app's hosting question is answered separately by Firebase Hosting, not by this page.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

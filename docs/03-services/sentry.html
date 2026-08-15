@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentry — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#adoption-trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup-steps">Setup steps</a>
+    <a href="#secrets-config">Secrets &amp; config</a>
+    <a href="#escape-hatch">Escape hatch</a>
+    <a href="#cost-scale">Cost &amp; scale</a>
+    <a href="#teammate-delta">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Services / Sentry</div>
+    <h1>Sentry <span class="tag tag-proposed">PROPOSED</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the setup plan and trade-off for Sentry, the proposed crash-and-error monitor for Forge — not yet wired into the app.</div>
+  </header>
+
+  <div class="callout warn"><strong>This is a coin-flip, not a settled decision.</strong> Sentry is proposed against Firebase Crashlytics and tagged <span class="tag tag-proposed">PROPOSED</span> pending William's review (decision brief &sect;6, &sect;9 question 3). Nothing described below is implemented yet.</div>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>Sentry (via the <code>sentry_flutter</code> package) would capture crashes and errors from the deployed app — web and mobile — into one dashboard, so failures reach William without a friend having to text him about it. It covers Milestone M4's definition of done directly: a deliberately-thrown test error from a production build showing up somewhere he'll see it.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative considered</th><th>Trade-off</th></tr></thead>
+        <tbody>
+          <tr><td>Firebase Crashlytics</td><td>Free and unlimited, already inside Firebase — matches the existing stack, which William weights heavily. But its Flutter web support is poor, and web is the beta channel.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Why Sentry wins by default:</strong> coverage of the platform the beta actually ships on beats stack consistency. Flip this back to Crashlytics if the beta ends up mobile-only.</p>
+  </section>
+
+  <section id="adoption-trigger">
+    <h2>Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>Span</th><th>Why this tier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>Alongside App Check, before Milestone M3 real users arrive</td>
+            <td>The decision brief's service table places Sentry at T1: a beta user hitting a crash with zero visibility defeats the purpose of running a beta. Milestone M4 formalizes the concrete verify step.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Plan</th><th>Limit</th><th>When exceeded</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>5,000 errors/month, 1 user</td><td>Not stated in the brief — verify at signup (whether it's a soft throttle, a hard stop, or event dropping).</td></tr>
+          <tr><td>First paid tier</td><td>Not stated in the brief</td><td>Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="setup-steps">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Create a Sentry account/organization — this is the account the free tier's "1 user" limit is scoped to.</li>
+      <li>Create a Flutter project inside Sentry to get a DSN.</li>
+      <li>Add the <code>sentry_flutter</code> package to <code>pubspec.yaml</code>.</li>
+      <li>Initialize Sentry at app startup in <code>main.dart</code>, wrapping the app's entry point per the package's init pattern.</li>
+      <li>Set <code>tracesSampleRate</code> low or 0 — performance traces consume the same free-tier quota as errors, and Forge doesn't need them yet.</li>
+      <li>Read the DSN from a build-time config source rather than hardcoding it inline, even though the DSN itself is not secret the way an API key is.</li>
+      <li>Deploy a build with Sentry initialized.</li>
+      <li><span class="verify">Verify:</span> deliberately throw a test error from the production build and confirm it appears in the Sentry dashboard — this is the literal Milestone M4 definition of done.</li>
+    </ol>
+  </section>
+
+  <section id="secrets-config">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Secret?</th><th>Local</th><th>Production</th></tr></thead>
+        <tbody>
+          <tr><td>DSN</td><td>Not secret the way an API key is — client-side by design — but it should still come from config, not be hardcoded</td><td>Dev config value</td><td>Same DSN, or a separate Sentry project if dev noise needs to be kept out of prod</td></tr>
+          <tr><td><code>tracesSampleRate</code></td><td>Not a secret, a tuning value</td><td>Low or 0</td><td>Low or 0, to avoid burning the 5,000/mo quota on performance data instead of errors</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Real secrets are never committed. Today Sentry doesn't introduce one, since the DSN is designed to be client-visible; a value for it belongs in <code>.env.example</code> as <code>SENTRY_DSN=</code> rather than typed into source. If source-map/symbol upload is added to CI later, that upload auth token would be a real secret — CI-only, never committed.</p>
+  </section>
+
+  <section id="escape-hatch">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-good">LOW lock-in</span></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Data that lives only here</td><td>Captured error events, stack traces, breadcrumbs, and release history — observability data, not app data.</td></tr>
+          <tr><td>Export</td><td>Sentry's dashboard/API can pull event data out; the app's function never depends on it.</td></tr>
+          <tr><td>Migrating off</td><td>Swap the <code>SentryFlutter.init</code> call for another SDK's init call (e.g. Crashlytics). Standard SDK, no data-model lock-in.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>Trivial error volume, nowhere near the 5,000/month free tier.</td></tr>
+          <tr><td>~100</td><td>Depends entirely on whether there's a recurring bug. 5,000/month is roughly 167/day, which a noisy bug across 100 active users could approach.</td></tr>
+          <tr><td>~1,000</td><td>Likely to exceed the free tier if error rate isn't near zero. This is when the first paid tier's actual cost needs checking (verify at signup), or sampling/alerting needs to tighten.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate-delta">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost</td><td>Free tier is explicitly 1 user in the brief; a second person is not covered. Paid seat cost: verify at signup.</td></tr>
+          <tr><td>Permission model</td><td>Sentry organization membership/roles — entirely separate from Firebase's IAM.</td></tr>
+          <tr><td>Does the free tier allow a second member?</td><td>No — explicitly capped at 1 user on the free plan per the brief's service table.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Confirm with William whether Sentry or Crashlytics is the actual pick — the PROPOSED tag on this page stays until that happens.</li>
+      <li>If Sentry proceeds, follow the setup steps above and hit the Milestone M4 verify: a deliberately-thrown test error visible in a production build.</li>
+      <li>Revisit the choice if the beta ends up mobile-only, per the brief's stated flip condition.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

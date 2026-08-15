@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Services — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#service-table">Service map</a>
+    <a href="#total-cost">Total cost</a>
+    <a href="#rejected">Rejected as premature</a>
+    <a href="#sentry-flag">Sentry flag</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Services</div>
+    <h1>Service Map</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the at-a-glance index of every third-party service Forge touches — what triggers adopting it, what it costs, how hard it is to leave, and whether it's actually set up yet. Start here before opening any individual runbook.</div>
+  </header>
+
+  <section id="service-table">
+    <h2>Adopted services</h2>
+    <p>Eight services made the cut in the master decision brief. Each row links to its own runbook with setup steps, secrets handling, and escape-hatch detail.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>Service</th><th>Trigger tier</th><th>Monthly cost</th><th>Lock-in</th><th>Status</th><th>Runbook</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Firebase (Auth, Firestore, Storage, Hosting)</td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-bad">High</span></td>
+            <td><span class="pill pill-good">Set up</span></td>
+            <td><a href="firebase.html">firebase.html</a></td>
+          </tr>
+          <tr>
+            <td>GitHub (private repo)</td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-good">Low</span></td>
+            <td><span class="pill pill-good">Set up</span></td>
+            <td><a href="github.html">github.html</a></td>
+          </tr>
+          <tr>
+            <td>Linear</td>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-good">Low</span></td>
+            <td><span class="pill pill-good">Set up</span></td>
+            <td><a href="linear.html">linear.html</a></td>
+          </tr>
+          <tr>
+            <td>Firebase App Check</td>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-good">Low</span></td>
+            <td><span class="pill">Not set up</span></td>
+            <td><a href="app-check.html">app-check.html</a></td>
+          </tr>
+          <tr>
+            <td>Cloudflare Pages (docs site only)</td>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-good">Low</span></td>
+            <td><span class="pill">Not set up</span></td>
+            <td><a href="cloudflare-pages.html">cloudflare-pages.html</a></td>
+          </tr>
+          <tr>
+            <td>Sentry <span class="tag tag-proposed">PROPOSED</span></td>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>$0</td>
+            <td><span class="pill pill-good">Low</span></td>
+            <td><span class="pill">Not set up</span></td>
+            <td><a href="sentry.html">sentry.html</a></td>
+          </tr>
+          <tr>
+            <td>Google Play Console</td>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>$0 <span class="faint small">($25 one-time)</span></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><span class="pill">Not set up</span></td>
+            <td><a href="google-play.html">google-play.html</a></td>
+          </tr>
+          <tr>
+            <td>Apple Developer</td>
+            <td><span class="tier tier-t2">T2 When it hurts</span></td>
+            <td>$0 <span class="faint small">($99/year)</span></td>
+            <td><span class="pill pill-warn">Medium</span></td>
+            <td><span class="pill">Not set up</span></td>
+            <td><a href="apple-developer.html">apple-developer.html</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">"Set up" means the account/repo/workspace exists and is in use. None of the eight are marked "Verified" — nothing on this list has been through a written verification test yet.</p>
+  </section>
+
+  <section id="total-cost">
+    <h2>Total cost</h2>
+    <div class="onesentence">Every adopted service costs <strong>$0/month</strong> today. The only committed spend anywhere in the plan is <strong>$25 one-time</strong> (Google Play, at T1) and <strong>$99/year</strong> (Apple Developer, at T2) — and the Apple charge doesn't start until its trigger fires.</div>
+  </section>
+
+  <section id="sentry-flag">
+    <h2>Needs William's eye</h2>
+    <div class="callout warn">
+      <strong>Sentry is <span class="tag tag-proposed">PROPOSED</span>, not decided.</strong> It's a genuine coin-flip against Firebase Crashlytics: Crashlytics is free, unlimited, and already inside the Firebase stack, but its Flutter web support is poor — and web is the beta channel, which is why Sentry is the current default. Flip it back to Crashlytics if the beta ends up mobile-only.
+    </div>
+  </section>
+
+  <section id="rejected">
+    <h2>Rejected as premature</h2>
+    <p>These were considered and deliberately not adopted. Each has a named trigger that would revisit the call — nothing here was silently dropped.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Rejected</th><th>Trigger that would change the decision</th></tr></thead>
+        <tbody>
+          <tr><td>Cloud Functions / Firebase Blaze</td><td>Needed when server-side logic becomes unavoidable — cascade account deletion at volume, tamper-proof goal counting, or FCM fan-out. Functions requires the Blaze pay-as-you-go plan, i.e. a card on file; avoided deliberately, with account deletion done client-side instead.</td></tr>
+          <tr><td>Riverpod / Bloc / DI framework</td><td>A second developer joins, or a screen becomes genuinely untestable without it.</td></tr>
+          <tr><td>Supabase / Postgres migration</td><td>Firestore query limits or cost actually bite. Not before ~1,000 users.</td></tr>
+          <tr><td>Algolia / Typesense search</td><td>Firestore prefix search on <code>displayNameLower</code> stops being good enough — realistically past a few thousand users.</td></tr>
+          <tr><td>GitHub Actions CI</td><td>A second developer, or the first time a broken build reaches a tester.</td></tr>
+          <tr><td>Firebase Analytics</td><td>There are enough users that behavioral questions can't be answered by asking them directly. Free when adopted.</td></tr>
+          <tr><td>FCM push notifications</td><td>Post-beta, once retention is the problem worth solving.</td></tr>
+          <tr><td>Stripe / RevenueCat</td><td>A gym actually offers to pay.</td></tr>
+          <tr><td>Separate staging Firebase project</td><td>The first time a test wipes real user data.</td></tr>
+          <tr><td>Codemagic / Fastlane</td><td>Manual builds become the bottleneck — realistically past weekly releases.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Review the Sentry vs. Crashlytics call above — it's the one open service decision on this page.</li>
+      <li>Open the Google Play runbook before touching Android distribution; it carries the bundle-id blocker that gates Milestone M2.</li>
+      <li>Leave every "Rejected as premature" row alone until its stated trigger actually fires.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

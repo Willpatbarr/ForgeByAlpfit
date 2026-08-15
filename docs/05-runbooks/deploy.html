@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deploy — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#web">Web app</a>
+    <a href="#firestore-rules">Firestore rules &amp; indexes</a>
+    <a href="#android">Android</a>
+    <a href="#docs-deploy">Docs site</a>
+    <a href="#no-ci">No CI, by design</a>
+    <a href="#checklist">Pre-deploy checklist</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 05-runbooks / Deploy</div>
+    <h1>Deploy</h1>
+    <div class="whatthisis"><strong>What this is:</strong> how a change actually reaches production today, across three paths — web (live), Firestore rules (the security boundary), and Android (blocked) — plus docs, which deploy separately.</div>
+  </header>
+
+  <section id="web">
+    <h2>1. Web app &rarr; Firebase Hosting <span class="tag tag-decided">DECIDED</span></h2>
+    <p>This is the live deploy path today. <code>firebase.json</code> points <code>hosting.public</code> at <code>build/web</code>, so the build output has to exist before you deploy it.</p>
+    <ol class="steps">
+      <li>
+        Build the web release from the app root (<code>forge_senior_project_version/</code>).
+        <pre><code>cd forge_senior_project_version
+flutter build web</code></pre>
+      </li>
+      <li>
+        Deploy only the hosting target — do not run a bare <code>firebase deploy</code>, which would also attempt rules/indexes.
+        <pre><code>firebase deploy --only hosting</code></pre>
+      </li>
+      <li><span class="verify">Verify:</span> open the hosting URL Firebase prints and confirm the deployed build reflects your change (hard-refresh to bypass cache).</li>
+    </ol>
+    <p>Web is unbranded today — <code>web/index.html</code> still carries Flutter's default title/description. That is a known gap, not a deploy-step problem — see the decision brief's Milestone 2.</p>
+  </section>
+
+  <section id="firestore-rules">
+    <h2>2. Firestore rules &amp; indexes <span class="tag tag-conflict">CONFLICT</span></h2>
+    <p>Rules are the actual security boundary for this app — not the committed config files (see <a href="local-setup.html#firebase-config">local-setup.html</a>). Deploying rules is not routine busywork; treat it with the same care as a production database migration.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Command</th><th>Deploys</th></tr></thead>
+        <tbody>
+          <tr><td><code>firebase deploy --only firestore:rules</code></td><td><code>firestore.rules</code> — the actual security boundary.</td></tr>
+          <tr><td><code>firebase deploy --only firestore:indexes</code></td><td><code>firestore.indexes.json</code> — composite index definitions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout danger">
+      <strong>Known open hole, being fixed in Milestone 1.</strong> The current deployed rules allow <code>allow read: if true;</code> on the entire <code>users</code> collection — every user's <code>email</code> and <code>contactInfo</code> is world-readable by anyone with the web API key today. Do not treat the current rules as a safe baseline to copy from; Milestone 1 splits public-safe fields from gated ones.
+    </div>
+    <div class="callout warn">
+      <strong>Do not deploy from <code>FIRESTORE_RULES_SETUP.md</code>.</strong> That file, in the repo root, contains a <strong>stale copy</strong> of the rules — it is missing the DM-thread rules, several <code>users</code> update branches, and the goals/plans subcollection rules that exist in the real, deployed <code>firestore.rules</code>. Copying rules from that doc and deploying them would silently reopen security holes already closed in the live rules file. It is slated for deletion in Milestone 0 — until then, treat it as poison, not reference material.
+    </div>
+    <p>The only trustworthy source for current rules is <code>forge_senior_project_version/firestore.rules</code> itself, read directly.</p>
+  </section>
+
+  <section id="android">
+    <h2>3. Android &rarr; Play Console internal testing <span class="tag tag-deferred">DEFERRED — blocked until Milestone 2</span></h2>
+    <ol class="steps">
+      <li>Build the app bundle.
+        <pre><code>flutter build appbundle</code></pre>
+      </li>
+      <li>Upload the resulting <code>.aab</code> to Google Play Console, internal testing track.</li>
+    </ol>
+    <div class="callout warn">
+      <strong>Blocked today.</strong> The Android <code>applicationId</code> is still the Flutter scaffold default <code>com.example.forge_senior_project_version</code> (<code>android/app/build.gradle.kts</code>). Play Console will not accept a <code>com.example.*</code> application id for any real submission. Fixing this requires re-registering the Firebase Android app under a real id and regenerating <code>google-services.json</code> — scoped as Milestone 2, not a same-day fix.</p>
+    </div>
+  </section>
+
+  <section id="docs-deploy">
+    <h2>Docs site — deploys separately</h2>
+    <p>This <code>docs/</code> folder is not part of either deploy path above. It builds and deploys on its own via <strong>Cloudflare Pages</strong> on every push to the repo — see <a href="../03-services/cloudflare-pages.html">cloudflare-pages.html</a> for the full setup. Firebase Hosting stays scoped to the app; Cloudflare Pages is for docs.</p>
+  </section>
+
+  <section id="no-ci">
+    <h2>No CI — a deliberate deferral</h2>
+    <p>There is no GitHub Actions workflow, no Codemagic config, nothing. Every deploy path above is run by hand, on William's own machine, when he decides to run it.</p>
+    <p>This is a stated deferral, not an oversight — per the decision brief's rejected-services table, CI is adopted when a second developer joins or the first broken build reaches a tester, whichever comes first. Until then, the pre-deploy checklist below is the only safety net.</p>
+  </section>
+
+  <section id="checklist">
+    <h2>Pre-deploy checklist</h2>
+    <ul class="todo">
+      <li><code>flutter analyze</code> comes back clean, or any warnings are understood and intentional.</li>
+      <li>You ran the app locally against production Firestore and confirmed the change works end to end (see <a href="local-setup.html">local-setup.html</a> — there is no emulator, so this is the only real check).</li>
+      <li>If the change touches <code>firestore.rules</code>: you read the rule diff line by line against the current deployed file, not against <code>FIRESTORE_RULES_SETUP.md</code>.</li>
+      <li>If the change touches <code>firestore.rules</code>: you deployed <code>firestore:rules</code> alone first and re-tested before also shipping a hosting build that depends on the new rule shape.</li>
+      <li>For a web deploy: you ran <code>flutter build web</code> immediately before <code>firebase deploy --only hosting</code>, so the deployed bundle matches your current branch.</li>
+      <li>You know which of the three paths (web / rules / Android) you're actually deploying — never run a bare <code>firebase deploy</code> that could touch more than intended.</li>
+    </ul>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>For a normal feature or UI change: <code>flutter build web</code> then <code>firebase deploy --only hosting</code>.</li>
+      <li>For a rules change: read the current <code>firestore.rules</code> directly, never <code>FIRESTORE_RULES_SETUP.md</code>, and deploy <code>firestore:rules</code> on its own.</li>
+      <li>Do not attempt an Android release build until Milestone 2's bundle-id fix lands.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

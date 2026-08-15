@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Decisions — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#proposed">Needs William's review</a>
+    <a href="#log">Full decision log</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 01-product / Decisions</div>
+    <h1>Decisions</h1>
+    <div class="whatthisis"><strong>What this is:</strong> every decision behind the product, tagged <span class="tag tag-locked">LOCKED</span>, <span class="tag tag-decided">DECIDED</span>, <span class="tag tag-proposed">PROPOSED</span>, or <span class="tag tag-deferred">DEFERRED</span>, with the rationale and — for anything deferred — the trigger that reopens it.</div>
+  </header>
+
+  <section id="proposed">
+    <h2>Needs William's review</h2>
+    <p>These three <span class="tag tag-proposed">PROPOSED</span> calls are where this plan is a default, not a decision. Everything else on this page follows from the notes or the code; these three are taste calls made in William's absence.</p>
+
+    <div class="callout warn">
+      <strong>1. One consumer app, not the three-product AlpFit business</strong>
+      <p>Trade-off: the earliest, undated brainstorm describes three separate products — consumer app, gym-management software, trainer software — but every later formal Proposal and Requirements doc scopes to one Flutter app in which "gym" is an account type, not a product. Direction of travel favors one app; this default is in force, but it is a question about what the product fundamentally is, and that call belongs to William.</p>
+    </div>
+
+    <div class="callout warn">
+      <strong>2. Web + Android beta, iOS deferred</strong>
+      <p>Trade-off: Web is already deployed once, costs nothing, and has no review queue; Android is a $25 one-time fee with an internal testing track and no review delay; iOS is $99/year plus real review latency. Picked web-first because it is the fastest, cheapest path to real users — flips if most rec-center testers turn out to be on iPhone.</p>
+    </div>
+
+    <div class="callout warn">
+      <strong>3. Sentry vs. Firebase Crashlytics</strong>
+      <p>Trade-off: Crashlytics is free, unlimited, and already inside Firebase — the more consistent choice, which William weights heavily — but its Flutter web support is poor, and web is the beta channel. Sentry gives one dashboard across web and mobile on a 5k-errors/month free tier; picked because live-surface coverage beats stack tidiness, flips if the beta ends up mobile-only.</p>
+    </div>
+  </section>
+
+  <section id="log">
+    <h2>Full decision log</h2>
+    <p>Sourced from the brief's reconciliation rulings (contradictions), service selections, platform ruling, and the decisions the existing code already forces. See <a href="../00-source/contradictions.html">contradictions.html</a> for the full contradiction-by-contradiction writeup and <a href="../03-services/index.html">03-services</a> for service-by-service detail.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Tag</th><th>Rationale</th><th>Revisit trigger</th></tr></thead>
+        <tbody>
+          <tr><td>Keep Flutter + Firebase</td><td><span class="tag tag-locked">LOCKED</span></td><td>~15,500 working lines of Dart already depend on this stack.</td><td>N/A — locked in barring a rewrite decision nobody is proposing.</td></tr>
+          <tr><td>Keep View &rarr; free-function service &rarr; Firestore pattern</td><td><span class="tag tag-decided">DECIDED</span></td><td>The clean-architecture scaffold (data/domain/presentation layers) was never used — all 0 bytes in <code>feed/</code>. Adopting it now is a rewrite with no payoff for a solo dev.</td><td>A second developer joins, or a screen becomes genuinely untestable without it.</td></tr>
+          <tr><td>Delete the 18 zero-byte scaffold files</td><td><span class="tag tag-decided">DECIDED</span></td><td>They currently masquerade as in-progress work, hiding what's actually not built.</td><td>None — one-time cleanup, Milestone 0.</td></tr>
+          <tr><td>Delete or supersede the 5 stale root <code>.md</code> docs</td><td><span class="tag tag-decided">DECIDED</span></td><td>They describe February 2026 and are wrong. <code>FIRESTORE_RULES_SETUP.md</code> is actively dangerous — it holds an outdated rules copy that would reopen closed security holes if restored.</td><td>None — one-time cleanup, Milestone 0.</td></tr>
+          <tr><td>Account deletion is client-side, not a Cloud Function</td><td><span class="tag tag-decided">DECIDED</span></td><td>Avoids the Blaze pay-as-you-go plan (a card on file) entirely. Best-effort delete of owned docs, then <code>user.delete()</code> — imperfect (non-atomic) but correct at this scale.</td><td>Revisit if client-side deletion gets slow or unreliable at scale.</td></tr>
+          <tr><td>Split <code>users</code> read rules — public-safe fields open, <code>email</code>/<code>contactInfo</code> gated</td><td><span class="tag tag-decided">DECIDED</span></td><td>Keeps the existing data model intact (no new collection) while closing the user-directory scraping hole.</td><td>None — implemented as specified, Milestone 1.</td></tr>
+          <tr><td>Fix bundle IDs before any store submission</td><td><span class="tag tag-decided">DECIDED</span></td><td><code>com.example.*</code> cannot be submitted to any app store; requires re-registering Firebase apps once, deliberately.</td><td>None — required before Milestone 2.</td></tr>
+          <tr><td>Typed models only where they pay</td><td><span class="tag tag-decided">DECIDED</span></td><td>Do not retrofit <code>Map&lt;String,dynamic&gt;</code> everywhere. Only <code>Goal</code> and the <code>Plan*</code> classes are typed today.</td><td>Add types feature-by-feature the next time an untyped bug makes the case.</td></tr>
+          <tr><td>Tests only on date math</td><td><span class="tag tag-decided">DECIDED</span></td><td>Goal period rollover, recurrence expansion, and plan generation are the algorithmically dense, silently-corrupting functions. Everything else is UI glue not worth the harness.</td><td>None — scope holds unless a non-date-math bug proves the case for more coverage.</td></tr>
+          <tr><td>Calendar view granularity = daily + multi-day + monthly</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-decided">DECIDED</span></td><td>Matches the Final Requirements Spec (latest, most formal doc) and matches what the code actually implements. Year view is dropped — nothing implements it.</td><td>None.</td></tr>
+          <tr><td>Event types at creation = two (basic, workout), not three</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-decided">DECIDED</span></td><td>Goals became a first-class object with its own model and service rather than a kind of event, confirmed by the code.</td><td>None.</td></tr>
+          <tr><td>Landing page = Feed, not Dashboard</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-decided">DECIDED</span></td><td>Feed absorbed Dashboard's widget job and added the social update stream — not a pure rename. <code>feed_page.dart</code> does exactly this.</td><td>None.</td></tr>
+          <tr><td>Goals are must-have, not stretch</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-decided">DECIDED</span></td><td>Goals received the most detailed design work in the entire corpus (full class, validation rules, enums, a whole Q&amp;A session) and are fully built.</td><td>None.</td></tr>
+          <tr><td>Goal class shape = refined design (<code>requiredCheckupsPerPeriod</code>, <code>resetPeriod</code> enum, etc.)</td><td><span class="tag tag-locked">LOCKED</span></td><td>Already implemented in <code>models/goal.dart</code>. Resolved inside the notes themselves — "<code>checkupFrequency</code> can be scrapped."</td><td>None.</td></tr>
+          <tr><td>Feed widget grid coordinates are aspirational, not built</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-deferred">DEFERRED</span></td><td>The two widget position specs overlap (Next Workout and Goals both claim row 2 of 4 columns) — the notation is under-specified, and the built feed does not use a literal 5x6 grid engine.</td><td>Beta feedback asks for a customizable or reflowable feed layout.</td></tr>
+          <tr><td>Groups</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-deferred">DEFERRED</span></td><td>A must-have in one requirements doc and a stretch item elsewhere, but no model, collection, or UI exists in the code — silently dropped during implementation.</td><td>Beta feedback ranks it in the Milestone 5 candidate pool.</td></tr>
+          <tr><td>Web version = build target, not the gym-admin product</td><td><span class="tag tag-decided">DECIDED</span></td><td>Web is already deployed (unbranded), but the stretch item as written — a distinct gym-management surface — was never built.</td><td>A gym account asks to manage community/moderation from a browser.</td></tr>
+          <tr><td>Stale project-status docs (<code>PROJECT_STATUS.md</code>, <code>PROJECT_SUMMARY.md</code>)</td><td><span class="tag tag-conflict">CONFLICT</span> &rarr; <span class="tag tag-decided">DECIDED</span></td><td>They describe February 2026, when auth/feed were unbuilt; the code has since caught up. Delete or mark superseded.</td><td>None.</td></tr>
+          <tr><td>API-gateway rearchitecture (lightweight frontend + gateway abstracting storage)</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Textbook premature abstraction for a solo dev with zero users.</td><td>Not stated explicitly in the brief despite its own claim of "an explicit trigger" — nearest analogue is the Firestore-migration trigger below (query limits or cost actually bite).</td></tr>
+          <tr><td>Firebase (Auth, Firestore, Storage, Hosting)</td><td><span class="tag tag-locked">LOCKED</span></td><td>Spark free tier covers current scale with a hard stop and no surprise bill.</td><td>N/A — already built on it; migrating is a rewrite.</td></tr>
+          <tr><td>GitHub (private repo)</td><td><span class="tag tag-locked">LOCKED</span></td><td>Repo already exists at <code>Willpatbarr/ForgeByAlpfit</code>.</td><td>N/A.</td></tr>
+          <tr><td>Linear</td><td><span class="tag tag-locked">LOCKED</span></td><td>William's existing planning UI; team <code>ForgeByAlpfit</code> already exists.</td><td>N/A.</td></tr>
+          <tr><td>Firebase App Check <span class="tier tier-t1">T1</span></td><td><span class="tag tag-decided">DECIDED</span></td><td>Closes the scraping hole — without it, the committed web API key plus open rules makes the whole user directory harvestable.</td><td>None — adopt before first real user.</td></tr>
+          <tr><td>Cloudflare Pages (docs site only) <span class="tier tier-t1">T1</span></td><td><span class="tag tag-decided">DECIDED</span></td><td>Renders <code>docs/</code> on push, matches William's standing cross-project setup. Firebase Hosting stays for the app; Pages is for docs only.</td><td>None.</td></tr>
+          <tr><td>Google Play Console <span class="tier tier-t1">T1</span></td><td><span class="tag tag-decided">DECIDED</span></td><td>$25 one-time — the cheapest real distribution channel; internal testing track needs no review wait.</td><td>None.</td></tr>
+          <tr><td>Cloud Functions / Firebase Blaze</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Avoided deliberately — Blaze requires a card on file, and account deletion works client-side instead.</td><td>Server-side logic becomes unavoidable: cascade account deletion at volume, tamper-proof goal counting, or FCM fan-out.</td></tr>
+          <tr><td>Riverpod / Bloc / DI framework</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Matches the "keep the built pattern" ruling above — no payoff for a solo dev today.</td><td>A second developer joins, or a screen becomes genuinely untestable without it.</td></tr>
+          <tr><td>Supabase / Postgres migration</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Firestore already works fine at current scale.</td><td>Firestore query limits or cost actually bite — not before roughly 1,000 users.</td></tr>
+          <tr><td>Algolia / Typesense search</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Firestore prefix search on <code>displayNameLower</code> is sufficient today.</td><td>Prefix search stops being good enough — realistically past a few thousand users.</td></tr>
+          <tr><td>GitHub Actions CI</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>No workflows exist; manual builds are fine at solo-dev scale.</td><td>A second developer joins, or the first broken build reaches a tester.</td></tr>
+          <tr><td>Firebase Analytics</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Free when eventually adopted, so there is no cost to deferring it.</td><td>There are enough users that behavioral questions can't be answered by just asking them.</td></tr>
+          <tr><td>FCM push notifications</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>No delivery mechanism is currently named or wired; <code>push_service.dart</code> is 0 bytes.</td><td>Post-beta, once retention is the problem worth solving.</td></tr>
+          <tr><td>Stripe / RevenueCat</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>The only mention of monetization in the whole corpus is one line about a paid premium gym account.</td><td>A gym actually offers to pay.</td></tr>
+          <tr><td>Separate staging Firebase project</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A single project is fine at current scale.</td><td>The first time a test wipes real user data.</td></tr>
+          <tr><td>Codemagic / Fastlane</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Manual builds are fine today.</td><td>Manual builds become the bottleneck — realistically past weekly releases.</td></tr>
+          <tr><td>Exercise database / API</td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Exercises are free-text today; not blocking.</td><td>Not stated explicitly in the brief — revisit if free-text logging becomes a real usability problem.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Get William's ruling on the three <span class="tag tag-proposed">PROPOSED</span> items above — everything else in this doc set assumes their current defaults.</li>
+      <li>Cross-check any deferred item before starting it against its trigger in the table — none of these should be built "because it would be nice," only because the trigger fired.</li>
+      <li>See <a href="../00-source/contradictions.html">contradictions.html</a> for the raw contradiction-by-contradiction writeup behind the resolved rows, and <a href="../03-services/index.html">03-services</a> for service-by-service setup detail.</li>
+      <li>See <a href="features.html">features.html</a> for how these decisions map to what is actually built today.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

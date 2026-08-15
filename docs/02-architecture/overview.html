@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architecture Overview — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#diagram">System diagram</a>
+    <a href="#components">Major components</a>
+    <a href="#pattern">The real pattern</a>
+    <a href="#dead-scaffold">Dead scaffold warning</a>
+    <a href="#routing">Routing</a>
+    <a href="#duplication">Known duplication</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 02-architecture / Overview</div>
+    <h1>Architecture Overview</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the shape of Forge as it actually exists today — client, backend surface, feature areas, and the one pattern that holds all of it together — not an idealized redesign.</div>
+  </header>
+
+  <section id="diagram">
+    <h2>System diagram</h2>
+    <p>One Flutter codebase, three build targets with real Firebase registration, one Firebase project as the entire backend. There is no server tier — the client talks to Firebase directly.</p>
+    <div class="mermaid">
+      <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flutter client on Web, Android, and iOS connects directly to Firebase Auth, Firestore, Storage, and Hosting; no server tier in between." style="max-width:100%; height:auto;">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#6cc394"/>
+          </marker>
+        </defs>
+
+        <!-- Flutter client group -->
+        <rect x="40" y="30" width="230" height="220" rx="12" fill="#1d2126" stroke="#3a424b" stroke-width="1.5"/>
+        <text x="155" y="55" text-anchor="middle" fill="#e8eaed" font-size="15" font-weight="600" font-family="ui-monospace,Menlo,monospace">Flutter client</text>
+
+        <rect x="60" y="75" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="155" y="100" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">Web</text>
+
+        <rect x="60" y="128" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="155" y="153" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">Android</text>
+
+        <rect x="60" y="181" width="190" height="42" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="155" y="206" text-anchor="middle" fill="#e8eaed" font-size="13" font-family="ui-monospace,Menlo,monospace">iOS</text>
+
+        <text x="155" y="240" text-anchor="middle" fill="#a4acb5" font-size="10.5">View &#8594; service &#8594; Firestore</text>
+
+        <!-- Arrow -->
+        <line x1="272" y1="140" x2="378" y2="140" stroke="#6cc394" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="325" y="128" text-anchor="middle" fill="#6cc394" font-size="10.5">direct SDK calls</text>
+
+        <!-- Firebase group -->
+        <rect x="382" y="30" width="300" height="260" rx="12" fill="#1d2126" stroke="#3a424b" stroke-width="1.5"/>
+        <text x="532" y="55" text-anchor="middle" fill="#e8eaed" font-size="15" font-weight="600" font-family="ui-monospace,Menlo,monospace">Firebase (forge-by-alpfit)</text>
+
+        <rect x="402" y="72" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="462" y="100" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Auth</text>
+
+        <rect x="542" y="72" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="602" y="100" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Firestore</text>
+
+        <rect x="402" y="130" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="462" y="158" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Storage</text>
+
+        <rect x="542" y="130" width="120" height="46" rx="8" fill="#14171a" stroke="#3a424b"/>
+        <text x="602" y="158" text-anchor="middle" fill="#e8eaed" font-size="12.5" font-family="ui-monospace,Menlo,monospace">Hosting</text>
+
+        <rect x="402" y="188" width="260" height="42" rx="8" fill="#14171a" stroke="#2b3138" stroke-dasharray="4 3"/>
+        <text x="532" y="213" text-anchor="middle" fill="#737c86" font-size="11.5" font-family="ui-monospace,Menlo,monospace">Functions — not used</text>
+
+        <text x="532" y="255" text-anchor="middle" fill="#a4acb5" font-size="10.5">rules deployed, App Check not yet on</text>
+      </svg>
+    </div>
+  </section>
+
+  <section id="components">
+    <h2>Major components</h2>
+    <p>Six feature areas make up the app. All are working end-to-end against live Firestore; line counts are the primary view file only, not the whole feature folder.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Feature area</th><th>What it owns</th><th>Main file</th><th>Lines</th></tr></thead>
+        <tbody>
+          <tr><td>Auth</td><td>Login, register, logout, route gating.</td><td><span class="fname">features/auth/presentation/view/{login,register}_page.dart</span> + <span class="fname">services/auth_service.dart</span></td><td>Not individually broken out</td></tr>
+          <tr><td>Feed</td><td>Home landing screen: personal widget dashboard plus a social update stream from friends and gyms.</td><td><span class="fname">features/feed/presentation/view/feed_page.dart</span></td><td>1,333</td></tr>
+          <tr><td>Calendar</td><td>Day and multi-day/range views, recurrence expansion, merged own/friends/gyms event streams, deep-link focus.</td><td><span class="fname">features/calendar/presentation/view/calendar_page.dart</span></td><td>1,489</td></tr>
+          <tr><td>Event Creator</td><td>Basic + workout event creation, plus the hub that fans out to goal and plan creation sheets.</td><td><span class="fname">features/event_creator/presentation/view/event_creator_page.dart</span></td><td>2,141 (plus 909 / 524 / 658 in the hub, goal sheet, plan sheet)</td></tr>
+          <tr><td>Social</td><td>User/gym search, friends, gym join/leave, DMs, channel posts/comments/likes.</td><td><span class="fname">features/social/presentation/view/social_page.dart</span></td><td>1,963</td></tr>
+          <tr><td>Profile</td><td>Avatar upload, friends list, joined gyms, gym member removal, edit name/contact.</td><td><span class="fname">features/profile/presentation/view/profile_page.dart</span></td><td>1,118</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Source: <span class="fname">out/04-asbuilt.md</span> feature status table. Goals and Plans are documented separately as their own working features on <a href="data-model.html">data-model.html</a>.</p>
+  </section>
+
+  <section id="pattern">
+    <h2>The real architecture pattern</h2>
+    <p>Every screen is a <code>StatefulWidget</code> that calls a free function in <span class="fname">lib/services/*.dart</span> directly from <code>build()</code>, usually through a <code>StreamBuilder</code> or <code>FutureBuilder</code>. The service function talks to Firestore. That is the entire stack.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Layer</th><th>What's there</th><th>What's not there</th></tr></thead>
+        <tbody>
+          <tr><td>View</td><td><code>StatefulWidget</code> + <code>setState</code>, or <code>StreamBuilder</code>/<code>FutureBuilder</code> wired to a service call.</td><td>No ViewModel, no Bloc, no Provider.</td></tr>
+          <tr><td>Service</td><td>Free functions in <span class="fname">lib/services/*.dart</span> — the de facto data layer for every feature.</td><td>No repository interfaces, no DI container.</td></tr>
+          <tr><td>Data</td><td>Raw <code>Map&lt;String, dynamic&gt;</code> almost everywhere; <code>Goal</code> and the <code>Plan*</code> classes are the only typed exceptions.</td><td>No DTOs, no converters layer.</td></tr>
+          <tr><td>State management</td><td>None — no Riverpod, Bloc, Provider, or get_it anywhere in <code>pubspec.yaml</code> or code.</td><td><code>ARCHITECTURE_ANALYSIS.md</code> recommended Riverpod; never adopted.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong><span class="tag tag-decided">DECIDED</span> Keep this pattern.</strong>
+      <p>Per brief &sect;7: "The dead clean-architecture scaffold was never used. Adopting it now is a rewrite with no payoff." View &#8594; free-function service &#8594; Firestore is the deliberate, permanent shape of this app, not a temporary state on the way to something else.</p>
+    </div>
+  </section>
+
+  <section id="dead-scaffold">
+    <h2>Dead scaffold warning</h2>
+    <p>A set of files across the tree are 0 bytes. They sit in directories named exactly the way a "proper" clean-architecture app would name them, which makes them look like abandoned work-in-progress. They are not in progress — nothing has touched them since the initial project scaffold commit.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Path</th><th>What it looks like</th></tr></thead>
+        <tbody>
+          <tr><td><span class="fname">features/feed/data/*</span> (feed_dto.dart, feed_repository.dart)</td><td>A repository/DTO layer for Feed.</td></tr>
+          <tr><td><span class="fname">features/feed/domain/*</span> (feed_filter.dart, feed_item.dart)</td><td>Domain models for Feed.</td></tr>
+          <tr><td><span class="fname">features/feed/presentation/viewmodel/*</span> (feed_state.dart, feed_viewmodel.dart, feed_card.dart)</td><td>A ViewModel layer for Feed.</td></tr>
+          <tr><td><span class="fname">core/errors/*.dart</span> (app_exception.dart, failure.dart)</td><td>A typed error/Result layer.</td></tr>
+          <tr><td><span class="fname">core/util/*.dart</span> (date_utils, extensions, validators)</td><td>Shared utility helpers.</td></tr>
+          <tr><td><span class="fname">app/di_providers.dart</span></td><td>A dependency-injection wiring point.</td></tr>
+          <tr><td>4 empty service files (<span class="fname">presence_service.dart</span>, <span class="fname">push_service.dart</span>, <span class="fname">link_preview_service.dart</span>, <span class="fname">moderation_service.dart</span>)</td><td>Presence, push, link unfurling, and moderation features.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Treat these as NOT STARTED, not partially started.</strong>
+      <p>Per brief &sect;7, Milestone 0 deletes all of this so the repo stops implying work exists where it doesn't. Do not resume "finishing" any of these files as if picking up mid-implementation — there is no partial implementation to continue.</p>
+    </div>
+  </section>
+
+  <section id="routing">
+    <h2>Routing</h2>
+    <p>Navigation runs on <code>go_router</code>, defined in <span class="fname">app/router.dart</span>. A top-level <code>redirect</code> gates every route on <code>FirebaseAuth.instance.currentUser</code> — logged out goes to login/register, logged in enters a <code>ShellRoute</code> with a persistent bottom nav.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Detail</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Auth gate</td><td>Top-level <code>redirect</code> checks <code>FirebaseAuth.instance.currentUser</code>; unauthenticated users cannot reach any route inside the shell.</td></tr>
+          <tr><td>Shell</td><td><code>ShellRoute</code> wraps Feed, Calendar, Social, Profile behind one persistent bottom nav bar.</td></tr>
+          <tr><td>Transitions</td><td>Custom slide-transition logic keyed off a hand-maintained route-order map.</td></tr>
+          <tr><td>Deep links</td><td>Query params drive calendar focus (<code>focusOwner</code>, <code>focusEvent</code>) and event edit (<code>edit</code>).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="duplication">
+    <h2>Known duplication worth knowing</h2>
+    <p><code>_mergeEventStreams</code> (<span class="fname">events_service.dart:450-497</span>) and <code>_mergeUpdateStreams</code> (<span class="fname">updates_service.dart:50-82</span>) are near-identical hand-rolled multi-stream mergers — each subscribes N per-friend/per-gym Firestore streams, buffers the latest value per index, and re-sorts client-side on every emission.</p>
+    <p>They were written twice, not shared. A bug fix to one (say, a subscription leak on cancel) has to be applied to the other by hand or it drifts. See <a href="conventions.html">conventions.html</a> for how to treat this pattern going forward.</p>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Do not resume any file listed under Dead scaffold warning as if it were in-progress work — confirm with Milestone 0 status before touching them.</li>
+      <li>See <a href="data-model.html">data-model.html</a> for the full collection-by-collection Firestore shape referenced by these services.</li>
+      <li>See <a href="conventions.html">conventions.html</a> before adding a new feature, so it lands in the flat View &#8594; service pattern rather than reviving the dead layering.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

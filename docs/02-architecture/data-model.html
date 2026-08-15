@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Model — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#users">users/{uid}</a>
+    <a href="#events">events subcollection</a>
+    <a href="#goals">goals subcollection</a>
+    <a href="#plans">plans subcollection</a>
+    <a href="#channels">channelPosts + comments</a>
+    <a href="#threads">directThreads</a>
+    <a href="#dead-collection">Dead collection</a>
+    <a href="#relationships">Relationships</a>
+    <a href="#storage">Storage choices</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 02-architecture / Data Model</div>
+    <h1>Data Model</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the Firestore/Storage shape Forge's code actually reads and writes today, field by field — a reference page, not a proposal. Firestore is schemaless; this is inferred from <span class="fname">firestore_refs.dart</span>, the service files, and <span class="fname">firestore.rules</span>.</div>
+  </header>
+
+  <section id="users">
+    <h2><code>users/{uid}</code></h2>
+    <p>One collection models both people and gym accounts, discriminated by <code>accountType</code>. See Relationships below for what that means in practice.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>uid</code></td><td>string</td><td>Firebase Auth uid, doc id.</td></tr>
+          <tr><td><code>email</code></td><td>string</td><td>World-readable today (<code>firestore.rules:27</code>: <code>allow read: if true;</code>) — Milestone&nbsp;1 splits this behind an owner-or-friend check per brief &sect;7.</td></tr>
+          <tr><td><code>displayName</code></td><td>string</td><td>User-facing name.</td></tr>
+          <tr><td><code>displayNameLower</code></td><td>string</td><td>Lowercased copy of <code>displayName</code>, used for case-insensitive prefix search.</td></tr>
+          <tr><td><code>accountType</code></td><td>string enum</td><td><code>'user'</code> or <code>'gym'</code> — the field that discriminates a person doc from a gym doc.</td></tr>
+          <tr><td><code>contactInfo</code></td><td>string, optional</td><td>User-supplied; also currently world-readable.</td></tr>
+          <tr><td><code>avatarUrl</code></td><td>string, optional</td><td>Points into Firebase Storage — see Storage choices.</td></tr>
+          <tr><td><code>friendIds</code></td><td>string[]</td><td>User-side only. Denormalized array of friend uids, not a join collection.</td></tr>
+          <tr><td><code>joinedGymIds</code></td><td>string[]</td><td>User-side only. Gyms this user has joined.</td></tr>
+          <tr><td><code>memberUserIds</code></td><td>string[]</td><td>Gym-side only. Uids of members of this gym.</td></tr>
+          <tr><td><code>channelNames</code></td><td>string[]</td><td>Gym-side only. Names of this gym's channels.</td></tr>
+          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>Server timestamp.</td></tr>
+          <tr><td><code>updatedAt</code></td><td>Timestamp</td><td>Server timestamp.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="events">
+    <h2><code>users/{uid}/events/{eventId}</code></h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>title</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>notes</code></td><td>string, optional</td><td>&nbsp;</td></tr>
+          <tr><td><code>eventType</code></td><td>string enum</td><td><code>'basic'</code> or <code>'workout'</code> — the goal type was dropped from event types once Goals became its own object (brief ruling #3).</td></tr>
+          <tr><td><code>isPublic</code></td><td>bool</td><td>&nbsp;</td></tr>
+          <tr><td><code>inviteeIds</code></td><td>string[]</td><td>&nbsp;</td></tr>
+          <tr><td><code>inviteeNames</code></td><td>string[]</td><td>Denormalized alongside <code>inviteeIds</code> to avoid a lookup per render.</td></tr>
+          <tr><td><code>startAt</code> / <code>endAt</code></td><td>Timestamp</td><td>Converted from/to <code>DateTime</code> at the service boundary.</td></tr>
+          <tr><td><code>exercises</code></td><td>array of maps</td><td><code>{name, sets, weight}</code> — untyped, free-text exercise names.</td></tr>
+          <tr><td><code>locationGymId</code> / <code>locationGymName</code></td><td>string, optional</td><td>Denormalized gym reference.</td></tr>
+          <tr><td><code>recurrence</code></td><td>map</td><td><code>{frequency, endType, untilDate, daysOfWeek[]}</code>.</td></tr>
+          <tr><td><code>planId</code> / <code>planSourceEventId</code></td><td>string, optional</td><td>Set when this event instance was generated by a Plan.</td></tr>
+          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="goals">
+    <h2><code>users/{uid}/goals/{goalId}</code></h2>
+    <p>Backed by the one properly typed model in the app, <code>models/goal.dart</code>, with real <code>fromFirestore</code>/<code>toJson</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>userId</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>name</code> / <code>description</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>startDate</code> / <code>endDate</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr><td><code>requiredCheckupsPerPeriod</code></td><td>number</td><td>&nbsp;</td></tr>
+          <tr><td><code>resetPeriod</code></td><td>string enum</td><td><code>daily | weekly | biweekly | monthly</code>.</td></tr>
+          <tr><td><code>currentCheckupsCompleted</code></td><td>number</td><td>Runs entirely client-side; no server-side validation of the counting logic (see debt list #11).</td></tr>
+          <tr><td><code>currentPeriodStart</code> / <code>currentPeriodEnd</code></td><td>Timestamp</td><td>See callout below — the most bug-prone fields in the model.</td></tr>
+          <tr><td><code>status</code></td><td>string enum</td><td><code>active | archived</code>.</td></tr>
+          <tr><td><code>periodHistory</code></td><td>array of maps</td><td><code>{periodStart, periodEnd, requiredCheckups, completedCheckups}</code> — accumulates one entry per rollover.</td></tr>
+          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Most bug-prone part of the model.</strong>
+      <p><code>currentPeriodStart</code>, <code>currentPeriodEnd</code>, and <code>periodHistory[]</code> drive the check-in/uncheck-in rollover transaction in <span class="fname">goals_service.dart:185-273</span>. This date math is exactly why Milestone 4 (brief &sect;8) adds unit tests specifically here, alongside recurrence expansion and plan generation — it is the algorithmically densest, silently-corrupting code in the app, and there is no test coverage anywhere in the repo today.</p>
+    </div>
+  </section>
+
+  <section id="plans">
+    <h2><code>users/{uid}/plans/{planId}</code></h2>
+    <p>Backed by typed classes in <span class="fname">plans_service.dart</span> (<code>PlanSummary</code>, <code>PlanDetails</code>, <code>LinkableEvent</code>) — the other typed exception to the <code>Map&lt;String, dynamic&gt;</code> norm.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>userId</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>name</code> / <code>description</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>repeatWindowWeeks</code></td><td>number</td><td>&nbsp;</td></tr>
+          <tr><td><code>startDate</code> / <code>endDate</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr><td><code>linkedEvents</code></td><td>array of maps</td><td><code>{sourceEventId, title, weekday}</code> — the template a plan generates instances from.</td></tr>
+          <tr><td><code>generatedInstanceCount</code></td><td>number</td><td>&nbsp;</td></tr>
+          <tr><td><code>maxGenerationCap</code></td><td>number</td><td>Bounds how many event instances one plan can generate in a batched write.</td></tr>
+          <tr><td><code>status</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="channels">
+    <h2><code>users/{gymUid}/channelPosts/{postId}</code> + nested comments</h2>
+    <p>Gym accounts only, conceptually — nothing in the schema itself enforces that a post's parent doc has <code>accountType: 'gym'</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>channelName</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>authorUid</code> / <code>authorName</code></td><td>string</td><td>Denormalized author identity.</td></tr>
+          <tr><td><code>content</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr><td><code>likeIds</code></td><td>string[]</td><td>Denormalized array of liker uids.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Nested subcollection: <code>.../channelPosts/{postId}/comments/{commentId}</code></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>authorUid</code> / <code>authorName</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>content</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>createdAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Owner-or-author delete only, gated by <code>isCurrentUserGymOwner</code> (<span class="fname">channel_posts_service.dart:99-114</span>). No report/mute/ban tooling exists yet — that is a Milestone 3 item per the brief.</p>
+  </section>
+
+  <section id="threads">
+    <h2><code>directThreads/{threadId}</code> + messages</h2>
+    <p>Doc id is a sorted <code>uidA__uidB</code> pair. This is the one top-level collection outside <code>users</code> — everything else nests under the owning user's doc.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>participants</code></td><td>[uidA, uidB]</td><td>2-element array; creation only checks the requester is in it, not that the pair is an allowed relationship — see security posture in <span class="fname">out/04-asbuilt.md</span> item 5.</td></tr>
+          <tr><td><code>lastMessage</code></td><td>string</td><td>Either participant can rewrite this independent of the real message log (rules gap, debt list #2b).</td></tr>
+          <tr><td><code>lastSenderUid</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>lastMessageAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr><td><code>unreadCounts</code></td><td>map&lt;uid, number&gt;</td><td>Per-participant unread count, computed client-side.</td></tr>
+          <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Subcollection: <code>directThreads/{threadId}/messages/{messageId}</code></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>senderUid</code> / <code>senderName</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>text</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>sentAt</code></td><td>Timestamp</td><td>&nbsp;</td></tr>
+          <tr><td><code>messageKind</code></td><td>string enum, nullable</td><td><code>'friend_request' | 'event_invite' | null</code> — messages double as the friend-request delivery mechanism, there is no separate friend-request collection.</td></tr>
+          <tr><td><code>recipientUid</code></td><td>string</td><td>&nbsp;</td></tr>
+          <tr><td><code>eventId</code> / <code>eventOwnerUid</code></td><td>string, optional</td><td>Populated only for <code>event_invite</code> messages.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="dead-collection">
+    <h2>Dead collection: <code>user_preferences/{userId}</code></h2>
+    <div class="callout warn">
+      <strong>Rules exist, code doesn't.</strong>
+      <p><code>firestore.rules:191-204</code> defines access rules for <code>user_preferences/{userId}</code>. Nothing in <span class="fname">lib/</span> reads or writes this collection — it is referenced only in the rules file and two stale markdown docs. Treat it as a cleanup item, not a feature to build toward.</p>
+    </div>
+  </section>
+
+  <section id="relationships">
+    <h2>Relationships</h2>
+    <p>Two structural choices explain most of the shape above. Both are honest trade-offs, not mistakes, and both are locked in by brief &sect;7 ("do not change the existing Firestore data model").</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Choice</th><th>Consequence</th></tr></thead>
+        <tbody>
+          <tr><td>One <code>users</code> collection models both people and gyms, discriminated by <code>accountType</code>. A gym is a user doc that additionally carries <code>memberUserIds</code>/<code>channelNames</code>.</td><td>Simple to query (one collection, one set of security rules to reason about) but means gym-specific fields sit unused on every person doc's schema, and vice versa. There is no schema-level guarantee a "gym" doc doesn't also have <code>friendIds</code> set.</td></tr>
+          <tr><td>Friendships and gym membership are denormalized uid arrays (<code>friendIds</code>, <code>joinedGymIds</code>, <code>memberUserIds</code>) directly on the user/gym doc, not a separate join collection.</td><td>Reading "who are my friends" is one document read, not a query — fast and cheap on the free tier. It also means the array shares the document's 1&nbsp;MiB Firestore size limit with every other field on that doc, so it does not scale to a large friend or member count, and any single friend/member read still means loading the whole array even to check one relationship.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="storage">
+    <h2>Storage choices</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Choice</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Firestore for structured data</td><td>Every collection above. Primary datastore for the whole app.</td></tr>
+          <tr><td>Firebase Storage for avatars only</td><td>Path convention <code>avatars/{uid}/profile</code>, bucket <code>forge-by-alpfit.firebasestorage.app</code>. No other file uploads exist in the app.</td></tr>
+          <tr><td>Enums as strings</td><td><code>accountType</code>, <code>eventType</code>, <code>resetPeriod</code>, <code>status</code>, <code>messageKind</code> are all stored as plain strings, not Firestore's native enum-adjacent types.</td></tr>
+          <tr><td><code>DateTime</code> &#8644; <code>Timestamp</code></td><td>Conversion happens at the service boundary — services accept/return Dart <code>DateTime</code>, Firestore stores <code>Timestamp</code>. No shared converter utility (<span class="fname">core/firebase/converters.dart</span> is 0 bytes) — each service does this inline.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Do not build against <code>user_preferences</code> — it has rules but zero code, and is a deletion candidate, not a starting point.</li>
+      <li>Before touching goal period-rollover logic, read the callout under Goals above and check whether Milestone 4's tests exist yet.</li>
+      <li>See <a href="conventions.html">conventions.html</a> for how new fields/collections should be added to this model, and <a href="overview.html">overview.html</a> for how these collections are reached from the View layer.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

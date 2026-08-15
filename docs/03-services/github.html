@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup">Setup steps</a>
+    <a href="#secrets">Secrets &amp; config</a>
+    <a href="#escape">Escape hatch</a>
+    <a href="#cost">Cost &amp; scale</a>
+    <a href="#teammate">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 03-services / GitHub</div>
+    <h1>GitHub <span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> where Forge's code and this <code>docs/</code> folder live, and nowhere else — for how the project is planned, see <a href="linear.html">linear.html</a>.</div>
+  </header>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>GitHub hosts the private Forge repository — the source of truth for every line of Dart and every doc in this folder. It was chosen because it is where the repo already lives, has zero migration cost, and gives unlimited private-repo collaborators for free.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative</th><th>Why it lost</th></tr></thead>
+        <tbody>
+          <tr><td>GitLab</td><td>No reason to move — repo already exists on GitHub, and moving is pure cost with no benefit.</td></tr>
+          <tr><td>Self-hosted git (Gitea, etc.)</td><td>Adds server maintenance for a solo dev with zero users. Rejected as premature per the brief's service table.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2>Adoption trigger</h2>
+    <p><span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span> — already adopted, not a future decision. The repo <code>Willpatbarr/ForgeByAlpfit</code> already exists, is private, has Issues enabled, and defaults to branch <code>main</code>.</p>
+    <p>It is T0 because the code has to live somewhere from day one; there is no lower tier for "where is the source code."</p>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Limit</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Private repositories</td><td>Unlimited, free.</td></tr>
+          <tr><td>Collaborators on private repos</td><td>Unlimited, free.</td></tr>
+          <tr><td>GitHub Actions minutes</td><td>2,000 min/mo included on the free plan.</td></tr>
+          <tr><td>What happens when exceeded</td><td>Actions minutes: verify at signup. Storage/collaborators have no exceed case at this scale.</td></tr>
+          <tr><td>First paid tier</td><td>Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Forge currently has no workflows, so the Actions minute limit is not in play yet — see the CI note in Setup steps.</p>
+  </section>
+
+  <section id="setup">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Confirm the repo exists: <code>Willpatbarr/ForgeByAlpfit</code>, private, default branch <code>main</code>. It already does — this is a status check, not a creation step.</li>
+      <li>Confirm Issues is enabled in repo settings. It is enabled, but per the brief, Issues stays empty on purpose — see below.</li>
+      <li>Do not create GitHub Actions workflows yet. There is deliberately no <code>.github/workflows</code> directory in this repo right now — this is a scoped deferral (see §4 "Rejected as premature" in the decision brief: CI is adopted only when a second developer joins, or a broken build first reaches a tester), not an oversight.</li>
+      <li>Keep <code>docs/</code> in this same repo — it is what Cloudflare Pages will build from. See <a href="cloudflare-pages.html">cloudflare-pages.html</a>.</li>
+      <li><span class="verify">Verify:</span> run <code>git clone https://github.com/Willpatbarr/ForgeByAlpfit.git</code> into a scratch directory and confirm the Flutter source and <code>docs/</code> both appear. If that clone works, GitHub is correctly set up as the code and docs home.</li>
+    </ol>
+    <div class="callout warn">
+      <strong>Painful to change later:</strong> the default branch name (<code>main</code>) and repo visibility (private) are cheap to change now, expensive once CI, branch protection rules, or external collaborators depend on them. Decide those before adding either.
+    </div>
+  </section>
+
+  <section id="secrets">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Client-safe / server-only</th><th>Local vs production</th></tr></thead>
+        <tbody>
+          <tr><td>Firebase web config keys</td><td>Client-safe by design (Firebase web API keys are not secrets), but still not committed as a convenience — see App Check note in the brief.</td><td>Same values used in both; scoping is enforced by security rules, not by hiding the key.</td></tr>
+          <tr><td>Any future GitHub Actions secrets</td><td>Server-only, would live in repo Settings &rarr; Secrets, never in a file.</td><td>N/A — no Actions workflows exist yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Real secrets are never committed to this repository. Nothing in this repo currently requires a <code>.env.example</code> for GitHub itself — that file, if needed, belongs to the app's own config, not to GitHub as a service.</p>
+  </section>
+
+  <section id="escape">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: low</span> — GitHub stores git history and Issues metadata, nothing Forge depends on structurally.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What lives only here</th><th>How to export</th><th>Migration cost</th></tr></thead>
+        <tbody>
+          <tr><td>Git history (commits, branches, tags)</td><td><code>git clone --mirror</code> and push to any other git host.</td><td>Minutes. Git is portable by design.</td></tr>
+          <tr><td>Issues / milestones</td><td>N/A today — GitHub Issues holds zero issues and zero milestones by design, since Linear is the write target (see <a href="linear.html">linear.html</a>).</td><td>None — nothing to migrate.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>Cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>$0</td><td>No change — GitHub cost is driven by collaborators and Actions minutes, not app users.</td></tr>
+          <tr><td>~100</td><td>$0</td><td>Still free. Watch for a first CI workflow being added around this point per the brief's CI trigger.</td></tr>
+          <tr><td>~1,000</td><td>Verify at signup</td><td>Only relevant if Actions usage grows; app user count itself does not move GitHub's bill.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost for another member</td><td>$0 — unlimited collaborators on private repos on the free plan.</td></tr>
+          <tr><td>Permission model</td><td>Per-collaborator roles (Read / Triage / Write / Maintain / Admin), set in repo Settings &rarr; Collaborators.</td></tr>
+          <tr><td>Does free tier allow another member</td><td>Yes, with no seat limit and no cost.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Leave <code>.github/workflows</code> absent — do not add CI until the brief's trigger fires (a second developer, or a broken build reaching a tester).</li>
+      <li>Keep Issues empty; file all planning work in Linear instead (<a href="linear.html">linear.html</a>).</li>
+      <li>Re-run the clone verification step above the next time repo visibility or branch protection changes.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contradictions Ledger — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#rules">How conflicts were resolved</a>
+    <a href="#needs-you">Needs your input</a>
+    <a href="#ledger">The full ledger</a>
+    <a href="#travel">Direction of travel</a>
+    <a href="#gaps">Gaps</a>
+    <a href="#correction">Intake correction</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Raw source</a> / Contradictions</div>
+    <h1>Contradictions Ledger</h1>
+    <div class="whatthisis"><strong>What this is:</strong> every place your notes disagreed with themselves, and exactly how each conflict was resolved. Read the <a href="#needs-you">Needs your input</a> section; skim the rest. This page exists so you can check the reasoning before trusting the plan built on top of it.</div>
+  </header>
+
+  <div class="onesentence">
+    Fifteen conflicts were found across nineteen source documents. Twelve are resolved and closed, three are deliberately deferred, and <strong>none were dropped silently</strong>.
+  </div>
+
+  <section id="rules">
+    <h2>How conflicts were resolved</h2>
+    <p>These rules were applied in order, so you can audit any individual ruling against them.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Rule</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Direction of travel wins</strong></td><td>If the notes evolve A &rarr; B &rarr; C, the trend is the signal, even when an old note argues loudly for A.</td></tr>
+          <tr><td><strong>Recency usually wins</strong></td><td>Unless the older note is clearly more considered. A worked-through spec beats a later offhand line.</td></tr>
+          <tr><td><strong>Specificity beats vagueness</strong></td><td>A detailed design outranks a passing mention.</td></tr>
+          <tr><td><strong>Never average</strong></td><td>No mushy middles. One position is picked; the other is recorded as the road not taken.</td></tr>
+          <tr><td><strong>The code is a vote</strong></td><td>This project is already built. Where a note and the working code disagree, the code shows what you actually decided.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="small muted">Scope conflicts &mdash; what the product <em>is</em>, who it's for, whether a feature exists at all &mdash; come to you. Implementation conflicts were resolved here and tagged <span class="tag tag-decided">DECIDED</span>.</p>
+  </section>
+
+  <section id="needs-you">
+    <h2>Needs your input</h2>
+    <div class="callout warn">
+      <p><strong>Only one conflict genuinely needs you: ruling #1, the scope of the business.</strong></p>
+      <p>Your earliest notes describe "AlpFit" as three products &mdash; a consumer app, gym management software, and trainer software. Every formal document after that describes one consumer app in which "gym" is just an account type. The plan proceeds on <strong>one app</strong>, because that is the unmistakable direction of travel. If you still intend the three-product business, say so and the roadmap changes shape significantly.</p>
+    </div>
+    <p>Rulings #7 (feed widget grid) and #9 (groups) are minor and deferred rather than decided. Glance at them if you disagree that they can wait.</p>
+  </section>
+
+  <section id="ledger">
+    <h2>The full ledger</h2>
+    <p>One row per conflict. Sources are your original filenames.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Topic</th><th>Position A</th><th>Position B</th><th>Resolution</th><th>Tag</th><th>Needs you?</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td><strong>Business scope</strong></td>
+            <td>Three products: consumer app + gym software + trainer software <span class="fname">AlpFit Mission Statement_Goals</span> (earliest, undated)</td>
+            <td>One consumer app; gym is an account type. Every formal doc: <span class="fname">Pre-Proposal</span>, <span class="fname">Forge Proposal</span>, <span class="fname">Initial Requirements</span>, <span class="fname">Final Requirements Specs</span></td>
+            <td><strong>One app.</strong> Ambition narrowed consistently as the documents got more formal. Gym software survives only as the "gym account" type plus one stretch web build.</td>
+            <td><span class="tag tag-conflict">CONFLICT</span></td>
+            <td><strong>Yes</strong></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Calendar view granularity</td>
+            <td>year / month / <strong>multi</strong> / day <span class="fname">Forge Initial Requirements</span> (2025-12-13)</td>
+            <td>year / month / <strong>week</strong> / day (the twin copy) &mdash; and a third list, daily / multi-day / monthly <span class="fname">Final Requirements Specs</span></td>
+            <td><strong>Daily, multi-day, monthly.</strong> The Final Requirements Spec is the most formal and latest deliverable, and it matches what the code actually implements. Year view is dropped; nothing implements it.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Event types at creation</td>
+            <td><strong>Three</strong>: workout, goal, basic <span class="fname">AlpFit Mission Statement_Goals</span></td>
+            <td><strong>Two</strong>: basic, workout &mdash; every later doc, and the code</td>
+            <td><strong>Two.</strong> Goals became a first-class object with their own model and service rather than a kind of event. Never stated outright in the notes; inferred from consistent absence and confirmed by the code.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Landing page name and role</td>
+            <td>"Dashboard": your goals, today's workout, friends' shared goals</td>
+            <td>"Feed": updates from friends and gyms, today's events, widget dashboard</td>
+            <td><strong>Feed, carrying both jobs.</strong> Not a pure rename &mdash; Feed absorbed Dashboard's personal-widget role and added a social update stream. The built <span class="fname">feed_page.dart</span> does exactly this.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td><strong>Goals: stretch or core?</strong></td>
+            <td>Listed under <em>Stretch</em> requirements <span class="fname">Final Requirements Specs</span></td>
+            <td>Received the most detailed design work in the entire corpus &mdash; full Dart class, validation rules, enums, widget spec, a whole Q&amp;A session &mdash; and is fully built</td>
+            <td><strong>Goals are core.</strong> This is you changing your mind over time, not a real contradiction: goals were promoted from stretch to core through sheer investment. The working code settles it.</td>
+            <td><span class="tag tag-conflict">CONFLICT</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Goal class shape</td>
+            <td>Early pseudo-class: <code>checkupFrequency</code>, <code>resetFrequency</code>, <code>nextCheckupStatus</code></td>
+            <td>Refined: <code>requiredCheckupsPerPeriod</code>, <code>resetPeriod</code> enum, <code>currentCheckupsCompleted</code>, <code>periodHistory[]</code></td>
+            <td><strong>Refined design</strong> &mdash; already what <span class="fname">models/goal.dart</span> implements. You resolved this inside the notes yourself ("checkupFrequency can be scrapped"). Listed so nobody treats the pseudo-class as current.</td>
+            <td><span class="tag tag-locked">LOCKED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Feed widget grid coordinates</td>
+            <td>Next Workout at position 0:0, height 3, width 4</td>
+            <td>Goals at position 0:2, height 2, width 4</td>
+            <td><strong>These two overlap.</strong> If position is col:row and height extends downward, both claim row 2 of the same four columns. The notation is under-specified and the built feed does not use a literal 5&times;6 grid engine. Treated as an aspirational spec, not a settled one.</td>
+            <td><span class="tag tag-deferred">DEFERRED</span></td>
+            <td>Minor</td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Calendar filtering</td>
+            <td>"filter which event <em>sources</em> are shown"</td>
+            <td>"provided the event owner is not filtered out"</td>
+            <td><strong>Same feature, two phrasings.</strong> Not a real conflict. Filtering is by owner/source.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td><strong>Groups</strong></td>
+            <td>"Create and join groups of other users" is a must-have <span class="fname">Forge Initial Requirements</span></td>
+            <td>Absent from the code entirely &mdash; no model, no collection, no UI</td>
+            <td><strong>Silently dropped during implementation.</strong> Not built, and not needed for the beta. Recorded here and moved to deferred with a trigger, rather than being quietly lost.</td>
+            <td><span class="tag tag-deferred">DEFERRED</span></td>
+            <td>Minor</td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Web version</td>
+            <td>Stretch: "web version for gym accounts to manage community"</td>
+            <td>Web is <em>already deployed</em> &mdash; hosting configured, deploy cache in git history &mdash; but unbranded and not gym-specific</td>
+            <td><strong>Web exists as a build target, not as the gym-admin product.</strong> The stretch item as written is not built and stays deferred. The web build gets repurposed as the fastest beta channel.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Duplicate source files</td>
+            <td><span class="fname">Forge_Goal_Class_Design</span> appears twice; <span class="fname">Forge Initial Requirements</span> appears twice</td>
+            <td>&mdash;</td>
+            <td>Byte-identical, and one-word different respectively. <strong>Each pair counts as one source</strong>, not two independent confirmations of the same idea.</td>
+            <td><span class="tag tag-locked">LOCKED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Rec Manager meeting notes</td>
+            <td>An intake pass reported this file was a duplicate of the <code>gsutil</code> CORS note</td>
+            <td>It is not &mdash; it contains real stakeholder notes</td>
+            <td><strong>Correction, see below.</strong> The file records your beta arrangement and is the only stakeholder record that exists. It directly shapes Milestone 3.</td>
+            <td><span class="tag tag-locked">LOCKED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Architecture direction</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> recommends Riverpod and clean architecture</td>
+            <td>Code uses plain <code>StatefulWidget</code> + <code>setState</code> + <code>StreamBuilder</code>; the clean-architecture folders are <strong>all 0 bytes</strong></td>
+            <td><strong>Keep what's built.</strong> The scaffold is a fossil from project setup that nothing ever used. Adopting Riverpod now is a rewrite with no payoff for a solo developer this quarter.</td>
+            <td><span class="tag tag-decided">DECIDED</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td><strong>Docs vs. reality</strong></td>
+            <td><span class="fname">PROJECT_STATUS.md</span> (Feb 2026): services are "empty placeholders," auth "not built," feed "hardcoded"</td>
+            <td>Auth, feed, calendar, events, goals, plans, social and profile are all working against live Firestore</td>
+            <td><strong>The docs are stale and wrong.</strong> They describe February. <span class="fname">FIRESTORE_RULES_SETUP.md</span> is actively dangerous &mdash; it holds an outdated rules copy that would reopen closed security holes if restored.</td>
+            <td><span class="tag tag-conflict">CONFLICT</span></td>
+            <td>No</td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td>Future architecture</td>
+            <td><span class="fname">Ideas for Future</span>: move to a lightweight frontend plus API gateway</td>
+            <td>Current: Flutter talks directly to Firestore</td>
+            <td><strong>Not now.</strong> Textbook premature abstraction for a solo developer with zero users. Deferred with an explicit trigger rather than rejected outright.</td>
+            <td><span class="tag tag-deferred">DEFERRED</span></td>
+            <td>No</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="travel">
+    <h2>Direction of travel</h2>
+    <p>Four places where the notes show your thinking moving in a clear direction over time. These patterns drove several rulings above.</p>
+    <div class="grid">
+      <div class="card">
+        <h3>Ambition narrowed</h3>
+        <p>The three-platform AlpFit vision never resurfaces after the first brainstorm. Every formal deliverable scopes down to one app with gym accounts inside it.</p>
+      </div>
+      <div class="card">
+        <h3>Dashboard became Feed</h3>
+        <p>An early split between a personal "Dashboard" and a separate "Social" page collapsed into one Feed that does both jobs.</p>
+      </div>
+      <div class="card">
+        <h3>Goals got promoted</h3>
+        <p>Filed as a stretch item, then given more design attention than anything else in the corpus, then fully built. Effort revealed the real priority.</p>
+      </div>
+      <div class="card">
+        <h3>Calendar views never stabilized</h3>
+        <p>Three documents give three different lists of view granularities, each dropping or renaming an option. The code broke the tie.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="gaps">
+    <h2>Gaps &mdash; what your notes never answered</h2>
+    <p>These are not contradictions. They are questions the plan needed answered that no document addresses. Nothing here was invented; each is carried forward as an open item.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Gap</th><th>How the plan handles it</th></tr></thead>
+        <tbody>
+          <tr><td>Monetization</td><td>One mention ever: "paid premium gym account." Out of scope until there are users.</td></tr>
+          <tr><td>Who pays for infrastructure at scale</td><td>Everything is pinned to free tiers with named triggers. Total committed spend is $0/month.</td></tr>
+          <tr><td>Platform targets</td><td>Never stated. Ruled on as <span class="tag tag-proposed">PROPOSED</span>: web first, then Android, iOS deferred.</td></tr>
+          <tr><td>Privacy, data retention, minors</td><td>Nothing beyond "Firebase Auth over HTTPS." Audience is stated as 18+, which avoids COPPA. A privacy policy and account deletion are both required before beta.</td></tr>
+          <tr><td>Moderation policy</td><td>You flagged this undefined yourself. Gym owners can delete posts; there is no report, ban, or mute. Minimum viable moderation is a Milestone 3 task.</td></tr>
+          <tr><td>Gym-approval workflow</td><td>Asserted in your spec ("instant or require approval") but never specified and not built. Needed for the rec center beta.</td></tr>
+          <tr><td>Testing strategy</td><td>"I need to do research into testing suites" is the entire plan. Zero tests exist. Scoped down to date-math unit tests only.</td></tr>
+          <tr><td>Exercise database source</td><td>"Free, I will create this or find a free API." Unresolved and not blocking &mdash; exercises are free-text today.</td></tr>
+          <tr><td>Push notification mechanism</td><td>Described from the user's side; no mechanism named. Deferred to T2.</td></tr>
+          <tr><td>Accessibility</td><td>Never mentioned, despite an "all ages" goal. Added as a small explicit task, not a program.</td></tr>
+          <tr><td>Named stakeholders</td><td>Your Proposal says "TBD." The rec center is the implied stakeholder. Still unresolved on paper.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="correction">
+    <h2>Correction to the intake pass</h2>
+    <div class="callout">
+      <p>An automated intake pass reported that <span class="fname">Bigger Rec Manager Meeting.docx</span> was a duplicate of the <code>gsutil</code> CORS command note, and that the real meeting notes did not exist. <strong>That was wrong, and it was caught by re-reading the file directly.</strong></p>
+      <p>The file contains genuine stakeholder notes: what you need from a stakeholder (feedback on design and UI, feedback on features implemented, and a beta group), and the split of that beta group into <strong>"The Gym"</strong> &mdash; who would host their own community and use it to communicate news and events &mdash; and <strong>"The User"</strong> &mdash; people who use the app and participate in the host gym's community.</p>
+      <p>This matters because it is the <em>only</em> record of the beta arrangement anywhere in your notes, and Milestone 3 is built directly on it.</p>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Read ruling <strong>#1</strong> and confirm Forge is one app, not the first product of a three-product business. Everything downstream depends on this.</li>
+      <li>Glance at rulings <strong>#7</strong> and <strong>#9</strong> and confirm the feed widget grid and Groups can both wait.</li>
+      <li>Move on to the <a href="../01-product/decisions.html">decision log</a>, where the three <span class="tag tag-proposed">PROPOSED</span> calls are collected.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Setup — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#prereqs">Prerequisites</a>
+    <a href="#steps">Setup steps</a>
+    <a href="#firebase-config">Firebase config already committed</a>
+    <a href="#repo-size">Repo size after building</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 05-runbooks / Local Setup</div>
+    <h1>Local Setup</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the exact steps from a fresh clone to a running app on your machine, fastest path first — read this before touching anything else.</div>
+  </header>
+
+  <section id="prereqs">
+    <h2>Prerequisites</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Requirement</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Flutter SDK</td><td>Install the Flutter SDK for your platform (includes the Dart SDK). Chrome is the target for the fastest run, so a Flutter install with web support enabled is what you need.</td></tr>
+          <tr><td>Dart constraint</td><td><code>^3.9.2</code> — from <code>pubspec.yaml:7</code> (<code>environment: sdk: ^3.9.2</code>). Whatever Flutter version you install must ship a Dart SDK satisfying this.</td></tr>
+          <tr><td>Chrome</td><td>Required for the <code>flutter run -d chrome</code> path below.</td></tr>
+          <tr><td>Git</td><td>To clone the repo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="steps">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>
+        Install the Flutter SDK following Google's official install guide for your OS, then confirm it's on your <code>PATH</code>.
+        <pre><code>flutter --version</code></pre>
+        <span class="verify">Verify:</span> the printed Dart SDK version satisfies <code>^3.9.2</code> (i.e. is 3.9.2 or newer, below 4.0.0).
+      </li>
+      <li>
+        Run Flutter's own environment doctor and resolve anything it flags as missing for your target platform (Chrome/web at minimum).
+        <pre><code>flutter doctor</code></pre>
+        <span class="verify">Verify:</span> the Chrome line shows a checkmark. Android/iOS toolchain warnings can be ignored if you only intend to run on web today.
+      </li>
+      <li>
+        Clone the repository.
+        <pre><code>git clone https://github.com/Willpatbarr/ForgeByAlpfit.git</code></pre>
+        <span class="verify">Verify:</span> a <code>ForgeByAlpfit/</code> directory now exists with a <code>forge_senior_project_version/</code> subfolder inside it.
+      </li>
+      <li>
+        <strong>Change into the app root — it is a subfolder of the repo, not the repo root.</strong> This is the step people skip and then get confusing "no pubspec.yaml found" errors from.
+        <pre><code>cd ForgeByAlpfit/forge_senior_project_version</code></pre>
+        <span class="verify">Verify:</span> <code>ls pubspec.yaml</code> succeeds from your current directory.
+      </li>
+      <li>
+        Fetch Dart/Flutter package dependencies.
+        <pre><code>flutter pub get</code></pre>
+        <span class="verify">Verify:</span> command exits with no red error text; a <code>.dart_tool/</code> directory now exists.
+      </li>
+      <li>
+        Run the app in Chrome — the fastest path to something on screen, no platform-specific build tooling required.
+        <pre><code>flutter run -d chrome</code></pre>
+        <span class="verify">Verify:</span> Chrome opens automatically and the Forge login/register screen renders.
+      </li>
+    </ol>
+  </section>
+
+  <section id="firebase-config">
+    <h2>Firebase config already committed</h2>
+    <p>No separate Firebase setup step is needed to run locally. <code>lib/firebase_options.dart</code>, <code>android/app/google-services.json</code>, and <code>ios/Runner/GoogleService-Info.plist</code> are already committed to the repo and point at the real <code>forge-by-alpfit</code> Firebase project.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>File</th><th>What it actually is</th></tr></thead>
+        <tbody>
+          <tr><td><code>lib/firebase_options.dart</code></td><td>Client identifiers, including the web API key. Not a server secret by design — Firebase web API keys are meant to be embedded in shipped clients.</td></tr>
+          <tr><td><code>android/app/google-services.json</code></td><td>Android client registration for project <code>forge-by-alpfit</code>.</td></tr>
+          <tr><td><code>ios/Runner/GoogleService-Info.plist</code></td><td>iOS client registration for the same project.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>What actually governs who can read or write data is <strong>Firestore security rules</strong>, not secrecy of these files. Anyone with the API key can only do what the rules allow — see <a href="deploy.html#firestore-rules">deploy.html</a> for the current state of those rules, including a known open hole being fixed in Milestone 1.</p>
+    <div class="callout warn">
+      <strong>Footgun: local runs hit the real production Firestore.</strong> There is no Firebase emulator configured and no separate development project. Every write you make while developing locally — test events, test goals, test messages — lands in the same Firestore data real users would eventually see. There is no sandbox to break instead.
+    </div>
+  </section>
+
+  <section id="repo-size">
+    <h2>Repo size after building</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Directory</th><th>Size</th><th>Note</th></tr></thead>
+        <tbody>
+          <tr><td><code>forge_senior_project_version/build/</code></td><td>1.7 GB</td><td>Created by <code>flutter run</code> / <code>flutter build</code>. Not in git — ignored.</td></tr>
+          <tr><td><code>forge_senior_project_version/.dart_tool/</code></td><td>621 MB</td><td>Created by <code>flutter pub get</code>. Not in git — ignored via the root <code>.gitignore</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>A fresh <code>git clone</code> is small. The first <code>flutter pub get</code> and <code>flutter run</code> grow the working copy by roughly 2.3 GB combined — budget disk space accordingly before you start.</p>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Run the six setup steps above in order; do not skip the <code>cd forge_senior_project_version</code> step.</li>
+      <li>Remember every local write hits production Firestore — do not use throwaway-looking test data you'd mind other people seeing.</li>
+      <li>Once the app runs, read <a href="deploy.html">deploy.html</a> before attempting to ship any change you make.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

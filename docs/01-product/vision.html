@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vision — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#problem">The problem</a>
+    <a href="#mission">Mission</a>
+    <a href="#users">Target users</a>
+    <a href="#scope">Scope call</a>
+    <a href="#success">What success looks like</a>
+    <a href="#competition">Competitive position</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 01-product / Vision</div>
+    <h1>Vision</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the problem Forge exists to solve, who it's for, and what "working" means at beta — pulled from William's own Proposal and Final Requirements Spec, never invented.</div>
+  </header>
+
+  <section id="problem">
+    <h2>The problem</h2>
+    <p>Forge exists to break down the <strong>"barrier of intimidation and self-consciousness that keeps people from starting a fitness journey."</strong> That exact phrasing recurs verbatim across William's Proposal and his Final Requirements Spec — it is his own framing, not a paraphrase.</p>
+    <p>The Pre-Proposal states the same problem from the other direction: a disconnect that leads to self-consciousness and hesitancy to work out in public. The proposed fix is two-sided — features for planning workouts with others, plus community interaction tied to a person's actual physical gym.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Source</th><th>Framing</th></tr></thead>
+        <tbody>
+          <tr><td>Elevator Pitch</td><td>"A social fitness app aimed at making the gym less intimidating by helping people start their journey with friends and supportive communities."</td></tr>
+          <tr><td>Pre-Proposal</td><td>Disconnect &rarr; self-consciousness &rarr; hesitancy to start. Solved by social planning + gym-tied community.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="mission">
+    <h2>Mission</h2>
+    <p>Quoted verbatim from the extraction of William's notes:</p>
+    <div class="onesentence">"To create a one-stop-shop for people to connect with their gym, trainer, and other gym goers in order to create a more inviting and connected experience for gym communities."</div>
+    <p>Note the mission statement still names a trainer product and a gym product alongside the consumer app — that is the earliest, least-formal framing of the idea. See the scope call below for how that narrowed.</p>
+  </section>
+
+  <section id="users">
+    <h2>Target users</h2>
+    <p>Audience: adults 18 through the late 50s, with the majority being younger adults already active on social media. The Proposal names three concrete archetypes:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Archetype</th><th>What they want from Forge</th></tr></thead>
+        <tbody>
+          <tr><td>New gym attendee</td><td>Help getting started — a less intimidating on-ramp to a fitness routine.</td></tr>
+          <tr><td>Consistent attendee</td><td>Connection — plan workouts with friends, stay accountable, share progress.</td></tr>
+          <tr><td>Gym (as an account type)</td><td>Host its own community — post updates, run channels, manage membership.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>No named individual stakeholders exist. The formal Proposal states plainly: "Stakeholders with Contact information: TBD."</p>
+  </section>
+
+  <section id="scope">
+    <h2>Scope call — one app, not a company</h2>
+    <div class="callout warn">
+      <strong><span class="tag tag-proposed">PROPOSED</span> Needs William's review — the single biggest open call in this brief.</strong>
+      <p>Forge is one consumer app. It is <em>not</em> the three-product "AlpFit" business (consumer app + gym management software + trainer software) described in the earliest, undated brainstorm. That three-product vision appears exactly once and never resurfaces in any formal Proposal or Requirements doc — every later document scopes to a single Flutter app in which "gym" is an account type, not a separate product.</p>
+      <p>Direction of travel favors one app: ambition narrowed consistently as the notes got more formal. The trainer product and the gym-facing website are <span class="tag tag-deferred">DEFERRED</span>. This is tagged <span class="tag tag-proposed">PROPOSED</span> rather than decided because it is a question about what the product fundamentally is — that call belongs to William, and he was away when this brief was written.</p>
+    </div>
+  </section>
+
+  <section id="success">
+    <h2>What success looks like at beta</h2>
+    <p>The only stakeholder record in the entire corpus is the "Bigger Rec Manager Meeting" note. It describes a beta group split into two roles, and Milestone 3 (rec center beta) is built directly on this arrangement:</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Role</th><th>Definition</th></tr></thead>
+        <tbody>
+          <tr><td>The Gym</td><td>Hosts its own community; communicates news and events to members.</td></tr>
+          <tr><td>The User</td><td>Uses the app; participates in the host gym's community.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>William's Final Requirements Spec sets a verification bar that doubles as the cleanest definition of "done" anywhere in the notes. Quoted verbatim:</p>
+    <div class="onesentence">"A requirement is considered fulfilled when the expected behavior occurs through the user interface and the resulting data is correctly saved and displayed across app restarts. A requirement will not be fulfilled if an action fails, produces incorrect or missing data, or does not persist across restarts."</div>
+    <p>Applied to the beta: success is five or more non-William users signing up, joining the rec center's community, and posting — with everything they did still there the next time they open the app.</p>
+  </section>
+
+  <section id="competition">
+    <h2>Competitive position</h2>
+    <p>William's own research found no direct competitor: "As far as I can find this specific type of app has not been created." Existing fitness apps focus on workout programming and meal planning, not on the social/community layer Forge is built around.</p>
+    <p>Stated honestly, this is a claim from one person's search, not a market study — there is no named competitor to contrast against, and no evidence of a broader competitive audit.</p>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Get William's ruling on the <span class="tag tag-proposed">PROPOSED</span> scope call above — one app vs. the three-product AlpFit business. Everything else in this doc set assumes "one app."</li>
+      <li>If the rec center relationship changes or falls through, revisit the beta success definition in this section — it currently has no fallback stakeholder.</li>
+      <li>See <a href="features.html">features.html</a> for what is actually built toward this vision today, and <a href="decisions.html">decisions.html</a> for the full decision log behind these calls.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

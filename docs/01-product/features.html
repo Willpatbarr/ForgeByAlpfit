@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Features — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#must">Must-have</a>
+    <a href="#should">Should-have</a>
+    <a href="#someday">Someday / deferred</a>
+    <a href="#groups">The Groups gap</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 01-product / Features</div>
+    <h1>Features</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the full feature inventory by priority, cross-checked against what is actually built. Most must-haves are already <span class="pill pill-good">Working</span> — the real news on this page is the gaps.</div>
+  </header>
+
+  <p>Status comes from the as-built code audit (<code>out/04-asbuilt.md</code>), not from the requirements docs. A feature can be a correctly-scoped must-have and still show <span class="pill pill-bad">Absent</span> — that is not a contradiction, it is the actual state of the repo today.</p>
+
+  <section id="must">
+    <div class="prio prio-must">
+      <h3>Must-have</h3>
+      <p>Core to the app being usable at all. Most of this list is already built and running against live Firestore; the exceptions below are the real pre-beta gaps.</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Priority</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Auth — member/gym account types</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Real <code>FirebaseAuth</code> calls, writes <code>users/{uid}</code> on signup, all routes gated on current user.</td></tr>
+          <tr><td>Feed with live updates</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Live Firestore streams for updates, goals, next workout. Architecturally flat — the scaffolded data/domain layers are unused (0 bytes).</td></tr>
+          <tr><td>Calendar — day + range views</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Day and date-range streams, recurrence expansion, multi-source merge, deep-link focus.</td></tr>
+          <tr><td>Event creator — basic + workout</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Two event types (not three — see <a href="decisions.html">decisions.html</a> row on event types). Recurrence, invitees, exercises, gym location all persist.</td></tr>
+          <tr><td>Goals with period check-ins</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Full CRUD, period-rollover check-in/uncheck-in as a transaction, validation, archiving.</td></tr>
+          <tr><td>Plans (recurring generator)</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Generates event instances from a template + weekday map in a batched write; updates selectively regenerate future instances.</td></tr>
+          <tr><td>Social search</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Search for gyms and users from Social &rarr; Search.</td></tr>
+          <tr><td>Friends</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Friend requests flow through DM thread messages.</td></tr>
+          <tr><td>Gym communities and channels</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Join/leave, channel posts and comments backed by real services.</td></tr>
+          <tr><td>Direct messages</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Real thread + message subcollections, unread counts.</td></tr>
+          <tr><td>Profile with avatar upload</td><td>Must-have</td><td><span class="pill pill-good">Working</span></td><td>Avatar to Storage, URL written to Firestore; friends list, joined gyms, member removal.</td></tr>
+          <tr><td>Account deletion</td><td>Must-have</td><td><span class="pill pill-bad">Absent</span></td><td>No deletion flow anywhere in the app. Firestore rules explicitly disallow user-doc delete. Blocks store submission and privacy compliance — Milestone 1/2.</td></tr>
+          <tr><td>Gym-approval workflow for joining a community</td><td>Must-have</td><td><span class="pill pill-bad">Absent</span></td><td>Asserted in the spec ("instant or require approval, depending on gym config") but never specified anywhere and not built. Needed for the rec center beta — Milestone 3.</td></tr>
+          <tr><td>Moderation beyond owner-delete</td><td>Must-have</td><td><span class="pill pill-bad">Absent</span></td><td><code>moderation_service.dart</code> exists at 0 bytes. Only capability today is owner-or-author delete of a post/comment. No report, mute, or ban. William's own spec flags this as undefined.</td></tr>
+          <tr><td>Like/comment on social post-preview surface</td><td>Must-have</td><td><span class="pill pill-warn">Partial</span></td><td>Two <code>// TODO</code> stubs at <code>social_page.dart:1928</code> and <code>:1944</code>. Narrower than it looks — the primary channel view (<code>channel_page.dart</code>) already has working like/comment; only this secondary preview surface is stubbed.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="should">
+    <div class="prio prio-important">
+      <h3>Should-have</h3>
+      <p>Meaningfully improves the app but the beta can run without them.</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Priority</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Active-workout screen</td><td>Should-have</td><td><span class="pill pill-bad">Absent</span></td><td>Spec exists in full in <code>Workout Page Requirements Spec</code>: elapsed timer, current set/exercise tracking, all exercises/sets displayed, buttons to adjust the plan on the fly, workout name shown, Poppins font with no bold or styled text. Nothing built yet.</td></tr>
+          <tr><td>Typed models</td><td>Should-have</td><td><span class="pill pill-warn">Partial</span></td><td>Only <code>Goal</code> and the <code>Plan*</code> classes are real typed models. Everything else (events, updates, search results, gym members) is raw <code>Map&lt;String,dynamic&gt;</code>. Ruling: add types feature-by-feature when a bug makes the case, not a blanket retrofit.</td></tr>
+          <tr><td>Tests on date math</td><td>Should-have</td><td><span class="pill pill-bad">Absent</span></td><td>No <code>test/</code> directory exists anywhere in the repo. Ruling: <code>flutter_test</code>, scoped to goal period rollover, recurrence expansion, and plan generation — the algorithmically dense functions most likely to silently corrupt data.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="someday">
+    <div class="prio prio-optional">
+      <h3>Someday / deferred</h3>
+      <p>Explicitly out of scope until a named trigger fires. Each row below carries its trigger so nothing here gets built by accident or forgotten by omission.</p>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Feature</th><th>Status</th><th>Trigger to revisit</th></tr></thead>
+        <tbody>
+          <tr><td>Push notifications</td><td><span class="pill pill-bad">Absent</span> (<code>push_service.dart</code> is 0 bytes, no <code>firebase_messaging</code> dependency)</td><td>Post-beta, once retention is the problem worth solving. FCM is the obvious mechanism; none is named in the notes.</td></tr>
+          <tr><td>Groups (create/join user groups)</td><td><span class="pill pill-bad">Absent</span></td><td>No trigger named beyond general M5 "earned features" pool — ranked only if beta feedback asks for it. See the callout below; this is not a silent drop.</td></tr>
+          <tr><td>Feed widget editor</td><td><span class="pill pill-bad">Absent</span> (feed is not grid-driven; layout is hand-coded)</td><td>Beta feedback ranks it in Milestone 5. The 5x6 grid spec is aspirational, not built — treat widget layout as an open design task.</td></tr>
+          <tr><td>Web gym-admin surface</td><td><span class="pill pill-bad">Absent</span> — web build exists but is unbranded and not gym-specific</td><td>Gym accounts ask for community management from a browser. Today the deployed web build is repurposed only as a beta distribution channel.</td></tr>
+          <tr><td>Exercise database / API</td><td><span class="pill pill-bad">Absent</span> — exercises are currently free-text</td><td>Not blocking. Revisit if free-text becomes a real UX problem for workout logging.</td></tr>
+          <tr><td>Premium gym accounts</td><td><span class="pill pill-bad">Absent</span></td><td>A gym actually offers to pay. Only mention of monetization anywhere in the corpus; no pricing or processor defined.</td></tr>
+          <tr><td>"Pokemon Go style" gym popularity map</td><td><span class="pill pill-bad">Absent</span></td><td>No trigger named in the notes. Speculative idea from the earliest brainstorm only.</td></tr>
+          <tr><td>API-gateway rearchitecture</td><td><span class="pill pill-bad">Absent</span> — Flutter talks directly to Firestore today</td><td>Explicitly ruled against for a solo dev with zero users (textbook premature abstraction). Not reopened by a specific trigger — treated as rejected, not merely deferred.</td></tr>
+          <tr><td>Child-class goal types</td><td><span class="pill pill-bad">Absent</span> — only one <code>Goal</code> shape exists</td><td>"Ideally wanted" per the design Q&amp;A but explicitly deferred for lack of time. Revisit once the single-goal-type model proves limiting in practice.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="groups">
+    <h2>The Groups gap</h2>
+    <div class="callout warn">
+      <strong>Do not silently drop this again.</strong> "Create and join groups of other users to interact with" is listed as a <strong>must-have</strong> in <code>Forge Initial Requirements</code> and reappears in stretch lists elsewhere in the notes. It does not exist in the code at all — no model, no collection, no UI.
+      <p>Per the decision brief's reconciliation ruling (row 9), Groups moved to <span class="tag tag-deferred">DEFERRED</span> rather than being treated as done or forgotten. It is not required for the beta, but it is a real must-have from a formal requirements document that was never built — see <a href="decisions.html">decisions.html</a> for the full ruling.</p>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Prioritize the three <span class="pill pill-bad">Absent</span> must-haves — account deletion, gym-approval workflow, and moderation — before the Milestone 3 rec center beta.</li>
+      <li>Fix the two <code>// TODO</code> stubs at <code>social_page.dart:1928</code> and <code>:1944</code>; confirm they should mirror the working like/comment logic already in <code>channel_page.dart</code>.</li>
+      <li>Confirm with William whether Groups should be built for the beta or stay <span class="tag tag-deferred">DEFERRED</span> — it is the one must-have from a formal doc that shipped as absent.</li>
+      <li>See <a href="decisions.html">decisions.html</a> for why each of these statuses is what it is, and <a href="vision.html">vision.html</a> for the problem these features serve.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

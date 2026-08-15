@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firebase — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#adoption-trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup-steps">Setup steps</a>
+    <a href="#secrets-config">Secrets &amp; config</a>
+    <a href="#escape-hatch">Escape hatch</a>
+    <a href="#cost-scale">Cost &amp; scale</a>
+    <a href="#teammate-delta">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Services / Firebase</div>
+    <h1>Firebase <span class="tag tag-locked">LOCKED</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the setup, limits, secrets, and exit plan for Firebase — the single backend (Auth, Firestore, Storage, Hosting) that all 15,500 lines of Forge already run on.</div>
+  </header>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>Firebase is Forge's entire backend: Auth, Firestore, Storage, and Hosting are one Google Cloud project (<code>forge-by-alpfit</code>) that the Flutter client talks to directly, with no server layer in between. It already stores every user, event, goal, plan, and message the app has — this is not a proposal being evaluated, it is what the working app is built against today.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative considered</th><th>Why it lost</th></tr></thead>
+        <tbody>
+          <tr><td>Supabase / Postgres</td><td>Listed as a future migration target only if Firestore query limits or cost actually bite — not expected before roughly 1,000 users. Not a day-one contender; Firebase predates this brief.</td></tr>
+          <tr><td>Custom API gateway abstracting storage from the client (from the "Ideas for Future" note)</td><td>Textbook premature abstraction for a solo developer with zero real users. Deferred, no trigger met.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Why Firebase wins:</strong> it's already built on. Migrating now is a rewrite, not a swap, and nothing today forces that cost.</p>
+  </section>
+
+  <section id="adoption-trigger">
+    <h2>Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>Span</th><th>Why this tier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-t0">T0 Now</span></td>
+            <td>Day one — already adopted, not a future decision</td>
+            <td>Firebase is one of the brief's hard constraints: "Will not change: Flutter/Dart, Firebase (Auth/Firestore/Storage/Hosting), the existing Firestore data model." There is no app without it.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Plan</th><th>Limit</th><th>When exceeded</th></tr></thead>
+        <tbody>
+          <tr><td>Spark (free)</td><td>50,000 reads/day, 20,000 writes/day, 1&nbsp;GiB Firestore storage, 5&nbsp;GB Storage, 10&nbsp;GB/mo Hosting transfer</td><td><strong>Hard stop.</strong> Requests are refused once the daily quota is hit; service resumes automatically the next day. No surprise bill — Spark cannot spend money.</td></tr>
+          <tr><td>Blaze (first paid tier)</td><td>Pay-as-you-go, requires a credit card on file</td><td>Exact per-operation rates: verify at signup — not stated in the brief.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>The Spark hard stop is a genuine advantage: there is no way to get an unexpected Firebase bill on the current plan. Adding Cloud Functions would force an upgrade to Blaze, which is exactly why the plan avoids Functions — account deletion and every other business rule run client-side instead.</p>
+  </section>
+
+  <section id="setup-steps">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Google account signed in, Firebase console project created as <code>forge-by-alpfit</code>. The project id and default resource region are effectively permanent once real data exists — both are already locked in for this project.</li>
+      <li>Authentication enabled with the Email/Password provider (no social sign-in providers are configured).</li>
+      <li>Firestore Database created; <code>firestore.rules</code> and <code>firestore.indexes.json</code> deployed from the repo.</li>
+      <li>Storage bucket <code>forge-by-alpfit.firebasestorage.app</code> enabled, used for avatar uploads at <code>avatars/{uid}/profile</code>.</li>
+      <li>Hosting connected to <code>build/web</code> and deployed at least once already (unbranded).</li>
+      <li>Android, iOS, and web registered as separate apps in the console. macOS and Windows are not real, independently-provisioned targets — they reuse iOS's and web's app ids respectively.</li>
+      <li>Each registration generated a config file, placed at its platform-standard path and committed to the repo: <code>google-services.json</code> (Android), <code>GoogleService-Info.plist</code> (iOS), and the values compiled into <code>lib/firebase_options.dart</code> (all platforms).</li>
+      <li><span class="verify">Verify:</span> log in against the live project and confirm a matching <code>users/{uid}</code> document appears in the Firestore console.</li>
+    </ol>
+    <div class="callout warn"><strong>Painful to change later:</strong> Android and iOS are still registered under the default <code>com.example.*</code> bundle ID. Fixing this before any store submission means re-registering the Firebase app and regenerating config — cheap now, expensive once real users and store reviews are involved (Milestone M2).</div>
+  </section>
+
+  <section id="secrets-config">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Client-safe?</th><th>Local</th><th>Production</th></tr></thead>
+        <tbody>
+          <tr><td>Web API key (in <code>lib/firebase_options.dart</code>)</td><td>Yes — access is governed by security rules, not by hiding the key</td><td>Committed to repo</td><td>Committed to repo</td></tr>
+          <tr><td><code>google-services.json</code> / <code>GoogleService-Info.plist</code></td><td>Yes, same reasoning</td><td>Committed to repo</td><td>Committed to repo</td></tr>
+          <tr><td>Firestore/Storage security rules</td><td>Not a secret</td><td><code>firestore.rules</code>, <code>storage.rules</code> in repo</td><td>Deployed via <code>firebase deploy</code></td></tr>
+          <tr><td>Service account key</td><td>N/A — not used</td><td>—</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Firebase's client config is intentionally not treated as a secret: access is governed entirely by the security rules, not by hiding the API key, which is why it is safe to commit. No real Firebase secret exists in this project today, because Cloud Functions were deliberately not adopted — there is no server-side service-account key anywhere. If that ever changes, a service-account key must never be committed, and only a placeholder belongs in <code>.env.example</code>.</p>
+  </section>
+
+  <section id="escape-hatch">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-bad">HIGH lock-in</span></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Data that lives only here</td><td>Every <code>users/</code> doc and its <code>events</code>, <code>goals</code>, <code>plans</code>, <code>channelPosts</code> subcollections; every <code>directThreads</code> doc and message; all avatar files in Storage.</td></tr>
+          <tr><td>Firestore export</td><td><code>gcloud firestore export</code> to a Cloud Storage bucket — a full data dump, not a live migration path.</td></tr>
+          <tr><td>Auth user export</td><td>The Admin SDK can export user records, but <strong>password hashes are not included that way</strong>. <code>firebase auth:export</code> is the command that pulls hashes, in Firebase's scrypt format.</td></tr>
+          <tr><td>What migrating actually costs</td><td>Either carry the scrypt hashes into a target auth system that can verify scrypt, or force every user to reset their password. Either way, the client talks directly to Firestore with no repository layer, so swapping backends means rewriting every service file, not changing a config value.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Lock-in is high, stated plainly rather than softened. It is still the right call today: 15,500 working lines already depend on it, there are effectively zero real users to migrate, and no rejected alternative has cleared its own stated trigger yet.</p>
+  </section>
+
+  <section id="cost-scale">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>Nowhere near the 50,000 reads / 20,000 writes per day Spark ceiling — roughly what William generates alone today.</td></tr>
+          <tr><td>~100</td><td>Still likely inside Spark for a typical day of feed and calendar use, but worth watching the Firebase console usage tab. No bill risk either way — Spark hard-stops instead of charging.</td></tr>
+          <tr><td>~1,000</td><td>Plausibly exceeds the 50,000-reads/day ceiling depending on how often each user opens the feed and calendar. When it does, requests are refused (hard stop) until the quota resets, forcing a conscious Blaze upgrade decision rather than a surprise charge.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate-delta">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost</td><td>None — Firebase billing is per-project usage, not per-seat.</td></tr>
+          <tr><td>Permission model</td><td>Google Cloud IAM roles on the <code>forge-by-alpfit</code> project (e.g. Editor), added by an existing project owner via the console.</td></tr>
+          <tr><td>Does the free tier allow a second member?</td><td>Yes — Spark's usage limits are shared across everyone using the project, not per-person. There is no per-user cap the way Sentry has.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Before any store submission, re-register the Android/iOS Firebase apps under real bundle IDs instead of <code>com.example.*</code> (see the callout in Setup steps).</li>
+      <li>Read <a href="app-check.html">app-check.html</a> and enforce App Check on Firestore + Storage before real users arrive (Milestone M1).</li>
+      <li>Run a <code>gcloud firestore export</code> once as a documented backup, per Milestone M4.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

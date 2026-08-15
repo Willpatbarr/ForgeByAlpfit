@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Firebase App Check — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#adoption-trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup-steps">Setup steps</a>
+    <a href="#secrets-config">Secrets &amp; config</a>
+    <a href="#escape-hatch">Escape hatch</a>
+    <a href="#cost-scale">Cost &amp; scale</a>
+    <a href="#teammate-delta">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / Services / App Check</div>
+    <h1>Firebase App Check</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the setup, rollout order, and stakes for App Check — the toggle that closes Forge's open user-directory scraping hole before real users arrive.</div>
+  </header>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>App Check attests that a request hitting Firestore or Storage came from a genuine, unmodified build of the Forge app, not from a script holding a copied API key. For this app specifically, it closes a hole that exists right now: the web API key lives in <code>lib/firebase_options.dart</code>, is committed to the repo, and is extractable from the deployed web bundle — combined with the fully-open <code>users</code> read rule, anyone with that key can scrape the entire user directory (names, emails, contact info) today.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative considered</th><th>Why it lost</th></tr></thead>
+        <tbody>
+          <tr><td>Do nothing, rely on key secrecy</td><td>The key isn't secret by design — access is meant to be governed by rules, not by hiding it. The as-built audit confirms the open <code>users</code> read rule plus the committed key is a real scraping vector today.</td></tr>
+          <tr><td>Custom server-side request validation</td><td>Would require standing up Cloud Functions, forcing the Blaze pay-as-you-go plan. The plan deliberately avoids Functions.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p><strong>Why App Check wins:</strong> it's the only fix that closes the hole without standing up a server.</p>
+  </section>
+
+  <section id="adoption-trigger">
+    <h2>Adoption trigger</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Tier</th><th>Span</th><th>Why this tier</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="tier tier-t1">T1 Before first user</span></td>
+            <td>Before Milestone M2/M3 bring in anyone besides William</td>
+            <td>Milestone M1 ("Lock the doors") defines success partly as "App Check enforced on Firestore + Storage." Per the service table: "Closes the scraping hole. Without it, the committed web API key + open rules = the whole user directory is harvestable."</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Plan</th><th>Limit</th><th>When exceeded</th></tr></thead>
+        <tbody>
+          <tr><td>Free</td><td>Unlimited</td><td>Not applicable — there is no usage cap to exceed.</td></tr>
+          <tr><td>First paid tier</td><td>App Check itself has none stated. The underlying attestation providers (e.g. reCAPTCHA Enterprise at very high web volume) may carry their own costs: verify at signup.</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="setup-steps">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>In the Firebase console, open App Check and register each app — Android, iOS, web — against an attestation provider.</li>
+      <li>Android: Play Integrity API as the provider.</li>
+      <li>iOS: DeviceCheck / App Attest as the provider.</li>
+      <li>Web: create a reCAPTCHA Enterprise site key and wire it into the App Check web initialization.</li>
+      <li>Enable the debug provider for local development and generate a debug token. This is the step that trips people up — without it, a local or emulator build cannot reach Firestore at all once App Check is anything but fully open.</li>
+      <li>Add each developer's debug token to the App Check allow-list in the console; a token is per machine, not shared.</li>
+      <li>Deploy Firestore + Storage enforcement in <strong>monitoring/unenforced mode</strong> first — requests are scored but never blocked.</li>
+      <li><span class="verify">Verify:</span> open the App Check metrics tab, confirm the real app's requests show as verified, then only after that flip Firestore + Storage enforcement on.</li>
+    </ol>
+    <div class="callout warn"><strong>Rollout order matters:</strong> register apps &rarr; run in monitoring/unenforced mode &rarr; check the metrics tab &rarr; only then enforce. Enforcing before monitoring can lock William out of his own app, with no warning it was about to happen.</div>
+  </section>
+
+  <section id="secrets-config">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Client-safe?</th><th>Local</th><th>Production</th></tr></thead>
+        <tbody>
+          <tr><td>reCAPTCHA Enterprise site key (web)</td><td>Yes — client-side by design, same category as the Firebase web API key</td><td>Same value used everywhere</td><td>Same value used everywhere</td></tr>
+          <tr><td>Debug token (per developer)</td><td>No — must never ship in a production build</td><td>Kept per developer machine, not committed</td><td>Never present; only listed in the console's debug-token allow-list</td></tr>
+          <tr><td>Play Integrity / DeviceCheck credentials</td><td>Managed by Google Play Console / Apple Developer accounts, not app-side values</td><td>N/A</td><td>N/A</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>App Check itself introduces no server secret — it is a console configuration plus a client SDK call, not a custom backend. The one value that must stay out of any committed file is the debug token: a leaked debug token would let anyone bypass enforcement entirely, defeating the point. If it needs a placeholder anywhere, <code>.env.example</code> should show the variable name only, never a real token.</p>
+  </section>
+
+  <section id="escape-hatch">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-good">LOW lock-in</span></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Data that lives only here</td><td>None persistent. App Check issues short-lived tokens per request; nothing beyond the provider registrations lives in its config.</td></tr>
+          <tr><td>Export</td><td>Not applicable — there is nothing to export.</td></tr>
+          <tr><td>Migrating off</td><td>Disable enforcement in the Firebase console (a toggle) and remove the client SDK init call.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>What happens</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>No cost impact — free and unlimited regardless of scale. Debug-token management is trivial at this size.</td></tr>
+          <tr><td>~100</td><td>Still no cost impact. Metrics on the App Check dashboard start becoming statistically meaningful — worth a spot-check that enforcement is still behaving as expected.</td></tr>
+          <tr><td>~1,000</td><td>Still no cost impact from App Check itself. This is a good point to re-verify the metrics tab shows the expected verified/unverified split before assuming the configuration from launch is still correct.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate-delta">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost</td><td>None — free regardless of team size.</td></tr>
+          <tr><td>Permission model</td><td>Same Firebase project IAM as the rest of Firebase; App Check config is part of the project, not a separate account.</td></tr>
+          <tr><td>Does the free tier allow a second member?</td><td>Yes, but each new developer needs their own debug token added to the console allow-list before their local build can reach Firestore.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Register all three app platforms in App Check and turn on monitoring mode before anyone else touches the app.</li>
+      <li>Check the metrics tab and confirm real traffic verifies before flipping enforcement on.</li>
+      <li>Once enforced, re-test the login and feed flows described in <a href="firebase.html">firebase.html</a> to confirm normal app use still works end to end.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

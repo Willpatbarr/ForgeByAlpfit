@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Apple Developer Program — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup">Setup steps</a>
+    <a href="#secrets">Secrets &amp; config</a>
+    <a href="#escape-hatch">Escape hatch</a>
+    <a href="#cost-scale">Cost &amp; scale</a>
+    <a href="#team-delta">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Apple Developer</div>
+    <h1>Apple Developer Program</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for iOS distribution — deliberately not adopted yet. This page exists so the trigger, the cost, and the setup gotchas are all known before William decides to spend the $99.</div>
+  </header>
+
+  <div class="callout warn">
+    <strong>Deferred, not rejected:</strong> <span class="tier tier-t2">T2 When it hurts</span>. Web-first + Android beta reaches "someone else can use it without me present" faster and for less money. iOS is one decision away, not off the table.
+  </div>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>The Apple Developer Program is the only way to run TestFlight or publish to the App Store — there is no side door. It costs $99/year, recurring, which is exactly why it loses to Google Play's $25 one-time fee for a beta that hasn't proven it needs iPhone testers yet.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Option</th><th>Why it lost / won (for now)</th></tr></thead>
+        <tbody>
+          <tr><td>Web + Android only (current plan)</td><td><strong>Wins for T1.</strong> $0 web, $25 one-time Android, no recurring cost, no review wait on internal testing.</td></tr>
+          <tr><td>Apple Developer Program</td><td>Loses today on cost asymmetry alone: $99 <em>every year</em> versus Play's $25 <em>once</em>. Deferred until there's a concrete reason to spend it.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2>Adoption trigger</h2>
+    <p><span class="tier tier-t2">T2 When it hurts</span> — the plan is explicit that this inverts the instinct in the original notes (which budgeted an Apple account by default). Adopt it when either of these happens: beta feedback shows testers are iPhone-heavy, or William decides he wants App Store distribution regardless of tester mix.</p>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Free tier</td><td>None. There is no free way to get a real device build onto a tester's phone or into TestFlight — the $99/year is the entry price, not an upgrade.</td></tr>
+          <tr><td>First paid cost</td><td><strong>$99/year, recurring</strong> — contrast with Play's $25 one-time. This is the whole reason the brief defers iOS to T2 instead of adopting it alongside Android.</td></tr>
+          <tr><td>Overage / lapse behavior</td><td>If the $99 isn't renewed, apps already published are <strong>pulled from sale</strong> — this isn't a soft downgrade, it's a removal.</td></tr>
+          <tr><td>TestFlight internal tester cap, build expiry windows</td><td>Not stated in the brief beyond the 100-internal-tester figure below. Anything else — verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Decide Individual vs Organization account before enrolling. <strong>Worth deciding deliberately:</strong> an Individual account publicly shows William's personal legal name on the App Store listing; an Organization account hides that but requires a D-U-N-S number to enroll.</li>
+      <li>Enroll in the Apple Developer Program and pay the $99/year fee.</li>
+      <li>Change <code>PRODUCT_BUNDLE_IDENTIFIER</code> from <code>com.example.forgeSeniorProjectVersion</code> to a real reverse-domain id matching Android's, e.g. <code>com.alpfit.forge</code>. <strong>Painful to change later:</strong> same category of problem as the Android <code>applicationId</code> — best fixed once, deliberately.</li>
+      <li>Re-register the iOS app in the Firebase console under the new bundle id and regenerate <code>GoogleService-Info.plist</code>.</li>
+      <li>Build in-app account deletion before submitting anything for review — App Store Review Guideline 5.1.1(v) requires it for any app with account creation, and this work is already scheduled in Milestone 1.</li>
+      <li>Set up TestFlight internal testing (up to 100 internal testers, no review required).</li>
+      <li>If testers outside the Apple Developer team are needed, submit the build for Apple's Beta App Review before external TestFlight distribution opens.</li>
+      <li><span class="verify">Verify:</span> install the app via TestFlight on a real iPhone and confirm it opens against live Firestore.</li>
+    </ol>
+  </section>
+
+  <section id="secrets">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Where it lives</th></tr></thead>
+        <tbody>
+          <tr><td>Signing certificates &amp; provisioning profiles</td><td>Apple's managed signing (Keychain / Xcode-managed) or manually exported <code>.p12</code> files, kept outside the repo.</td></tr>
+          <tr><td>App Store Connect API keys (if used for CI later)</td><td>Not adopted yet — no CI is in place. When added, stored as a CI secret, never committed.</td></tr>
+          <tr><td><code>GoogleService-Info.plist</code> (post-rebrand)</td><td>Regenerated per-bundle-id config tied to the new identifier — don't leave stray copies from the old <code>com.example.*</code> registration in the repo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Real secrets — signing certificates, private keys, API tokens — are never committed to the repo.</p>
+  </section>
+
+  <section id="escape-hatch">
+    <h2>Escape hatch</h2>
+    <p>Lock-in: <span class="pill pill-warn">Medium</span></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>What lives only here</td><td>The App Store listing, TestFlight build history, and any accumulated App Store reviews once published.</td></tr>
+          <tr><td>Export path</td><td>The Flutter codebase is portable — nothing about the app's logic depends on Apple's tooling. Dropping the program means the iOS build stops distributing, not that code is lost.</td></tr>
+          <tr><td>Migration cost</td><td>Medium — losing the $99/year buys back nothing already spent, and re-enrolling later re-triggers the same bundle-id and TestFlight setup. Mostly an admin cost, not a rewrite.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Scale</th><th>Expected Apple cost</th></tr></thead>
+        <tbody>
+          <tr><td>~10 users</td><td>$99/year flat — TestFlight internal testing covers this comfortably.</td></tr>
+          <tr><td>~100 users</td><td>Still $99/year flat. At the top of TestFlight's internal tester range, external testing (Beta App Review) may be needed, but the program fee doesn't change with usage.</td></tr>
+          <tr><td>~1,000 users</td><td>Still $99/year flat — Apple does not charge more for a free app's downloads, only the flat annual program fee.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="team-delta">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost for a second person</td><td>No per-seat fee stated in the brief — the $99/year is the account-level cost. Verify specifics at signup.</td></tr>
+          <tr><td>Permission model</td><td>Individual accounts allow adding team members with roles; Organization accounts support more granular roles suited to a real team. Exact roles not stated in brief — verify at signup.</td></tr>
+          <tr><td>Free-tier member limits</td><td>Not stated in the brief. Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Watch Milestone M3 beta feedback for signal on iPhone-heavy testers before spending the $99.</li>
+      <li>If the trigger fires, decide Individual vs Organization account first — that decision shapes the public listing.</li>
+      <li>Confirm the in-app account deletion flow (Milestone 1) is done before ever submitting for App Store review.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

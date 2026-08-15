@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conventions — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#folders">Folder layout</a>
+    <a href="#naming">Naming</a>
+    <a href="#follow">Patterns to follow</a>
+    <a href="#dont-copy">Patterns not to copy</a>
+    <a href="#checklist">Adding a new feature</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 02-architecture / Conventions</div>
+    <h1>Conventions</h1>
+    <div class="whatthisis"><strong>What this is:</strong> naming, folder layout, and coding patterns actually in force in this codebase today — what to copy when adding a feature, and what existing debt not to add more of.</div>
+  </header>
+
+  <section id="folders">
+    <h2>Folder layout</h2>
+    <p>Top level of <span class="fname">lib/</span>: <code>app</code>, <code>core</code>, <code>features</code>, <code>models</code>, <code>services</code>, <code>widgets</code>. Every feature lives under <code>features/&lt;name&gt;/presentation/view/</code>.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Folder</th><th>Holds</th></tr></thead>
+        <tbody>
+          <tr><td><code>lib/app/</code></td><td>Router (<span class="fname">router.dart</span>), auth state, the empty <span class="fname">di_providers.dart</span>.</td></tr>
+          <tr><td><code>lib/core/</code></td><td><span class="fname">firebase/firestore_refs.dart</span> (real, 49 lines) and <span class="fname">constants/app_text_styles.dart</span> (real, 81 lines). Everything else under <code>core/errors</code>, <code>core/util</code>, most of <code>core/constants</code> is 0 bytes.</td></tr>
+          <tr><td><code>lib/features/&lt;name&gt;/presentation/view/</code></td><td>The screens themselves — one flat folder per feature, no data/domain split.</td></tr>
+          <tr><td><code>lib/models/</code></td><td>The two real typed models: <code>Goal</code>, and the <code>Plan*</code> classes.</td></tr>
+          <tr><td><code>lib/services/</code></td><td>Free-function service files — the de facto data layer for every feature.</td></tr>
+          <tr><td><code>lib/widgets/</code></td><td>Shared UI widgets used across features.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">
+      <strong>Only <code>feed/</code> ever got the deeper layering, and it is empty.</strong>
+      <p><code>features/feed/data/</code>, <code>features/feed/domain/</code>, and <code>features/feed/presentation/viewmodel/</code> exist as folders with 0-byte files inside. Every other feature — auth, calendar, event_creator, social, profile — only ever had a flat <code>presentation/view/</code> folder. The flat layout is the real convention; the deeper folders are fossil, not a pattern to extend. See <a href="overview.html">overview.html</a> for the full dead-scaffold list.</p>
+    </div>
+  </section>
+
+  <section id="naming">
+    <h2>Naming</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Thing</th><th>Convention</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Files</td><td>snake_case</td><td><code>feed_page.dart</code>, <code>goals_service.dart</code></td></tr>
+          <tr><td>Classes</td><td>PascalCase</td><td><code>Goal</code>, <code>PlanSummary</code>, <code>AuthService</code></td></tr>
+          <tr><td>Case-insensitive search field</td><td><code>displayNameLower</code> — a lowercased copy of <code>displayName</code> stored alongside it, used for Firestore prefix search.</td><td><code>users/{uid}.displayNameLower</code></td></tr>
+          <tr><td>Service files</td><td><code>&lt;area&gt;_service.dart</code>, exporting free functions rather than a class with instance methods.</td><td><code>events_service.dart</code>, <code>channel_posts_service.dart</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="follow">
+    <h2>Patterns to follow</h2>
+    <ul>
+      <li><code>StreamBuilder</code> wired directly to a service stream function (e.g. <code>getEventsForDayStream</code>) — the standard way a screen gets live data.</li>
+      <li>Services throw plain <code>Exception(humanReadableMessage)</code> — no typed error/Result layer exists, and none should be added ad hoc.</li>
+      <li>Views catch <code>FirebaseException</code> / <code>FirebaseAuthException</code> / generic <code>Exception</code> and surface it with a <code>SnackBar</code>.</li>
+      <li>Firestore document/collection references are centralized in <span class="fname">core/firebase/firestore_refs.dart</span> — do not hand-build a Firestore path inline in a service or view.</li>
+      <li>Multi-stream merges (own + friends' + gyms' events) go through a hand-rolled merger function local to the service file — see the duplication note below before writing a third one.</li>
+    </ul>
+  </section>
+
+  <section id="dont-copy">
+    <h2>Patterns NOT to copy</h2>
+    <p>This is existing debt. The brief is explicit: fix it feature-by-feature when a bug makes the case, not in a batch rewrite.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Debt pattern</th><th>Where it shows up</th><th>What to do instead</th></tr></thead>
+        <tbody>
+          <tr><td><code>Map&lt;String, dynamic&gt;</code> as the de facto model type</td><td>Events, search results, gym members, feed updates, friend lists — almost everything except <code>Goal</code> and the <code>Plan*</code> classes.</td><td>Do not retrofit typed models across the board. Add a typed model for a feature only when a bug there makes the case for it (brief &sect;7).</td></tr>
+          <tr><td>Business logic living inside 1,300&#8211;2,100 line view files</td><td><code>event_creator_page.dart</code> (2,141), <code>social_page.dart</code> (1,963), <code>calendar_page.dart</code> (1,489), <code>feed_page.dart</code> (1,333).</td><td>Don't grow a new screen to this size by habit. It's tolerated debt in the existing screens, not a target to replicate in a new one.</td></tr>
+          <tr><td>Duplicated hand-rolled stream mergers</td><td><code>_mergeEventStreams</code> (<span class="fname">events_service.dart:450-497</span>) and <code>_mergeUpdateStreams</code> (<span class="fname">updates_service.dart:50-82</span>) — same shape, copy-pasted.</td><td>If a third merge is needed, extract a shared <code>mergeSortedStreams&lt;T&gt;</code> helper in <code>core/</code> instead of writing a third copy.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Frame as "don't add more of it," not "rewrite now."</strong>
+      <p>Brief &sect;7: "Typed models only where they pay... do not retrofit <code>Map&lt;String,dynamic&gt;</code> everywhere. Add types feature-by-feature when a bug makes the case." The same restraint applies to view-file size and the stream mergers — these are accepted debt, tracked on <span class="fname">out/05-debt.md</span>, not blockers.</p>
+    </div>
+  </section>
+
+  <section id="checklist">
+    <h2>Adding a new feature</h2>
+    <ol class="steps">
+      <li>Create <span class="fname">lib/features/&lt;name&gt;/presentation/view/&lt;name&gt;_page.dart</span> — flat, no <code>data/</code> or <code>domain/</code> subfolders. That is the real convention; see Folder layout above.</li>
+      <li>Add a service file <span class="fname">lib/services/&lt;name&gt;_service.dart</span> exporting free functions that talk to Firestore, following the naming convention above.</li>
+      <li>Centralize any new Firestore paths in <span class="fname">core/firebase/firestore_refs.dart</span> rather than inlining them in the service.</li>
+      <li>Wire the screen's live data through a <code>StreamBuilder</code> calling the new service function, matching the pattern used everywhere else.</li>
+      <li>Register the screen in <span class="fname">app/router.dart</span> — inside the <code>ShellRoute</code> if it needs the persistent bottom nav, top-level if it's auth-adjacent like login/register.</li>
+      <li>Use a typed model only if the data is already typed elsewhere in this feature (e.g. extending <code>Goal</code>) or a specific bug requires it — default to <code>Map&lt;String, dynamic&gt;</code> otherwise, per brief &sect;7.</li>
+      <li><span class="verify">Verify:</span> confirm the new screen's data persists across an app restart — the Final Requirements Spec's own bar for "done" (quoted on <a href="../01-product/vision.html">vision.html</a>).</li>
+    </ol>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Before writing a new feature, skim <a href="overview.html">overview.html</a> for the dead-scaffold list so nothing gets built inside those folders by mistake.</li>
+      <li>Before adding a field to any collection, check <a href="data-model.html">data-model.html</a> for the existing shape and the two relationship trade-offs already accepted.</li>
+      <li>If a debt pattern above starts actively causing a bug, fix that one instance — do not batch-rewrite the rest as part of an unrelated change.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup">Setup steps</a>
+    <a href="#secrets">Secrets &amp; config</a>
+    <a href="#escape">Escape hatch</a>
+    <a href="#cost">Cost &amp; scale</a>
+    <a href="#teammate">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / 03-services / Linear</div>
+    <h1>Linear <span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span></h1>
+    <div class="whatthisis"><strong>What this is:</strong> the single write target for all Forge planning — issues, statuses, and labels live here, not in GitHub Issues.</div>
+  </header>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>Linear is William's planning UI: every task, bug, and improvement for Forge is tracked here as an issue. It was chosen because it is already William's standing tool, the workspace and team already exist, and it keeps planning cleanly separated from GitHub's code-and-docs role.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Alternative</th><th>Why it lost</th></tr></thead>
+        <tbody>
+          <tr><td>GitHub Issues</td><td>Would duplicate Linear if both were written to. Per the brief (§9 Q4), GitHub Issues stays the read side, not the write target — Linear writes are one-way unless sync is later enabled.</td></tr>
+          <tr><td>A plain text/markdown TODO file</td><td>No statuses, labels, or multi-team structure; does not scale past a solo dev's memory.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2>Adoption trigger</h2>
+    <p><span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span> — already adopted. Workspace <code>WillieWorkspace</code> exists; team <strong>ForgeByAlpfit</strong> already exists (created 2026-08-15).</p>
+    <p>It is T0 because planning work starts immediately, same reasoning as GitHub for code — there is no lower tier for "where does the work get tracked."</p>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Limit</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Issues</td><td><strong>250 issues</strong> on the free plan.</td></tr>
+          <tr><td>Members</td><td>Unlimited, free.</td></tr>
+          <tr><td>Teams</td><td>2 teams.</td></tr>
+          <tr><td>What happens when exceeded</td><td>Verify at signup — but treat the 250-issue cap as the real constraint on this plan, since it is the only hard number in play.</td></tr>
+          <tr><td>First paid tier cost</td><td>Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout warn">
+      <strong>Watch this number.</strong> 250 issues is not a lot for an actively worked solo project. Whether archived issues still count against the cap until deleted is <strong>not yet determined — needs verification at signup</strong>; do not assume archiving alone frees up room.
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Confirm workspace <code>WillieWorkspace</code> and team <strong>ForgeByAlpfit</strong> exist. They already do.</li>
+      <li>Confirm default statuses are in place: Backlog, Todo, In Progress, Done, Canceled, Duplicate. These are Linear's defaults and require no setup.</li>
+      <li>Confirm default labels exist: Feature, Bug, Improvement.</li>
+      <li>Add the plan's area and tier labels on top of the defaults (for example, <code>T0</code>/<code>T1</code>/<code>T2</code> matching this doc set's tier system). Label taxonomy is cheap to add now, painful to retrofit onto 200+ existing issues later — do this before the issue count grows.</li>
+      <li>Leave GitHub Issues Sync off unless a deliberate decision is made to turn it on (see Escape hatch and Teammate delta below for why).</li>
+      <li><span class="verify">Verify:</span> create one test issue in the ForgeByAlpfit team, confirm it lands in Backlog with the Feature/Bug/Improvement label options available, then delete the test issue.</li>
+    </ol>
+  </section>
+
+  <section id="secrets">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Client-safe / server-only</th><th>Local vs production</th></tr></thead>
+        <tbody>
+          <tr><td>Linear API key (if ever used for automation)</td><td>Server-only — never client-safe.</td><td>Would be the same key for local scripts and any production automation; scope it narrowly if created.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>No Linear credentials are part of the Forge app itself today, so no <code>.env.example</code> entry exists for Linear. If an API key is ever generated for automation, it is never committed — real secrets are not committed to this repository, full stop.</p>
+  </section>
+
+  <section id="escape">
+    <h2>Escape hatch</h2>
+    <p><span class="pill pill-good">Lock-in: low</span> — CSV export and a documented API cover a full migration.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>What lives only here</th><th>How to export</th><th>Migration cost</th></tr></thead>
+        <tbody>
+          <tr><td>Issues, statuses, labels, history</td><td>CSV export from workspace settings, or the Linear API for a structured pull.</td><td>Low — both paths are documented and complete enough to rebuild a task list elsewhere.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Users</th><th>Cost</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>~10</td><td>$0</td><td>App user count does not move Linear's bill; issue count does. Well under 250 at this stage.</td></tr>
+          <tr><td>~100</td><td>$0, watch issue count</td><td>Beta feedback (Milestone 3) will generate issues faster — check the 250 cap here.</td></tr>
+          <tr><td>~1,000</td><td>Verify at signup if the 250-issue cap is hit</td><td>The trigger to re-evaluate is the issue count, not the user count.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="teammate">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost for another member</td><td>$0 — unlimited members on the free plan.</td></tr>
+          <tr><td>Permission model</td><td>Workspace/team roles set per member in Linear's admin settings.</td></tr>
+          <tr><td>Does free tier allow another member</td><td>Yes, with no seat limit — the constraint to watch is issue count (250), not members.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Add the area and T0/T1/T2 tier labels on top of the default Feature/Bug/Improvement set before issue volume grows.</li>
+      <li>Track issue count against the 250 cap; verify at signup whether archived issues still count.</li>
+      <li>Leave GitHub Issues Sync off — per brief §9 Q4, only Linear is written to, so if sync is enabled later issues will flow to GitHub automatically without duplication.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>

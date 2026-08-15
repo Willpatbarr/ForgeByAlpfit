@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Google Play Console — Forge by AlpFit</title>
+<link rel="stylesheet" href="../assets/forge.css">
+</head>
+<body>
+
+<nav class="skipto" aria-label="Skip to section">
+  <button class="skipto-toggle" aria-label="Skip to section menu"><svg width="18"
+    height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+    stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
+  <div class="skipto-menu">
+    <div class="navlabel">Skip to</div>
+    <a href="#what-why">What &amp; why</a>
+    <a href="#trigger">Adoption trigger</a>
+    <a href="#free-tier">Free tier reality</a>
+    <a href="#setup">Setup steps</a>
+    <a href="#secrets">Secrets &amp; config</a>
+    <a href="#escape-hatch">Escape hatch</a>
+    <a href="#cost-scale">Cost &amp; scale</a>
+    <a href="#team-delta">Teammate delta</a>
+    <a href="#next">What to do next</a>
+    <a href="../index.html">&larr; Docs hub</a>
+  </div>
+</nav>
+
+<main>
+
+  <header class="pagehead">
+    <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Google Play</div>
+    <h1>Google Play Console</h1>
+    <div class="whatthisis"><strong>What this is:</strong> the runbook for the Android distribution channel — what it costs, what breaks if the setup order is wrong, and the exact steps to take before Android testers can install the app.</div>
+  </header>
+
+  <div class="callout danger">
+    <strong>Blocker, read first:</strong> the Android <code>applicationId</code> is still the Flutter scaffold default <code>com.example.forge_senior_project_version</code> (<code>android/app/build.gradle.kts</code>). Google Play rejects any <code>com.example.*</code> package outright. It must change to a real reverse-domain id (recommended: <code>com.alpfit.forge</code>) before any upload is possible, which means re-registering the Android app in Firebase and regenerating <code>google-services.json</code>.
+  </div>
+
+  <section id="what-why">
+    <h2>What &amp; why</h2>
+    <p>Google Play Console is where the Android build gets signed, listed, and handed to testers without anyone sideloading an APK by hand. It's the cheapest real distribution channel available and its internal testing track skips the review queue entirely, which is the whole reason it works as the beta channel.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Option</th><th>Why it lost / won</th></tr></thead>
+        <tbody>
+          <tr><td>Raw APK sideload (no store)</td><td>No review, no fee — but no update mechanism, no crash-free install link, and testers have to manually enable unknown sources. Fine for one device, not for a beta group.</td></tr>
+          <tr><td>Google Play Console</td><td><strong>Won.</strong> $25 one-time, and the internal testing track needs no review wait — an installable link goes out same-day, with automatic updates on later uploads.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="trigger">
+    <h2>Adoption trigger</h2>
+    <p><span class="tier tier-t1">T1 Before first user</span> — needed the moment anyone other than William is expected to install Android builds. This lines up with Milestone M2 ("Ship-ready identity"): real bundle IDs, re-registered Firebase apps, and the Android internal-testing track live are all part of that milestone's definition of done.</p>
+  </section>
+
+  <section id="free-tier">
+    <h2>Free tier reality</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Registration fee</td><td><strong>$25, one-time.</strong> Not a subscription, not recurring — pay it once per developer account, ever.</td></tr>
+          <tr><td>Overage behavior</td><td>None to speak of. There is no usage meter on the Console itself; the $25 is a flat gate, not a tier with a ceiling.</td></tr>
+          <tr><td>First paid cost</td><td>The $25 registration fee itself — it's the whole bill for a free app distributed through Play.</td></tr>
+          <tr><td>Internal tester count, app size caps, track limits</td><td>Not stated in the brief. Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="setup">
+    <h2>Setup steps</h2>
+    <ol class="steps">
+      <li>Change <code>applicationId</code> in <code>android/app/build.gradle.kts</code> from <code>com.example.forge_senior_project_version</code> to a real reverse-domain id, e.g. <code>com.alpfit.forge</code>. <strong>Painful to change later:</strong> this cannot move again after the first Play publish.</li>
+      <li>Re-register the Android app in the Firebase console under the new package name.</li>
+      <li>Download the regenerated <code>google-services.json</code> for the new package name and replace the committed one.</li>
+      <li>Create the Google Play Console account and pay the $25 one-time registration fee.</li>
+      <li>At first upload, enable Play App Signing — Google generates and holds the app signing key; the developer keeps only the upload key. <strong>Painful to change later:</strong> the signing setup is effectively permanent once the first release is live.</li>
+      <li>Generate the upload keystore locally and back it up somewhere that is not the repo (password manager, encrypted drive) — see <a href="#secrets">Secrets &amp; config</a>.</li>
+      <li>Publish a privacy policy at a public URL and complete the Data Safety form in Play Console. Both are mandatory before any track — including internal testing — can go live.</li>
+      <li>Create the internal testing track, upload the signed AAB, and add testers by email.</li>
+      <li><span class="verify">Verify:</span> install the app from the internal testing link on a real Android device and confirm it opens against live Firestore.</li>
+    </ol>
+  </section>
+
+  <section id="secrets">
+    <h2>Secrets &amp; config</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Where it lives</th></tr></thead>
+        <tbody>
+          <tr><td>Upload keystore (<code>.jks</code>) + its password</td><td>Local, backed up outside the repo. This is the most consequential secret on this page.</td></tr>
+          <tr><td><code>google-services.json</code> (post-rebrand)</td><td>Regenerated per-package config, not a bearer secret by itself, but tied to the real bundle id — don't commit stray copies from the old <code>com.example.*</code> registration.</td></tr>
+          <tr><td>Play Console account credentials</td><td>William's Google account; not stored in the repo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Real secrets — the keystore file, its password, any Play Console API credentials added later — are never committed to the repo.</p>
+  </section>
+
+  <section id="escape-hatch">
+    <h2>Escape hatch</h2>
+    <p>Lock-in: <span class="pill pill-warn">Medium</span></p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+        <tbody>
+          <tr><td>What lives only here</td><td>The Play Store listing, accumulated reviews, install stats, and — if Play App Signing is enabled — the app signing key itself, held by Google.</td></tr>
+          <tr><td>Export path</td><td>The Flutter codebase isn't locked to Play. Signed AAB/APK artifacts can still be built and distributed via the web build or direct APK if Play is abandoned.</td></tr>
+          <tr><td>Migration cost</td><td>Medium — rebuilding a distribution channel and losing the accumulated listing/reviews, not a code rewrite. The one true irreversible cost is the app identity itself (see the blocker callout above): the <code>applicationId</code> and the upload signing key can never be changed after first publish. Recovering from a lost upload key is possible via a Play App Signing key reset <em>only if</em> Play App Signing was enabled — without it, a lost key is unrecoverable and the app can never be updated again under that identity.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="cost-scale">
+    <h2>Cost &amp; scale checkpoints</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Scale</th><th>Expected Play cost</th></tr></thead>
+        <tbody>
+          <tr><td>~10 users</td><td>$0/month beyond the initial $25. Internal testing track is sufficient.</td></tr>
+          <tr><td>~100 users</td><td>Still $0/month from Play itself. May outgrow the internal track into closed/open testing (limits not stated in brief — verify at signup), but Play does not charge more for it.</td></tr>
+          <tr><td>~1,000 users</td><td>Still $0/month from Play — it does not meter usage for a free app. Any cost pressure at this scale comes from Firebase crossing its free tier, not from Play Console.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="team-delta">
+    <h2>Teammate delta</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+        <tbody>
+          <tr><td>Seat cost for a second person</td><td>Not stated in the brief. Verify at signup.</td></tr>
+          <tr><td>Permission model</td><td>Play Console supports adding users with scoped roles at the developer-account level; specific roles and limits not stated in brief — verify at signup.</td></tr>
+          <tr><td>Free-tier member limits</td><td>Not stated in the brief. Verify at signup.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="next">
+    <h2>What To Do Next</h2>
+    <ol>
+      <li>Pick and lock the real Android package id (<code>com.alpfit.forge</code> recommended) before touching Play Console.</li>
+      <li>Re-register the Android Firebase app and regenerate <code>google-services.json</code> under that id.</li>
+      <li>Register the $25 Play Console account and enable Play App Signing on first upload.</li>
+      <li>Back up the upload keystore outside the repo, then publish the privacy policy and complete the Data Safety form.</li>
+    </ol>
+  </section>
+
+</main>
+
+<script>
+var nav=document.querySelector('.skipto');
+nav.querySelector('.skipto-toggle').addEventListener('click',function(){nav.classList.toggle('open')});
+document.addEventListener('click',function(e){if(!nav.contains(e.target))nav.classList.remove('open')});
+nav.querySelectorAll('.skipto-menu a').forEach(function(a){a.addEventListener('click',function(){
+  nav.classList.remove('open');
+  requestAnimationFrame(function(){document.activeElement&&document.activeElement.blur()});})});
+</script>
+
+</body>
+</html>
