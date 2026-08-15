@@ -72,12 +72,14 @@ graph TD
   SVC --> FS
   SVC --> ST
 
-  AC["Firebase App Check&lt;br/&gt;PLANNED &mdash; M1"]
-  FCM["FCM push&lt;br/&gt;PLANNED &mdash; M5"]
+  AC["Firebase App Check&lt;br/&gt;PLANNED &mdash; M3"]
+  FCM["FCM push&lt;br/&gt;PLANNED &mdash; M4"]
+  CR["Firebase Crashlytics&lt;br/&gt;PLANNED &mdash; M3"]
   SVC -.-> AC
   AC -.-> FS
   SVC -.-> FCM
   FCM -.-> FS
+  SVC -.-> CR
 
   DOCS["docs/ static HTML"] --> CFP["Cloudflare Pages&lt;br/&gt;PLANNED &mdash; M3"]
 
@@ -87,7 +89,7 @@ graph TD
   end
 
   classDef planned stroke-dasharray: 6 4;
-  class AC,FCM,CFP planned;
+  class AC,FCM,CR,CFP planned;
     </div>
 
     <div class="tablewrap">
@@ -98,9 +100,10 @@ graph TD
           <tr><td>App &rarr; Firestore</td><td><span class="pill pill-good">Live</span></td><td>Direct SDK calls from 11 services. No repository layer, no seam.</td></tr>
           <tr><td>App &rarr; Storage</td><td><span class="pill pill-good">Live</span></td><td>One path: <span class="fname">avatars/{uid}/profile</span>. No size or MIME cap on write.</td></tr>
           <tr><td>App Check &rarr; Firestore</td><td><span class="pill pill-bad">Planned</span></td><td>Not enabled. Combined with the open <span class="fname">/users</span> read rule, anyone with the project id can read the user table. See <a href="#risks">risks</a>.</td></tr>
-          <tr><td>FCM</td><td><span class="pill pill-bad">Planned</span></td><td><span class="fname">lib/services/push_service.dart</span> is 0 bytes. Invites and DMs are silent today.</td></tr>
+          <tr><td>FCM</td><td><span class="pill pill-bad">Planned</span></td><td><span class="fname">lib/services/push_service.dart</span> is 0 bytes. Invites and DMs are silent today. Lands in <a href="../04-plan/milestones.html#m4">M4</a> — see the Cloud Functions row below, because sending push properly needs one.</td></tr>
+          <tr><td>App &rarr; Crashlytics</td><td><span class="pill pill-bad">Planned</span></td><td>No error reporting exists today, against an app with known unchecked-cast crash paths. Adopted in <a href="../04-plan/milestones.html#m3">M3</a>; it replaced the earlier Sentry proposal once <a href="../01-product/decisions.html">D3</a> cut web as a target. See <a href="../03-services/crashlytics.html">the runbook</a>.</td></tr>
           <tr><td>Docs &rarr; Cloudflare Pages</td><td><span class="pill pill-warn">Planned</span></td><td>D9. Firebase Hosting is already configured for <span class="fname">build/web</span> and stays only if the app itself needs it.</td></tr>
-          <tr><td>Cloud Functions</td><td><span class="pill">Not adopted</span></td><td>No package, no <span class="fname">functions/</span> dir, no <span class="fname">firebase.json</span> entry. Deliberate — see <a href="../03-services/index.html">Rejected as premature</a>.</td></tr>
+          <tr><td>Cloud Functions</td><td><span class="pill pill-warn">Trigger expected to fire</span></td><td>No package, no <span class="fname">functions/</span> dir, no <span class="fname">firebase.json</span> entry — still <a href="../03-services/index.html#rejected">rejected as premature</a> today. But two <a href="../04-plan/milestones.html#m4">M4</a> items are expected to fire its trigger: sending FCM from the client would mean shipping an admin credential, and the account-deletion cascade may not be expressible in rules + client. Decide it there, not now.</td></tr>
         </tbody>
       </table>
     </div>
@@ -361,7 +364,7 @@ graph TD
             <td><strong><span class="fname">/users</span> is <code>allow read: if true</code></strong> — the whole user collection is world-readable, unauthenticated</td>
             <td><span class="pill pill-bad">Critical</span></td>
             <td>An inline rule comment justifies it: "needed for friend lists, gym lists". But the app only ever reads user docs while signed in — the rule is wider than any code path requires. No App Check, and the Firebase config is committed, so the project id is discoverable.</td>
-            <td>Require <code>request.auth != null</code> immediately. Then split the doc: public profile fields vs private <code>email</code>/<code>contactInfo</code>. Enable App Check in the same pass.</td>
+            <td>Require <code>request.auth != null</code> immediately. Then split the doc: public profile fields vs private <code>email</code>/<code>contactInfo</code>. App Check hardens this further but is <em>not</em> a prerequisite and lands later, in <a href="../04-plan/milestones.html#m3">M3</a> — do not wait for it.</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
