@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+**/.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Editors
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Note: the Flutter app has its own .gitignore at
+# forge_senior_project_version/.gitignore covering build/, .dart_tool/, etc.
