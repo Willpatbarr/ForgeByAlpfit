@@ -282,3 +282,11 @@ Future<void> archiveGoal(String goalId) async {
     'updatedAt': Timestamp.fromDate(DateTime.now()),
   });
 }
+
+/// Permanently deletes a goal for the current user.
+Future<void> deleteGoal(String goalId) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception('Not signed in');
+
+  await FirestoreRefs.userGoals(user.uid).doc(goalId).delete();
+}

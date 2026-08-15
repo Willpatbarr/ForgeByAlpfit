@@ -11,6 +11,20 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:forge_senior_project_version/features/social/presentation/view/channel_page.dart';
 import '../../../../app/app_header.dart';
 
+/// Matches [DateTime.weekday] (Mon = 1 … Sun = 7).
+String _weekdayName(DateTime date) {
+  const weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ];
+  return weekdays[date.weekday - 1];
+}
+
 enum FeedLayout { base, updates }
 
 // ------------ GRID SYSTEM ------------
@@ -193,7 +207,7 @@ class _FeedPageState extends State<FeedPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Wednesday',
+                    _weekdayName(DateTime.now()),
                     style: AppTextStyles.title.copyWith(
                       fontSize: 24,
                       fontWeight: AppTextStyles.lightWeight,

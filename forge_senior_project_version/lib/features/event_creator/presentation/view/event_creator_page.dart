@@ -49,6 +49,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
   List<String> _selectedFriendIds = [];
   List<Map<String, dynamic>> _exercises = [];
   bool _isCreating = false;
+  bool _isDeleting = false;
 
   // Recurrence
   RecurrenceFrequency _recurrenceFrequency = RecurrenceFrequency.none;
@@ -78,6 +79,14 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
 
   bool _isLoadingEventForEdit = false;
   bool _loadEventError = false;
+
+  /// Rebuilds the event form inside a modal bottom sheet when [setState] alone is not enough.
+  StateSetter? _eventFormModalSetState;
+
+  void _syncEventFormUi() {
+    setState(() {});
+    _eventFormModalSetState?.call(() {});
+  }
 
   @override
   void initState() {
@@ -432,6 +441,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     _setsController.dispose();
     _repsController.dispose();
     _weightController.dispose();
+    _eventFormModalSetState = null;
     super.dispose();
   }
 
@@ -528,6 +538,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
             Expanded(
               child: StatefulBuilder(
                 builder: (context, setModalState) {
+                  _eventFormModalSetState = setModalState;
                   return SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
                     child: Column(
@@ -575,8 +586,11 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                           maxLines: 4,
                         ),
                         const SizedBox(height: 24),
+                        _buildDeleteEventButton(),
                         ElevatedButton(
-                          onPressed: _createEvent,
+                          onPressed: (_isCreating || _isDeleting)
+                              ? null
+                              : _createEvent,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: EventCreatorPage.forgeBlue,
                             padding: const EdgeInsets.symmetric(vertical: 16),
@@ -820,6 +834,7 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
               Expanded(
                 child: StatefulBuilder(
                   builder: (context, setModalState) {
+                    _eventFormModalSetState = setModalState;
                     return SingleChildScrollView(
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomPadding),
                       child: Column(
@@ -885,9 +900,13 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
                       ),
                       const SizedBox(height: 24),
 
+                          _buildDeleteEventButton(),
+
                           // Create / Update button
                           ElevatedButton(
-                            onPressed: _createEvent,
+                            onPressed: (_isCreating || _isDeleting)
+                                ? null
+                                : _createEvent,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: EventCreatorPage.forgeBlue,
                               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1358,9 +1377,10 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
         Switch(
           value: _isPublic,
           onChanged: (value) {
-            setState(() {
-              _isPublic = value;
-            });
+            _isPublic = value;
+            // Create-event UI is often inside a modal [StatefulBuilder]; parent setState
+            // alone does not rebuild that subtree, so the Switch would stay stuck on "Public".
+            _syncEventFormUi();
           },
           activeColor: EventCreatorPage.forgeBlue,
         ),
@@ -1903,8 +1923,89 @@ class _EventCreatorPageState extends State<EventCreatorPage> {
     );
   }
 
+  Future<void> _confirmAndDeleteEvent() async {
+    final eventId = widget.eventId;
+    if (eventId == null || _isDeleting || _isCreating) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete event?'),
+        content: const Text(
+          'This removes the event for everyone who could see it. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    _isDeleting = true;
+    _syncEventFormUi();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await deleteEvent(eventId: eventId);
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Event deleted')),
+      );
+      navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to delete event: $e')),
+      );
+    } finally {
+      if (mounted) {
+        _isDeleting = false;
+        _syncEventFormUi();
+      }
+    }
+  }
+
+  /// Shown above [Update Event] when editing an existing event.
+  Widget _buildDeleteEventButton() {
+    if (widget.eventId == null) return const SizedBox.shrink();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OutlinedButton.icon(
+          onPressed:
+              (_isCreating || _isDeleting) ? null : _confirmAndDeleteEvent,
+          icon: _isDeleting
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.red,
+                  ),
+                )
+              : const Icon(Icons.delete_outline, color: Colors.red),
+          label: Text(_isDeleting ? 'Deleting…' : 'Delete event'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.red,
+            side: BorderSide(color: Colors.red.withValues(alpha: 0.5)),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
   Future<void> _createEvent() async {
-    if (_isCreating) return;
+    if (_isCreating || _isDeleting) return;
     setState(() => _isCreating = true);
 
     final navigator = Navigator.of(context);

@@ -232,6 +232,14 @@ Future<void> updateEvent({
   });
 }
 
+/// Permanently deletes an event for the current user.
+Future<void> deleteEvent({required String eventId}) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw Exception('Not signed in');
+
+  await FirestoreRefs.userEvents(user.uid).doc(eventId).delete();
+}
+
 /// Default colors for calendar events.
 const Color _ownEventColor = Color(0xFF4D7CFF); // forge blue
 const Color _friendEventColor = Color(0xFF4CAF50); // green

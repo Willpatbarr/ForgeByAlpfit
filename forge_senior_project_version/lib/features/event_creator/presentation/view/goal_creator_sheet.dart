@@ -26,6 +26,7 @@ class _GoalCreatorSheetState extends State<GoalCreatorSheet> {
   DateTime? _endDate;
   ResetPeriod _resetPeriod = ResetPeriod.weekly;
   bool _isCreating = false;
+  bool _isDeleting = false;
   bool _isLoadingGoal = false;
 
   bool get _isEditMode => widget.goalId != null;
@@ -109,8 +110,50 @@ class _GoalCreatorSheetState extends State<GoalCreatorSheet> {
     }
   }
 
+  Future<void> _confirmDeleteGoal() async {
+    if (!_isEditMode || _isDeleting || _isCreating) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete goal?'),
+        content: const Text(
+          'This removes the goal and its history. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await deleteGoal(widget.goalId!);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Goal deleted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete goal: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isDeleting = false);
+    }
+  }
+
   Future<void> _createGoal() async {
-    if (_isCreating) return;
+    if (_isCreating || _isDeleting) return;
 
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -352,8 +395,35 @@ class _GoalCreatorSheetState extends State<GoalCreatorSheet> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    if (_isEditMode) ...[
+                      OutlinedButton.icon(
+                        onPressed: (_isCreating || _isDeleting)
+                            ? null
+                            : _confirmDeleteGoal,
+                        icon: _isDeleting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.delete_outline, color: Colors.red),
+                        label: Text(_isDeleting ? 'Deleting…' : 'Delete goal'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: BorderSide(
+                            color: Colors.red.withValues(alpha: 0.5),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
                     ElevatedButton(
-                      onPressed: _isCreating ? null : _createGoal,
+                      onPressed:
+                          (_isCreating || _isDeleting) ? null : _createGoal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: GoalCreatorSheet.forgeBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16),

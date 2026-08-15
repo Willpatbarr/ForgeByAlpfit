@@ -30,6 +30,8 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       
       // Users can update own doc, or add only themselves to someone else's friendIds (friend accept).
+      // Join/leave gym: user updates a gym account's memberUserIds for themselves only (gyms_service.addGym / removeGym).
+      // Kick member: gym account removes itself from a member's joinedGymIds (gyms_service.removeMemberFromGym).
       allow update: if request.auth != null && (
         request.auth.uid == userId
         || (
@@ -39,6 +41,33 @@ service cloud.firestore {
           && !(request.auth.uid in resource.data.get('friendIds', []))
           && request.resource.data.get('friendIds', []).size()
               == resource.data.get('friendIds', []).size() + 1
+        )
+        || (
+          request.auth.uid != userId
+          && resource.data.get('accountType', '') == 'gym'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUserIds', 'updatedAt'])
+          && request.auth.uid in request.resource.data.get('memberUserIds', [])
+          && !(request.auth.uid in resource.data.get('memberUserIds', []))
+          && request.resource.data.get('memberUserIds', []).size()
+              == resource.data.get('memberUserIds', []).size() + 1
+        )
+        || (
+          request.auth.uid != userId
+          && resource.data.get('accountType', '') == 'gym'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberUserIds', 'updatedAt'])
+          && !(request.auth.uid in request.resource.data.get('memberUserIds', []))
+          && request.auth.uid in resource.data.get('memberUserIds', [])
+          && request.resource.data.get('memberUserIds', []).size()
+              == resource.data.get('memberUserIds', []).size() - 1
+        )
+        || (
+          request.auth.uid != userId
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountType', '') == 'gym'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['joinedGymIds', 'updatedAt'])
+          && !(request.auth.uid in request.resource.data.get('joinedGymIds', []))
+          && request.auth.uid in resource.data.get('joinedGymIds', [])
+          && request.resource.data.get('joinedGymIds', []).size()
+              == resource.data.get('joinedGymIds', []).size() - 1
         )
       );
       
