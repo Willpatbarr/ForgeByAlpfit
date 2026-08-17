@@ -33,7 +33,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / App Check</div>
     <h1>Firebase App Check <span class="tag tag-decided">DECIDED</span> <span class="tier tier-t1">T1 Before first real user</span></h1>
-    <div class="whatthisis"><strong>What this is:</strong> the runbook for App Check — the free Firebase feature that makes Firestore and Storage refuse requests that don't come from the genuine Forge app. It is the <em>second</em> lock on the door. <strong>It is not a substitute for fixing <code>allow read: if true</code>, and this page will not let you pretend otherwise.</strong></div>
+    <div class="whatthisis">Runbook for verifying genuine Forge clients with Firebase App Check.</div>
   </header>
 
   <section id="what-why">
@@ -54,7 +54,7 @@
     <p><strong>Trigger:</strong> before anyone who isn't him has the app on their phone — i.e. before <strong>M3, Ship to a device that isn't his</strong>, and hard-required by <strong>M4, Beta-ready</strong>.</p>
     <p><strong>Why this tier and not another:</strong> the moment real people's emails and messages are in the database, "anyone with the project ID can script against it" stops being a theoretical finding. It is T1 rather than T0 only because it requires real bundle IDs and store registrations that don't exist yet.</p>
     <div class="callout danger">
-      <strong>Do NOT set this up yet — and here is the specific reason.</strong> App Check enforcement depends on Android <strong>Play Integrity</strong> and iOS <strong>App Attest</strong>, and both are keyed to the app's real package name / bundle ID. Forge is still <code class="fname">com.example.forge_senior_project_version</code> and <code class="fname">com.example.forgeSeniorProjectVersion</code>. Configuring App Check before those are fixed means configuring it twice. <strong>Order: fix the rules (M1) → fix the bundle IDs (M2/M3) → then App Check.</strong>
+      App Check depends on the final Android package name and iOS bundle ID. <strong>Order: fix the rules (M1) → fix the bundle IDs (M2/M3) → configure App Check.</strong>
     </div>
     <div class="callout danger">
       <strong>The trap this page exists to prevent.</strong> App Check does <em>not</em> fix <code>allow read: if true</code> on <code>/users</code>. A rule that permits unauthenticated reads still permits them from an attested app — and getting an attested token is a matter of running the real app. <strong>App Check narrows <em>who can knock</em>. Rules decide <em>what opens</em>. Forge's door is currently unlocked, and App Check is a doorman, not a lock.</strong> Fix the rule first. If only one of the two ever gets done, it must be the rule.
@@ -178,7 +178,7 @@
 
   <section id="next">
     <h2>What to do next</h2>
-    <div class="onesentence"><strong>Do nothing on App Check yet — go close M1 first.</strong> Fix <code>allow read: if true</code> on <code>/users</code> in <code class="fname">firestore.rules</code> and deploy it. App Check is the second lock and it is worthless while the first one is open.</div>
+    <div class="onesentence"><strong>Complete M1 before configuring App Check.</strong></div>
     <ol class="todo">
       <li>Then fix the <code class="fname">com.example.*</code> bundle IDs (M2/M3) — App Check cannot be configured correctly before they are real.</li>
       <li>Then work this runbook top to bottom, and stay in <strong>monitoring mode for a week</strong> before enforcing.</li>

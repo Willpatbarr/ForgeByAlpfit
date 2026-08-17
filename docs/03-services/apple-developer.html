@@ -33,7 +33,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Apple Developer</div>
     <h1>Apple Developer Program <span class="tag tag-decided">DECIDED</span> <span class="tier tier-t1">T1 Before first real user</span></h1>
-    <div class="whatthisis"><strong>What this is:</strong> the runbook for the $99/year Apple membership and TestFlight — the only legal way to get Forge onto an iPhone that isn't his. It is also the gate that surfaces the app's two hardest blockers: <strong>no moderation</strong> (guideline 1.2) and <strong>no account deletion</strong> (guideline 5.1.1(v)). Neither is paperwork; both are code that does not exist.</div>
+    <div class="whatthisis">Runbook for Apple Developer membership, TestFlight, and App Store requirements.</div>
   </header>
 
   <section id="what-why">
@@ -54,7 +54,7 @@
     <p><strong>Tier:</strong> <span class="tier tier-t1">T1 Before first real user</span></p>
     <p><strong>Trigger:</strong> enrol at <strong>M3, Ship to a device that isn't his</strong>. Enrolment takes 24–48 hours or longer, so start it a week before it's needed.</p>
     <p><strong>Why this tier:</strong> this is the first genuinely committed money in the plan and the first hard external dependency. It is T1 rather than T0 because none of the app's <em>real</em> problems — open rules, hollow surfaces, zero tests — need $99 to fix.</p>
-    <div class="callout warn"><strong>Do NOT enrol yet — and this is a money argument, not a process one.</strong> The membership auto-renews annually and the clock starts the day you pay. Enrolling now buys a year that starts before there is anything to distribute. Wait until (a) the <a href="firebase.html">Firestore rules are fixed</a>, (b) the bundle ID is real, and (c) there is an iOS build worth putting in a stranger's hands. Also note App Check's <a href="app-check.html">App Attest</a> and <a href="cloud-messaging.html">APNs push</a> both depend on this membership — so when it starts, several things unblock at once, and it's worth having them queued.</div>
+    <div class="callout warn"><strong>Enroll when the Firestore rules, bundle ID, and distributable iOS build are ready.</strong> Membership renews annually from the purchase date.</div>
     <div class="callout danger"><strong>The real trigger is not the money — it's two missing features.</strong> Paying $99 does not get Forge onto TestFlight's external track, because that track requires Beta App Review, and review applies the App Review Guidelines. Forge currently fails two of them outright:
       <ul>
         <li><strong>Guideline 1.2 (user-generated content)</strong> requires content filtering, a report mechanism with timely response, the ability to block abusive users, and published contact info. <code class="fname">lib/services/moderation_service.dart</code> is <strong>0 bytes</strong>. There is no reporting, no blocking, no filtering — and <code>isCurrentUserGymOwner</code> is literally <code>uid == gymUid</code>, so a post's own author can't even delete their own post.</li>

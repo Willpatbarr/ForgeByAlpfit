@@ -28,7 +28,7 @@
   <header class="pagehead">
     <div class="crumb">Forge docs</div>
     <h1>Forge by AlpFit</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the front door to every planning document for Forge. Start at the status block, take the one next action, and use the link grid at the bottom to reach any page in one click.</div>
+    <div class="whatthisis">Project status, plan, and documentation index.</div>
   </header>
 
   <section id="status">
@@ -68,7 +68,7 @@
     </ul>
 
     <div class="callout danger">
-      <strong>The single next action:</strong> restrict the <span class="fname">/users</span> read rule in <span class="fname">firestore.rules</span> to authenticated users. Right now it says <span class="fname">allow read: if true</span>, which means every user's email, contact info, friend list and gym list is readable by anyone with the project id, signed in or not. It is the smallest issue in <a href="04-plan/milestones.html#m1">Milestone 1</a> and the highest-severity item in the project. Nothing else should start before it.
+      <strong>Next:</strong> restrict <span class="fname">/users</span> reads in <span class="fname">firestore.rules</span> to authenticated users. The current <span class="fname">allow read: if true</span> exposes user data; see <a href="04-plan/milestones.html#m1">Milestone 1</a>.
     </div>
   </section>
 

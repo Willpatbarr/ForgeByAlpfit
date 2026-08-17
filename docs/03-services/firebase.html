@@ -33,7 +33,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Services</a> / Firebase</div>
     <h1>Firebase <span class="tag tag-locked">LOCKED</span> <span class="tier tier-t0">T0 Now</span></h1>
-    <div class="whatthisis"><strong>What this is:</strong> the runbook for Firebase Auth, Firestore, and Storage — the entire backend all ~16,300 lines of Forge already run on. Read the <a href="#free-tier">Free tier reality</a> section before anything else: the Spark-vs-Blaze question is the only place in this whole plan where a surprise bill is possible.</div>
+    <div class="whatthisis">Runbook for Firebase Auth, Firestore, Storage, and billing.</div>
   </header>
 
   <section id="what-why">
@@ -116,7 +116,7 @@
     </div>
     <p class="small muted">Rates taken from Firebase's own worked billing example, <a href="https://firebase.google.com/docs/firestore/billing-example">firebase.google.com/docs/firestore/billing-example</a>. Confirm the region actually in use in the console before trusting these — pricing varies by location, and Forge's Firestore location was never recorded anywhere in this repo.</p>
 
-    <h3 id="budget-alerts">Budget alerts are the only thing between him and a surprise bill</h3>
+    <h3 id="budget-alerts">Budget alerts</h3>
     <div class="callout danger">
       <p><strong>Blaze has no spending cap for Firestore or Storage.</strong> Google's own wording: budgets and budget alerts <em>do not</em> cap usage or charges. They send an email. That is all they do.</p>
       <p>Firebase does now have a <strong>budget spend cap</strong> feature that genuinely pauses a service — but it currently covers only <strong>Firebase AI Logic, App Hosting, Cloud Functions, and Extensions</strong>. <strong>Firestore and Cloud Storage are not covered.</strong> Even where it does apply, Google calls it "not a hard cap" because of reporting lag.</p>
@@ -189,7 +189,7 @@
       </li>
       <li><strong>What would make this cheaper</strong> — a repository interface between the UI and Firestore. Not worth building today for its own sake, but if it ever gets built for testability it halves the migration cost as a side effect.</li>
     </ul>
-    <p>Stated plainly: <strong>Forge is not portable and pretending otherwise would be dishonest.</strong> It is still the right call. ~16,300 working lines depend on it, there are effectively zero real users to migrate, and the D1 trigger (a second non-Flutter client, or Firestore reads past $25/mo) has not fired.</p>
+    <p><strong>Forge is not currently portable.</strong> About 16,300 lines depend on Firebase, and the D1 migration trigger has not fired.</p>
   </section>
 
   <section id="cost-scale">

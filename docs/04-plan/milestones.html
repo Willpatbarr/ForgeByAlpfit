@@ -32,7 +32,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / Plan</div>
     <h1>Milestones</h1>
-    <div class="whatthisis"><strong>What this is:</strong> six milestones in the order they have to happen, each one a set of issues you can create in Linear tomorrow. The table below is the whole plan in one view — read it, rewrite it, then read the detail for whichever milestone you're actually starting.</div>
+    <div class="whatthisis">Six milestones in dependency order, with Linear-ready issues.</div>
   </header>
 
   <section id="table">
@@ -132,7 +132,7 @@
     <div class="onesentence">Close the security holes, fix the one guaranteed crash path, and stand up the first tests &mdash; so that everything after this is built on something that can be trusted.</div>
 
     <div class="callout danger">
-      <strong>Nothing else ships before this.</strong> Today <span class="fname">firestore.rules</span> says <span class="fname">allow read: if true</span> on <span class="fname">/users</span>. Every user's email, contact info, friend list and gym list is readable by anyone with the project id, unauthenticated. That is a privacy incident waiting for its first real user, not a style nit.
+      <span class="fname">firestore.rules</span> currently allows unauthenticated reads of <span class="fname">/users</span>, exposing email, contact, friend, and gym data. Fix this before release.
     </div>
 
     <h3>Definition of done</h3>

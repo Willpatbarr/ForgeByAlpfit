@@ -30,7 +30,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / Services</div>
     <h1>Service Map</h1>
-    <div class="whatthisis"><strong>What this is:</strong> the index of every third-party service Forge touches — when to adopt it, what it costs, how hard it is to leave, and whether it is actually set up yet. Nine services, one runbook each. Start here before opening any of them.</div>
+    <div class="whatthisis">Service status, adoption triggers, cost, and lock-in.</div>
   </header>
 
   <section id="service-map">
@@ -289,9 +289,9 @@
 
   <section id="next">
     <h2>What to do next</h2>
-    <div class="onesentence"><strong>Open the Firebase console and answer one question: is <code class="fname">forge-by-alpfit</code> on Spark or Blaze?</strong> If Blaze, set a $5 budget alert before closing the tab — it is the only thing standing between the project and a bill, it takes ten minutes, and every other item on this page can wait for it.</div>
+    <div class="onesentence"><strong>Check whether <code class="fname">forge-by-alpfit</code> uses Spark or Blaze.</strong> If Blaze, set a $5 budget alert.</div>
     <ol class="todo">
-      <li>Then close M1: fix <code>allow read: if true</code> on <code>/users</code> and deploy. Nothing else on this map matters while that is open.</li>
+      <li>Close M1: restrict <code>/users</code> reads and deploy the rule.</li>
       <li>Then make the bundle ID call in <a href="#proposed">Open calls</a> — six of the eleven setup steps are waiting behind it.</li>
       <li>Leave every row in <a href="#rejected">Rejected as premature</a> alone until its stated trigger actually fires.</li>
     </ol>
