@@ -39,34 +39,21 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>The Apple Developer Program is what lets Forge be signed, distributed to testers through TestFlight, and eventually submitted to the App Store. For this project its immediate value is TestFlight — the BYU-I Rec Center beta (<a href="../01-product/decisions.html">D6</a>) is the whole point of the next two milestones, and roughly half of a US campus population is on iPhone.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>Free provisioning <span class="faint small">(a personal Apple ID, sideload from Xcode)</span></td><td><strong>Builds expire after 7 days</strong> and you must physically plug in each device — fine for testing on his own phone, useless for a beta with strangers.</td></tr>
-          <tr><td>Android-only beta</td><td>Genuinely cheaper ($25 vs $99+$25) and a legitimate fallback if money is tight — but it silently excludes about half the target population from a study about <em>social</em> behaviour, which is the thing being measured.</td></tr>
-          <tr><td>Apple Developer Enterprise Program</td><td>$299/year, requires a D-U-N-S, and is for internal-only distribution within a company. Wrong tool.</td></tr>
-          <tr><td>Web app / PWA instead</td><td><a href="../01-product/decisions.html">D3</a> cuts web. A social workout app that can't push notifications isn't the product.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>Free provisioning</strong> <span class="faint small">(a personal Apple ID, sideload from Xcode)</span> — <strong>builds expire after 7 days</strong> and you must physically plug in each device. Fine for testing on his own phone, useless for a beta with strangers.</li>
+      <li><strong>Android-only beta</strong> — genuinely cheaper ($25 vs $99+$25) and a legitimate fallback if money is tight, but it silently excludes about half the target population from a study about <em>social</em> behaviour, which is the thing being measured.</li>
+      <li><strong>Apple Developer Enterprise Program</strong> — $299/year, requires a D-U-N-S, and is for internal-only distribution within a company. Wrong tool.</li>
+      <li><strong>Web app / PWA instead</strong> — <a href="../01-product/decisions.html">D3</a> cuts web. A social workout app that can't push notifications isn't the product.</li>
+    </ul>
     <p><strong>Why the paid program wins:</strong> TestFlight is the only mechanism that gets a build onto an arbitrary tester's iPhone without a cable, and $99/year is the entry price.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why this tier</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t1">T1 Before first real user</span></td>
-            <td>Enrol at <strong>M3, Ship to a device that isn't his</strong>. Enrolment takes 24–48 hours or longer, so start it a week before it's needed.</td>
-            <td>This is the first genuinely committed money in the plan and the first hard external dependency. It is T1 rather than T0 because none of the app's <em>real</em> problems — open rules, hollow surfaces, zero tests — need $99 to fix.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t1">T1 Before first real user</span></p>
+    <p><strong>Trigger:</strong> enrol at <strong>M3, Ship to a device that isn't his</strong>. Enrolment takes 24–48 hours or longer, so start it a week before it's needed.</p>
+    <p><strong>Why this tier:</strong> this is the first genuinely committed money in the plan and the first hard external dependency. It is T1 rather than T0 because none of the app's <em>real</em> problems — open rules, hollow surfaces, zero tests — need $99 to fix.</p>
     <div class="callout warn"><strong>Do NOT enrol yet — and this is a money argument, not a process one.</strong> The membership auto-renews annually and the clock starts the day you pay. Enrolling now buys a year that starts before there is anything to distribute. Wait until (a) the <a href="firebase.html">Firestore rules are fixed</a>, (b) the bundle ID is real, and (c) there is an iOS build worth putting in a stranger's hands. Also note App Check's <a href="app-check.html">App Attest</a> and <a href="cloud-messaging.html">APNs push</a> both depend on this membership — so when it starts, several things unblock at once, and it's worth having them queued.</div>
     <div class="callout danger"><strong>The real trigger is not the money — it's two missing features.</strong> Paying $99 does not get Forge onto TestFlight's external track, because that track requires Beta App Review, and review applies the App Review Guidelines. Forge currently fails two of them outright:
       <ul>
@@ -82,28 +69,41 @@
       <table>
         <thead><tr><th>Item</th><th>Reality</th></tr></thead>
         <tbody>
-          <tr><td><strong>Free tier</strong></td><td><strong>There isn't one</strong> in any useful sense. A free Apple ID gets you Xcode and 7-day sideloaded builds on devices you physically hold. That is the entire free offering.</td></tr>
-          <tr><td><strong>Cost</strong></td><td><strong>$99 USD / year</strong>, individual enrolment. <strong>Auto-renewing</strong> when enrolled through the Apple Developer app; web enrolment offers other payment methods. <a href="https://developer.apple.com/support/enrollment/">developer.apple.com/support/enrollment</a></td></tr>
-          <tr><td>D-U-N-S number</td><td><strong>Not required</strong> for individual enrolment — only for organizations. Enrol as an individual.</td></tr>
-          <tr><td>When exceeded / lapsed</td><td><span class="pill pill-bad">Hard stop, and it's harsh.</span> Let the membership lapse and <strong>your apps are removed from the App Store and TestFlight builds stop working.</strong> Not a throttle — the app disappears. There is no surprise bill; there is a surprise <em>outage</em> if the card on file fails.</td></tr>
-          <tr><td>App Store commission</td><td>15–30% of sales. Irrelevant — <a href="../01-product/decisions.html">D8</a> defers monetization entirely, so Forge is free with no in-app purchases.</td></tr>
+          <tr><td><strong>Free tier</strong></td><td><strong>There isn't one</strong> in any useful sense</td></tr>
+          <tr><td><strong>Cost</strong></td><td><strong>$99 USD / year</strong>, individual enrolment, <strong>auto-renewing</strong></td></tr>
+          <tr><td>D-U-N-S number</td><td><strong>Not required</strong> for individual enrolment</td></tr>
+          <tr><td>When exceeded / lapsed</td><td><span class="pill pill-bad">Hard stop, and it's harsh</span></td></tr>
+          <tr><td>App Store commission</td><td>15–30% of sales — irrelevant, <a href="../01-product/decisions.html">D8</a> defers monetization</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Free tier</strong> — a free Apple ID gets you Xcode and 7-day sideloaded builds on devices you physically hold. That is the entire free offering.</li>
+      <li><strong>Cost</strong> — auto-renewal applies when enrolled through the Apple Developer app; web enrolment offers other payment methods. <a href="https://developer.apple.com/support/enrollment/">developer.apple.com/support/enrollment</a></li>
+      <li><strong>D-U-N-S number</strong> — only organizations need one. Enrol as an individual.</li>
+      <li><strong>When lapsed</strong> — let the membership lapse and <strong>your apps are removed from the App Store and TestFlight builds stop working.</strong> Not a throttle; the app disappears. There is no surprise bill, but there is a surprise <em>outage</em> if the card on file fails.</li>
+      <li><strong>App Store commission</strong> — Forge is free with no in-app purchases, so this never applies today.</li>
+    </ul>
 
     <h3>TestFlight limits — the thing you're actually paying for</h3>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Limit</th><th>Value</th><th>Notes for Forge</th></tr></thead>
         <tbody>
-          <tr><td>Internal testers</td><td><strong>100</strong> App Store Connect users</td><td>No review required, builds available in minutes. Requires each tester to be an App Store Connect user — fine for him and a couple of collaborators, wrong shape for 100 gym members.</td></tr>
-          <tr><td>External testers</td><td><strong>10,000</strong></td><td>Vastly more than a Rec Center beta needs. Invite by email or public link. <strong>Requires Beta App Review.</strong></td></tr>
-          <tr><td>Builds</td><td>Up to 100 shareable</td><td>Not a constraint.</td></tr>
-          <tr><td><strong>Build expiry</strong></td><td><strong>90 days</strong></td><td><span class="pill pill-warn">Plan around this.</span> A beta that runs longer than 90 days needs a fresh build uploaded, or every tester's app stops opening mid-study.</td></tr>
-          <tr><td>Beta App Review</td><td>Required for the first build sent to an external group; later builds may not need a full review</td><td>Turnaround time is <strong>not published by Apple</strong> — <span class="pill pill-warn">unverified</span>. Budget for days, not hours, and do not schedule the beta launch on the assumption of a same-day approval.</td></tr>
+          <tr><td>Internal testers</td><td><strong>100</strong> App Store Connect users</td><td>No review required; builds available in minutes</td></tr>
+          <tr><td>External testers</td><td><strong>10,000</strong></td><td><strong>Requires Beta App Review</strong></td></tr>
+          <tr><td>Builds</td><td>Up to 100 shareable</td><td>Not a constraint</td></tr>
+          <tr><td><strong>Build expiry</strong></td><td><strong>90 days</strong></td><td><span class="pill pill-warn">Plan around this</span></td></tr>
+          <tr><td>Beta App Review</td><td>Required for the first build sent to an external group</td><td>Turnaround <span class="pill pill-warn">unverified</span></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Internal testers</strong> — each tester must be an App Store Connect user. Fine for him and a couple of collaborators, wrong shape for 100 gym members.</li>
+      <li><strong>External testers</strong> — 10,000 is vastly more than a Rec Center beta needs. Invite by email or public link.</li>
+      <li><strong>Build expiry</strong> — a beta that runs longer than 90 days needs a fresh build uploaded, or every tester's app stops opening mid-study.</li>
+      <li><strong>Beta App Review</strong> — later builds may not need a full review. Turnaround time is <strong>not published by Apple</strong>. Budget for days, not hours, and do not schedule the beta launch on the assumption of a same-day approval.</li>
+    </ul>
   </section>
 
   <section id="setup-steps">
@@ -136,14 +136,18 @@
           <tr><td>Bundle ID <code class="fname">com.alpfit.forge</code></td><td><span class="pill pill-good">No</span> — public, printed in the app binary</td><td>Committed in <code class="fname">project.pbxproj</code></td><td>Ships in the app</td><td>n/a</td></tr>
           <tr><td>Team ID</td><td><span class="pill pill-good">No</span> — semi-public identifier</td><td>Xcode config</td><td>—</td><td><code>APPLE_TEAM_ID=</code></td></tr>
           <tr><td><code class="fname">GoogleService-Info.plist</code></td><td><span class="pill pill-good">No</span> — <a href="firebase.html#secrets-config">client config, correctly committed</a></td><td>Committed</td><td>Bundled</td><td>n/a</td></tr>
-          <tr><td><strong>Distribution certificate private key</strong> (<code class="fname">.p12</code>)</td><td><span class="pill pill-bad">YES.</span> Whoever holds it can sign software as you.</td><td>macOS Keychain; export to an encrypted backup, <strong>never the repo</strong></td><td>Base64 in a CI secret, only at T2</td><td><code>IOS_DIST_CERT_P12_BASE64=</code><br><code>IOS_DIST_CERT_PASSWORD=</code></td></tr>
+          <tr><td><strong>Distribution certificate private key</strong> (<code class="fname">.p12</code>)</td><td><span class="pill pill-bad">YES</span> — signs software as you</td><td>macOS Keychain, <strong>never the repo</strong></td><td>Base64 in a CI secret, only at T2</td><td><code>IOS_DIST_CERT_P12_BASE64=</code><br><code>IOS_DIST_CERT_PASSWORD=</code></td></tr>
           <tr><td><strong>App Store Connect API key</strong> (<code class="fname">.p8</code>)</td><td><span class="pill pill-bad">YES</span> — <span class="pill pill-bad">download-once</span></td><td>Password manager</td><td>CI secret, only when release automation exists</td><td><code>ASC_KEY_ID=</code><br><code>ASC_ISSUER_ID=</code><br><code>ASC_KEY_P8=</code></td></tr>
           <tr><td><strong>APNs auth key</strong> (<code class="fname">.p8</code>)</td><td><span class="pill pill-bad">YES</span> — <span class="pill pill-bad">download-once</span>. See <a href="cloud-messaging.html#secrets-config">Cloud Messaging</a>.</td><td>Password manager</td><td>Uploaded once to Firebase console</td><td><code>APNS_KEY_ID=</code></td></tr>
-          <tr><td>Provisioning profiles (<code class="fname">.mobileprovision</code>)</td><td><span class="pill pill-warn">Not secret, but regeneratable</span> — don't commit them</td><td>Xcode-managed</td><td>Xcode-managed</td><td>n/a</td></tr>
-          <tr><td>Apple ID password / 2FA</td><td><span class="pill pill-bad">YES</span> — losing access to this account means losing the app</td><td>Password manager + recovery codes stored offline</td><td>n/a</td><td>n/a</td></tr>
+          <tr><td>Provisioning profiles (<code class="fname">.mobileprovision</code>)</td><td><span class="pill pill-warn">Not secret, but regeneratable</span></td><td>Xcode-managed</td><td>Xcode-managed</td><td>n/a</td></tr>
+          <tr><td>Apple ID password / 2FA</td><td><span class="pill pill-bad">YES</span> — losing it means losing the app</td><td>Password manager + offline recovery codes</td><td>n/a</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Distribution certificate <code class="fname">.p12</code></strong> — whoever holds it can sign software as you. Export it to an encrypted backup.</li>
+      <li><strong>Provisioning profiles</strong> — Xcode-managed and regeneratable; do not commit them.</li>
+    </ul>
     <p><strong>Never commit a real secret.</strong> Apple is where the first genuine secrets enter this project — up to now there were none. <strong>Add <code>*.p8</code>, <code>*.p12</code>, <code>*.mobileprovision</code>, and <code>*.cer</code> to <code class="fname">.gitignore</code> before enrolling</strong>, not after; the <a href="github.html#setup-steps">GitHub runbook</a> lists this as a step for exactly this reason. Commit <code class="fname">.env.example</code> with the empty key names above and keep <code class="fname">.env</code> untracked.</p>
     <div class="callout warn"><strong>The two <code class="fname">.p8</code> files are downloadable exactly once.</strong> If either is lost, revoke it in the portal and generate a new one — for APNs that means re-uploading to Firebase and push breaks until you do. Put both in a password manager the moment they touch disk, and delete them from Downloads.</div>
   </section>
@@ -151,18 +155,13 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-warn">Lock-in: MEDIUM</span> — not technical lock-in so much as <strong>a gatekeeper you can't route around</strong>.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>The app record, TestFlight tester emails and their feedback, App Store reviews and ratings, and sales/analytics reports. Notably, <strong>no user account data</strong> — that all lives in <a href="firebase.html">Firebase</a>. Losing the Apple account loses distribution, not the product.</td></tr>
-          <tr><td>How do I export?</td><td>TestFlight tester lists export from App Store Connect. Reviews and analytics come out via the App Store Connect API. The <em>app</em> is your own code and needs no export.</td></tr>
-          <tr><td>What does leaving cost?</td><td><strong>iOS distribution, entirely.</strong> There is no alternative iOS channel in the US; sideloading and alternative marketplaces exist only in the EU under the DMA and are not a realistic path for this project. Leaving Apple means shipping Android-only.</td></tr>
-          <tr><td>What migrating <em>within</em> Apple costs</td><td>Moving from an Individual to an Organization account is a fresh enrolment plus a D-U-N-S, and app transfer between accounts is possible but has conditions. If "AlpFit" is meant to be a company name on the App Store eventually, <strong>that's worth thinking about before enrolling</strong>, not after.</td></tr>
-          <tr><td>The reversible part</td><td>The Flutter codebase itself is untouched by any of this. Nothing in <code class="fname">lib/</code> knows Apple exists apart from the platform channel plugins.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — the app record, TestFlight tester emails and their feedback, App Store reviews and ratings, and sales/analytics reports. Notably <strong>no user account data</strong>; that all lives in <a href="firebase.html">Firebase</a>. Losing the Apple account loses distribution, not the product.</li>
+      <li><strong>How to export</strong> — TestFlight tester lists export from App Store Connect. Reviews and analytics come out via the App Store Connect API. The <em>app</em> is your own code and needs no export.</li>
+      <li><strong>What leaving costs</strong> — <strong>iOS distribution, entirely.</strong> There is no alternative iOS channel in the US; sideloading and alternative marketplaces exist only in the EU under the DMA and are not a realistic path for this project. Leaving Apple means shipping Android-only.</li>
+      <li><strong>What migrating <em>within</em> Apple costs</strong> — moving from an Individual to an Organization account is a fresh enrolment plus a D-U-N-S, and app transfer between accounts is possible but has conditions. If "AlpFit" is meant to be a company name on the App Store eventually, <strong>that's worth thinking about before enrolling</strong>, not after.</li>
+      <li><strong>The reversible part</strong> — the Flutter codebase itself is untouched by any of this. Nothing in <code class="fname">lib/</code> knows Apple exists apart from the platform channel plugins.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -171,12 +170,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$99/yr</strong> <span class="faint small">(~$8.25/mo)</span></td><td>Nothing. Internal TestFlight (100 tester cap) covers this entirely with no Beta App Review at all — the cheapest, fastest path for the first handful of people.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta)</span></td><td><strong>$99/yr</strong> — unchanged</td><td>Cost doesn't move; TestFlight's 10,000 external cap isn't near. What breaks is <strong>process</strong>: this scale needs the <em>external</em> track, which means Beta App Review, which means guidelines 1.2 and 5.1.1(v) are enforced. The 90-day build expiry also becomes real — a semester-long beta needs a re-upload partway through, and forgetting means every tester's app stops opening at once.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$99/yr</strong> — still unchanged</td><td>Apple's cost is <strong>flat at every scale</strong> (no monetization, so no commission). Still inside TestFlight's 10,000 external cap. At this point the pressure moves to full App Store review rather than Beta App Review, which is stricter — and to review-response obligations under guideline 1.2, which requires <em>timely</em> responses to reports, i.e. someone actually reading a moderation queue. That's a time cost, and it's the one nobody budgets for.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$99/yr</strong> <span class="faint small">(~$8.25/mo)</span></td><td>Nothing — internal TestFlight covers this entirely</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta)</span></td><td><strong>$99/yr</strong> — unchanged</td><td>Cost doesn't move; what breaks is <strong>process</strong></td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$99/yr</strong> — still unchanged</td><td>Full App Store review and moderation obligations</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — internal TestFlight's 100-tester cap needs no Beta App Review at all, the cheapest and fastest path for the first handful of people.</li>
+      <li><strong>~100 users</strong> — TestFlight's 10,000 external cap isn't near. This scale needs the <em>external</em> track, which means Beta App Review, which means guidelines 1.2 and 5.1.1(v) are enforced. The 90-day build expiry also becomes real: a semester-long beta needs a re-upload partway through, and forgetting means every tester's app stops opening at once.</li>
+      <li><strong>~1,000 users</strong> — Apple's cost is <strong>flat at every scale</strong> (no monetization, so no commission), and this is still inside the 10,000 external cap. The pressure moves to full App Store review rather than Beta App Review, which is stricter, and to review-response obligations under guideline 1.2, which requires <em>timely</em> responses to reports — i.e. someone actually reading a moderation queue. That's a time cost, and it's the one nobody budgets for.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -185,14 +189,21 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td>Apple publishes no per-seat fee for adding App Store Connect users — but <span class="pill pill-warn">"it's free" is unverified</span>; no Apple page states it affirmatively. Treat it as almost certainly free and confirm in the portal.</td></tr>
-          <tr><td>Does the program allow another member?</td><td>Yes. App Store Connect supports multiple users with roles. Note that an <strong>Individual</strong> enrolment is a personal account — team management exists but the legal entity is still him.</td></tr>
-          <tr><td>Permission model</td><td>Roles: <strong>Account Holder, Admin, App Manager, Developer, Marketing, Sales, Finance, Customer Support</strong>. There is exactly one Account Holder and it cannot be shared. Give a collaborating developer the <em>Developer</em> role — enough to upload builds, not enough to change agreements or banking. <a href="https://developer.apple.com/help/account/manage-your-team/roles/">Apple's role reference</a>.</td></tr>
-          <tr><td>What actually changes</td><td>Three frictions arrive together: (1) <strong>certificate sharing</strong> — the distribution certificate lives in one person's Keychain, and the standard fix is Xcode's automatic cloud-managed signing or a <code>fastlane match</code> repo; (2) <strong>device provisioning</strong> for anyone testing push, since <a href="cloud-messaging.html">iOS push doesn't work in the simulator</a>; (3) <strong>role gates</strong> — creating or revoking the APNs key needs Account Holder or Admin, so a Developer-role teammate will hit a wall doing push setup.</td></tr>
-          <tr><td>Internal testers</td><td>Every App Store Connect user with Account Holder, Admin, App Manager, Developer, or Marketing can be a TestFlight internal tester at no extra cost — up to 100.</td></tr>
+          <tr><td>Extra seat cost</td><td>No published per-seat fee <span class="pill pill-warn">unverified</span></td></tr>
+          <tr><td>Does the program allow another member?</td><td>Yes — App Store Connect supports multiple users with roles</td></tr>
+          <tr><td>Permission model</td><td>Eight roles; exactly one Account Holder, and it cannot be shared</td></tr>
+          <tr><td>What actually changes</td><td>Certificate sharing, device provisioning, and role gates</td></tr>
+          <tr><td>Internal testers</td><td>Up to 100, at no extra cost</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Extra seat cost</strong> — Apple publishes no per-seat fee for adding App Store Connect users, and no Apple page states affirmatively that it is free. Treat it as almost certainly free and confirm in the portal.</li>
+      <li><strong>Does the program allow another member</strong> — an <strong>Individual</strong> enrolment is a personal account: team management exists but the legal entity is still him.</li>
+      <li><strong>Permission model</strong> — the roles are <strong>Account Holder, Admin, App Manager, Developer, Marketing, Sales, Finance, Customer Support</strong>. Give a collaborating developer the <em>Developer</em> role: enough to upload builds, not enough to change agreements or banking. <a href="https://developer.apple.com/help/account/manage-your-team/roles/">Apple's role reference</a>.</li>
+      <li><strong>What actually changes</strong> — three frictions arrive together: (1) <strong>certificate sharing</strong>, since the distribution certificate lives in one person's Keychain and the standard fix is Xcode's automatic cloud-managed signing or a <code>fastlane match</code> repo; (2) <strong>device provisioning</strong> for anyone testing push, since <a href="cloud-messaging.html">iOS push doesn't work in the simulator</a>; (3) <strong>role gates</strong>, since creating or revoking the APNs key needs Account Holder or Admin, so a Developer-role teammate will hit a wall doing push setup.</li>
+      <li><strong>Internal testers</strong> — every App Store Connect user with Account Holder, Admin, App Manager, Developer, or Marketing can be a TestFlight internal tester.</li>
+    </ul>
   </section>
 
   <section id="next">

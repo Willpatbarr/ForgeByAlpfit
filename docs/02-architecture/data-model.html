@@ -153,7 +153,7 @@ erDiagram
     </div>
 
     <div class="card">
-      <h3>User <span class="pill pill-bad">Untyped</span></h3>
+      <h3 id="users">User <span class="pill pill-bad">Untyped</span></h3>
       <p class="small">
         <strong>Path:</strong> <span class="fname">users/{uid}</span> &middot;
         <strong>Class:</strong> none — written inline by <code>auth_service</code> and <span class="fname">profile_page</span> &middot;
@@ -166,24 +166,33 @@ erDiagram
           <thead><tr><th>Field</th><th>Type</th><th>Written by</th><th>Notes</th></tr></thead>
           <tbody>
             <tr><td><code>uid</code></td><td>string</td><td><code>auth_service</code></td><td>Duplicates the doc id.</td></tr>
-            <tr><td><code>email</code></td><td>string</td><td><code>auth_service</code></td><td><strong>World-readable.</strong> This field is the reason the <span class="fname">/users</span> rule is a privacy blocker, not a style nit.</td></tr>
+            <tr><td><code>email</code></td><td>string</td><td><code>auth_service</code></td><td><strong>World-readable.</strong></td></tr>
             <tr><td><code>displayName</code></td><td>string</td><td><code>auth_service</code>, <span class="fname">profile_page</span></td><td></td></tr>
-            <tr><td><code>displayNameLower</code></td><td>string</td><td><code>auth_service</code>, <span class="fname">profile_page</span></td><td><strong>Written but never queried.</strong> It exists for search; search filters in memory instead.</td></tr>
-            <tr><td><code>accountType</code></td><td>string</td><td><code>auth_service</code></td><td><code>'user'</code> or <code>'gym'</code>. Set once at registration, <strong>no way to change</strong> in the UI — and no rule stops a client writing <code>'gym'</code> onto its own doc to self-promote.</td></tr>
-            <tr><td><code>contactInfo</code></td><td>string?</td><td><span class="fname">profile_page</span></td><td>Initialised <code>null</code>. <strong>World-readable.</strong> Written by the profile editor and never displayed anywhere, including on the other-user profile page.</td></tr>
-            <tr><td><code>avatarUrl</code></td><td>string</td><td><code>profile_avatar_service</code></td><td><strong>Written but never read for rendering</strong> — every avatar re-resolves from Storage by uid.</td></tr>
+            <tr><td><code>displayNameLower</code></td><td>string</td><td><code>auth_service</code>, <span class="fname">profile_page</span></td><td><strong>Written but never queried.</strong></td></tr>
+            <tr><td><code>accountType</code></td><td>string</td><td><code>auth_service</code></td><td><code>'user'</code> or <code>'gym'</code>, set once at registration</td></tr>
+            <tr><td><code>contactInfo</code></td><td>string?</td><td><span class="fname">profile_page</span></td><td><strong>World-readable</strong>, initialised <code>null</code></td></tr>
+            <tr><td><code>avatarUrl</code></td><td>string</td><td><code>profile_avatar_service</code></td><td><strong>Written but never read for rendering</strong></td></tr>
             <tr><td><code>friendIds</code></td><td>array&lt;string&gt;</td><td><code>friends_service</code></td><td>Rules-guarded: another user may add only themselves, exactly one at a time.</td></tr>
             <tr><td><code>joinedGymIds</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td>Drives event visibility and channel access.</td></tr>
-            <tr><td><code>memberUserIds</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td><strong>Gym accounts only. Not initialised at signup</strong> — its mere presence is used as a gym heuristic in <span class="fname">social_page</span>, while <span class="fname">event_creator_page</span> checks <code>accountType</code>. Inconsistent account-type detection across screens.</td></tr>
-            <tr><td><code>channelNames</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td>Gym accounts only, not initialised at signup. <strong>Channels are a string array on the gym doc, not an entity.</strong></td></tr>
+            <tr><td><code>memberUserIds</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td><strong>Gym accounts only, not initialised at signup</strong></td></tr>
+            <tr><td><code>channelNames</code></td><td>array&lt;string&gt;</td><td><code>gyms_service</code></td><td>Gym accounts only; a string array, not an entity</td></tr>
             <tr><td><code>createdAt</code> / <code>updatedAt</code></td><td>Timestamp</td><td><code>auth_service</code></td><td><code>serverTimestamp</code> — correct here, unlike goals/plans/messages.</td></tr>
           </tbody>
         </table>
       </div>
+      <ul class="small">
+        <li><code>email</code> — this field is the reason the <span class="fname">/users</span> rule is a privacy blocker, not a style nit.</li>
+        <li><code>displayNameLower</code> — it exists for search; search filters in memory instead.</li>
+        <li><code>accountType</code> — <strong>no way to change</strong> it in the UI, and no rule stops a client writing <code>'gym'</code> onto its own doc to self-promote.</li>
+        <li><code>contactInfo</code> — written by the profile editor and never displayed anywhere, including on the other-user profile page.</li>
+        <li><code>avatarUrl</code> — every avatar re-resolves from Storage by uid.</li>
+        <li><code>memberUserIds</code> — its mere presence is used as a gym heuristic in <span class="fname">social_page</span>, while <span class="fname">event_creator_page</span> checks <code>accountType</code>. Inconsistent account-type detection across screens.</li>
+        <li><code>channelNames</code> — not initialised at signup either. <strong>Channels are a string array on the gym doc, not an entity.</strong></li>
+      </ul>
     </div>
 
     <div class="card">
-      <h3>Event <span class="pill pill-bad">Untyped</span> <span class="pill pill-bad">Crash path</span></h3>
+      <h3 id="events">Event <span class="pill pill-bad">Untyped</span> <span class="pill pill-bad">Crash path</span></h3>
       <p class="small">
         <strong>Path:</strong> <span class="fname">users/{ownerUid}/events/{eventId}</span> &middot;
         <strong>Class:</strong> none — fields written inline by <code>events_service.createEvent</code> &middot;
@@ -201,18 +210,23 @@ erDiagram
             <tr><td><code>isPublic</code></td><td>bool</td><td>Drives the friend/gym visibility branch in the rules.</td></tr>
             <tr><td><code>inviteeIds</code></td><td>array&lt;string&gt;</td><td>Indexed (CONTAINS) with <code>startAt</code>.</td></tr>
             <tr><td><code>inviteeNames</code></td><td>array&lt;string&gt;</td><td>Denormalised display names — go stale if a user renames.</td></tr>
-            <tr><td><code>startAt</code></td><td>Timestamp?</td><td><span class="pill pill-bad">Nullable on write, non-null cast on read.</span> <code>_mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. Any event saved without a start time crashes the calendar for the owner <em>and</em> everyone it is shared with.</td></tr>
-            <tr><td><code>endAt</code></td><td>Timestamp?</td><td>Same. Also: nothing validates <code>endAt &gt; startAt</code> anywhere.</td></tr>
-            <tr><td><code>exercises</code></td><td>array&lt;map&gt;</td><td>Written as <code>{name, sets, setDetails: [{reps, weight}]}</code>. <strong>Read back as <code>{name, sets, weight}</code> from a top-level <code>weight</code> key that is never written</strong> — the calendar always renders blank weights. Per-set editing is unbuilt; every set gets identical reps and weight.</td></tr>
+            <tr><td><code>startAt</code></td><td>Timestamp?</td><td><span class="pill pill-bad">Nullable on write, non-null cast on read.</span></td></tr>
+            <tr><td><code>endAt</code></td><td>Timestamp?</td><td>Same; nothing validates <code>endAt &gt; startAt</code>.</td></tr>
+            <tr><td><code>exercises</code></td><td>array&lt;map&gt;</td><td><strong>Written and read with different shapes</strong> — weights render blank</td></tr>
             <tr><td><code>locationGymId</code></td><td>string?</td><td>A gym is a user, so this is a uid.</td></tr>
             <tr><td><code>locationGymName</code></td><td>string?</td><td>Denormalised.</td></tr>
-            <tr><td><code>recurrence</code></td><td>map?</td><td><code>{frequency, endType, untilDate, daysOfWeek}</code>. <code>frequency</code> &isin; <code>weekly</code>, <code>monthly</code>, <code>every_other_day</code>, <code>custom_weekly</code>, <code>none</code>. <code>endType</code> &isin; <code>never</code>, <code>until_date</code>. <strong>Expanded client-side</strong> — one doc, N rendered occurrences.</td></tr>
+            <tr><td><code>recurrence</code></td><td>map?</td><td><code>{frequency, endType, untilDate, daysOfWeek}</code>, expanded client-side</td></tr>
             <tr><td><code>planId</code></td><td>string?</td><td>Set only by plan generation. Indexed with <code>startAt</code>.</td></tr>
             <tr><td><code>planSourceEventId</code></td><td>string?</td><td>Set only by plan generation.</td></tr>
-            <tr><td><code>createdAt</code></td><td>Timestamp</td><td><code>serverTimestamp</code> on direct create; <strong>client clock</strong> on plan-generated instances.</td></tr>
+            <tr><td><code>createdAt</code></td><td>Timestamp</td><td><code>serverTimestamp</code>, but client clock on plan-generated instances</td></tr>
           </tbody>
         </table>
       </div>
+      <ul class="small">
+        <li><code>startAt</code> — <code>_mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. Any event saved without a start time crashes the calendar for the owner <em>and</em> everyone it is shared with.</li>
+        <li><code>exercises</code> — written as <code>{name, sets, setDetails: [{reps, weight}]}</code>, <strong>read back as <code>{name, sets, weight}</code> from a top-level <code>weight</code> key that is never written</strong>, so the calendar always renders blank weights. Per-set editing is unbuilt; every set gets identical reps and weight.</li>
+        <li><code>recurrence</code> — <code>frequency</code> &isin; <code>weekly</code>, <code>monthly</code>, <code>every_other_day</code>, <code>custom_weekly</code>, <code>none</code>. <code>endType</code> &isin; <code>never</code>, <code>until_date</code>. One doc, N rendered occurrences.</li>
+      </ul>
       <p class="small muted">Two repetition mechanisms coexist and nothing reconciles them: <code>recurrence</code> expands at render time, while Plans materialise real documents. See <a href="overview.html#risks">overview risks</a>.</p>
     </div>
 
@@ -257,15 +271,19 @@ erDiagram
         <table>
           <thead><tr><th>Field</th><th>Type</th><th>Notes</th></tr></thead>
           <tbody>
-            <tr><td><code>channelName</code></td><td>string</td><td>A plain string matched against the gym doc's <code>channelNames</code> array. Indexed with <code>createdAt</code> DESC. <strong>There is no Channel entity</strong> and therefore no per-channel permissions, despite the proposal promising users may post on "certain channels".</td></tr>
+            <tr><td><code>channelName</code></td><td>string</td><td>Matched against the gym doc's <code>channelNames</code> array</td></tr>
             <tr><td><code>authorUid</code></td><td>string</td><td>Any joined member can rewrite this field under the current update rule.</td></tr>
             <tr><td><code>authorName</code></td><td>string</td><td>Denormalised.</td></tr>
             <tr><td><code>content</code></td><td>string</td><td>No length cap, no content constraint, no rate limit.</td></tr>
             <tr><td><code>createdAt</code></td><td>Timestamp</td><td><code>serverTimestamp</code> — correct.</td></tr>
-            <tr><td><code>likeIds</code></td><td>array&lt;string&gt;</td><td>Toggled transactionally. <strong>This array is the only thing the <code>update</code> rule was meant to permit</strong>, and the rule does not say so.</td></tr>
+            <tr><td><code>likeIds</code></td><td>array&lt;string&gt;</td><td>Toggled transactionally; all the <code>update</code> rule meant to allow</td></tr>
           </tbody>
         </table>
       </div>
+      <ul class="small">
+        <li><code>channelName</code> — a plain string, indexed with <code>createdAt</code> DESC. <strong>There is no Channel entity</strong> and therefore no per-channel permissions, despite the proposal promising users may post on "certain channels".</li>
+        <li><code>likeIds</code> — <strong>this array is the only thing the <code>update</code> rule was meant to permit</strong>, and the rule does not say so.</li>
+      </ul>
       <p class="small muted">Moderation is broken at the model level: <code>channel_posts_service.isCurrentUserGymOwner</code> is literally <code>uid == gymUid</code>, so <strong>a post's own author cannot delete their own post from the UI</strong> even though the rule allows it.</p>
     </div>
 
@@ -294,7 +312,7 @@ erDiagram
     </div>
 
     <div class="card">
-      <h3>DirectThread <span class="pill pill-bad">Untyped</span></h3>
+      <h3 id="threads">DirectThread <span class="pill pill-bad">Untyped</span></h3>
       <p class="small">
         <strong>Path:</strong> <span class="fname">directThreads/{threadId}</span> where <code>threadId = sorted(uidA, uidB).join('__')</code> &middot;
         <strong>Class:</strong> none &middot;
@@ -343,7 +361,7 @@ erDiagram
     </div>
 
     <div class="card">
-      <h3>user_preferences <span class="pill pill-bad">Dead ruleset</span></h3>
+      <h3 id="dead-collection">user_preferences <span class="pill pill-bad">Dead ruleset</span></h3>
       <p class="small">
         <strong>Path:</strong> <span class="fname">user_preferences/{userId}</span> &middot;
         <strong>Class:</strong> none &middot;
@@ -376,66 +394,77 @@ erDiagram
           <tr>
             <td><span class="fname">users/{userId}</span></td>
             <td><code>if true</code> — public, unauthenticated</td>
-            <td>Create: self only. Update: self, or one of four diff-guarded cross-user mutations (friend-accept adds only self to <code>friendIds</code>; join/leave gym adds/removes only self from a gym's <code>memberUserIds</code>; a gym removes only itself from a member's <code>joinedGymIds</code>). Delete: <code>if false</code>.</td>
-            <td><span class="pill pill-bad">Critical</span> — full PII leak. Also: <strong>no shape validation</strong>, so a client can write <code>accountType: 'gym'</code> on its own doc and gain channel-creation and DM-anyone privileges, or a 1 MB <code>displayName</code>. And <code>delete: if false</code> means <strong>account deletion is explicitly denied</strong> — an App Store 5.1.1(v) blocker.</td>
+            <td>Self, plus four diff-guarded cross-user mutations. Delete: <code>if false</code>.</td>
+            <td><span class="pill pill-bad">Critical</span> — full PII leak</td>
           </tr>
           <tr>
             <td><span class="fname">users/{u}/events/{e}</span></td>
             <td>Owner, invitee, or <code>isPublic</code> AND owner &isin; reader's <code>friendIds</code> or <code>joinedGymIds</code></td>
             <td>Owner only</td>
-            <td><span class="pill pill-warn">Medium</span> — the read logic is sound. But owner-only write makes the "invite friends to edit a workout" requirement <strong>architecturally impossible</strong>. No field validation, so the nullable <code>startAt</code> crash path can be written by any client.</td>
+            <td><span class="pill pill-warn">Medium</span> — owner-only write blocks collaborative editing</td>
           </tr>
           <tr>
             <td><span class="fname">users/{u}/goals/{g}</span></td>
             <td>Owner only</td>
             <td>Owner only</td>
-            <td><span class="pill pill-good">OK</span> — apart from the client-supplied <code>createdAt</code>.</td>
+            <td><span class="pill pill-good">OK</span> — apart from the client-supplied <code>createdAt</code></td>
           </tr>
           <tr>
             <td><span class="fname">users/{u}/plans/{p}</span></td>
             <td>Owner only</td>
             <td>Owner only</td>
-            <td><span class="pill pill-good">OK</span> — same timestamp caveat.</td>
+            <td><span class="pill pill-good">OK</span> — same timestamp caveat</td>
           </tr>
           <tr>
             <td><span class="fname">users/{gym}/channelPosts/{p}</span></td>
             <td>Gym or joined member</td>
-            <td>Create: gym or joined member. <strong>Update: gym or joined member, unconstrained.</strong> Delete: gym or <code>authorUid</code>.</td>
-            <td><span class="pill pill-bad">High</span> — the update rule was written for likes but restricts nothing. Any joined member can overwrite any post's <code>content</code> or <code>authorUid</code>. Needs <code>affectedKeys().hasOnly(['likeIds'])</code>.</td>
+            <td>Create: gym or member. <strong>Update: unconstrained.</strong> Delete: gym or <code>authorUid</code>.</td>
+            <td><span class="pill pill-bad">High</span> — any member can rewrite any post</td>
           </tr>
           <tr>
             <td><span class="fname">…/channelPosts/{p}/comments/{c}</span></td>
             <td>Gym or joined member</td>
             <td>Create: gym or joined member. Delete: gym or author. Update: <code>if false</code>.</td>
-            <td><span class="pill pill-warn">Medium</span> — create has <strong>no rate limit and no content constraint</strong>. Immutability is fine; unbounded creation is not.</td>
+            <td><span class="pill pill-warn">Medium</span> — no rate limit, no content constraint</td>
           </tr>
           <tr>
             <td><span class="fname">directThreads/{t}</span></td>
             <td>Participant</td>
             <td>Create/update: participant, <code>participants.size() == 2</code>. Delete: <code>if false</code>.</td>
-            <td><span class="pill pill-warn">Medium</span> — update lets a participant rewrite the other party's <code>unreadCounts</code> and set <code>lastMessage</code> to arbitrary text.</td>
+            <td><span class="pill pill-warn">Medium</span> — a participant can rewrite the other party's fields</td>
           </tr>
           <tr>
             <td><span class="fname">…/{t}/messages/{m}</span></td>
             <td>Participant, <strong>or if the thread doc does not exist</strong></td>
-            <td>Create: participant + <code>senderUid == auth.uid</code> + (a <code>friend_request</code> addressed to the other participant, OR <code>dmAllowedBetween()</code>). Delete: only a received <code>friend_request</code>. Update: <code>if false</code>.</td>
-            <td><span class="pill pill-warn">Medium</span> — the <code>!exists()</code> read branch is a hole by construction. Separately, <code>dmAllowedBetween()</code> performs <strong>3&ndash;4 <code>get()</code> calls per message write</strong>: each is billed, and it is close to Firestore's 10-<code>get()</code>-per-evaluation ceiling.</td>
+            <td>Create: participant + <code>senderUid == auth.uid</code> + a relationship check. Update: <code>if false</code>.</td>
+            <td><span class="pill pill-warn">Medium</span> — a read hole, plus 3&ndash;4 <code>get()</code> calls per write</td>
           </tr>
           <tr>
             <td><span class="fname">user_preferences/{userId}</span></td>
             <td>Self</td>
             <td>Self; delete never</td>
-            <td><span class="pill pill-warn">Dead</span> — no code path touches this collection. Delete the block.</td>
+            <td><span class="pill pill-warn">Dead</span> — no code path touches this collection</td>
           </tr>
           <tr>
             <td><span class="fname">Storage: avatars/{userId}/**</span></td>
             <td><code>if true</code> — public, unauthenticated</td>
             <td><code>request.auth.uid == userId</code></td>
-            <td><span class="pill pill-warn">Medium</span> — <strong>no file-size limit and no content-type restriction.</strong> A user can upload a 5 GB file to their own avatar path. Everything outside <span class="fname">/avatars/**</span> is implicitly denied, which is correct. <span class="fname">storage-cors.json</span> is <code>origin: ["*"]</code> with <code>Authorization</code> in <code>responseHeader</code>.</td>
+            <td><span class="pill pill-warn">Medium</span> — no size limit, no content-type restriction</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong><span class="fname">users/{userId}</span></strong> — the four cross-user mutations are diff-guarded: friend-accept adds only self to <code>friendIds</code>; join/leave gym adds or removes only self from a gym's <code>memberUserIds</code>; a gym removes only itself from a member's <code>joinedGymIds</code>. There is <strong>no shape validation</strong>, so a client can write <code>accountType: 'gym'</code> on its own doc and gain channel-creation and DM-anyone privileges, or a 1 MB <code>displayName</code>. And <code>delete: if false</code> means <strong>account deletion is explicitly denied</strong> — an App Store 5.1.1(v) blocker.</li>
+      <li><strong><span class="fname">users/{u}/events/{e}</span></strong> — the read logic is sound. But owner-only write makes the "invite friends to edit a workout" requirement <strong>architecturally impossible</strong>. No field validation, so the nullable <code>startAt</code> crash path can be written by any client.</li>
+      <li><strong><span class="fname">users/{gym}/channelPosts/{p}</span></strong> — the update rule was written for likes but restricts nothing. Any joined member can overwrite any post's <code>content</code> or <code>authorUid</code>. Needs <code>affectedKeys().hasOnly(['likeIds'])</code>.</li>
+      <li><strong><span class="fname">…/channelPosts/{p}/comments/{c}</span></strong> — immutability is fine; unbounded creation is not.</li>
+      <li><strong><span class="fname">directThreads/{t}</span></strong> — update lets a participant rewrite the other party's <code>unreadCounts</code> and set <code>lastMessage</code> to arbitrary text.</li>
+      <li><strong><span class="fname">…/{t}/messages/{m}</span></strong> — create requires either a <code>friend_request</code> addressed to the other participant, OR <code>dmAllowedBetween()</code>; delete covers only a received <code>friend_request</code>. The <code>!exists()</code> read branch is a hole by construction. Separately, <code>dmAllowedBetween()</code> performs <strong>3&ndash;4 <code>get()</code> calls per message write</strong>: each is billed, and it is close to Firestore's 10-<code>get()</code>-per-evaluation ceiling.</li>
+      <li><strong><span class="fname">user_preferences/{userId}</span></strong> — delete the block.</li>
+      <li><strong><span class="fname">Storage: avatars/{userId}/**</span></strong> — a user can upload a 5 GB file to their own avatar path. Everything outside <span class="fname">/avatars/**</span> is implicitly denied, which is correct. <span class="fname">storage-cors.json</span> is <code>origin: ["*"]</code> with <code>Authorization</code> in <code>responseHeader</code>.</li>
+    </ul>
 
     <p class="small muted">Cross-cutting: <strong>not one rule in the file validates a field type, a string length, or a required key.</strong> Every timestamp on goals, plans, and DMs is client-supplied <code>Timestamp.now()</code>, with no <code>request.time</code> check anywhere. See the <a href="../03-services/firebase.html">Firebase runbook</a> for the deploy command and <a href="../04-plan/milestones.html#m1">M1</a> for the fix order.</p>
   </section>
@@ -476,67 +505,82 @@ erDiagram
         <tbody>
           <tr>
             <td><strong>User groups</strong> — no entity, no collection, no rules, no UI</td>
-            <td>"Create and join groups of other users to interact with" is an explicit Social page requirement in the Initial Requirements; the Final Specs demotes it to a stretch ("create groups of friends to share events and posts with"). Nothing anywhere implements it.</td>
-            <td><span class="pill">Optional</span> — the demotion is the later signal. See <a href="../01-product/features.html#groups">features &rarr; groups</a>.</td>
+            <td>Creating and joining groups of other users</td>
+            <td><span class="pill">Optional</span></td>
           </tr>
           <tr>
-            <td><strong>Friend request as a first-class entity</strong> — currently a <code>DirectMessage</code> with <code>messageKind: 'friend_request'</code></td>
-            <td>A request has a lifecycle — pending, accepted, declined, withdrawn, blocked — and none of it is representable. Consequences today: the other-user profile shows "Add Friend" with <strong>no pending state</strong>, so users fire duplicate requests until the service throws; declining pops the whole chat page while accepting does not; and there is no unfriend-then-reblock story.</td>
-            <td><span class="pill pill-warn">Important</span> — the duplicate-request bug is user-visible now.</td>
+            <td><strong>Friend request as a first-class entity</strong></td>
+            <td>A request lifecycle: pending, accepted, declined</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
           <tr>
-            <td><strong>Gym membership approval state</strong> — <code>addGym</code> joins instantly; only the kick half exists</td>
-            <td>"Remove from or accept users into managed community" is a must-have requirement. Membership is currently two arrays with no <code>pending</code> value and no request record. There is no way for a gym to gate who joins.</td>
-            <td><span class="pill pill-warn">Important</span> — a rec-center beta means a real gym expects this.</td>
+            <td><strong>Gym membership approval state</strong> — <code>addGym</code> joins instantly</td>
+            <td>Accepting users into a managed community</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
           <tr>
             <td><strong>Moderation / report records</strong> — <span class="fname">moderation_service.dart</span> is 0 bytes</td>
-            <td>Report, block, hide, takedown, appeal. App Store guideline 1.2 requires a report/block mechanism for any UGC app; Forge has gym channels <em>and</em> DMs. There is no <code>reports</code> collection, no <code>blockedUserIds</code> field, no hidden-content flag.</td>
-            <td><span class="pill pill-bad">Must</span> — hard iOS submission blocker, and D6 puts real external users in scope.</td>
+            <td>Report, block, hide, takedown, appeal</td>
+            <td><span class="pill pill-bad">Must</span></td>
           </tr>
           <tr>
-            <td><strong>Notification tokens</strong> — no <code>fcmTokens</code> field, no <code>notificationPreferences</code></td>
-            <td>Push. <span class="fname">push_service.dart</span> is empty, so invites, DMs, and event changes are all silent — you learn about them by opening the app. Even deferring push, the <em>token storage</em> shape needs deciding before it is retrofitted onto a live user table.</td>
-            <td><span class="pill">Optional</span> — <span class="tag tag-deferred">DEFERRED</span> to M5, trigger: retention becomes the problem worth solving.</td>
+            <td><strong>Notification tokens</strong> — no <code>fcmTokens</code>, no <code>notificationPreferences</code></td>
+            <td>Push, and the token storage shape it needs</td>
+            <td><span class="pill">Optional</span> <span class="tag tag-deferred">DEFERRED</span></td>
           </tr>
           <tr>
-            <td><strong>Account-deletion tombstones</strong> — <code>allow delete: if false</code> on <span class="fname">users</span>, no UI</td>
-            <td>Apple guideline 5.1.1(v) requires in-app account deletion. Deleting a user also orphans their events, goals, plans, channel posts, comments, DM threads, avatar blob, and their uid inside every friend's <code>friendIds</code> and every gym's <code>memberUserIds</code>. A tombstone or a soft-delete flag is needed so surviving references render as "Deleted user" instead of crashing.</td>
-            <td><span class="pill pill-bad">Must</span> — hard iOS blocker, and the cascade is the real work.</td>
+            <td><strong>Account-deletion tombstones</strong> — <code>allow delete: if false</code> on <span class="fname">users</span></td>
+            <td>In-app account deletion, Apple guideline 5.1.1(v)</td>
+            <td><span class="pill pill-bad">Must</span></td>
           </tr>
           <tr>
             <td><strong>Recurring-event exceptions</strong> — <code>recurrence</code> has no exception list</td>
-            <td>"Skip this one occurrence" and "edit just this occurrence" are unrepresentable. Client-side expansion means every occurrence is derived; there is nowhere to record that one of them moved or was cancelled. Plans dodge this by materialising real docs — which is why two mechanisms exist.</td>
-            <td><span class="pill pill-warn">Important</span> — the first user who cancels one week of a recurring workout hits it.</td>
+            <td>"Skip this one occurrence" and "edit just this one"</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
           <tr>
-            <td><strong>Timezones</strong> — every timestamp is naive; the goal period engine does flat date arithmetic</td>
-            <td>A calendar app and a period-based goal engine both depend on "what day is it for this user". <code>ResetPeriod.monthly</code> is a flat 30-day add; the day grid starts at a hardcoded 4 AM and renders anything earlier at a negative offset, off-grid. No document in the corpus addresses timezones at all.</td>
-            <td><span class="pill pill-warn">Important</span> — silent wrong-day bugs, and they get worse with travel and DST.</td>
+            <td><strong>Timezones</strong> — every timestamp is naive</td>
+            <td>Knowing what day it is for this user</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
           <tr>
-            <td><strong>Channel as an entity</strong> — currently a string in the gym doc's <code>channelNames</code> array</td>
-            <td>Per-channel write permissions ("users can post on <em>certain</em> channels"), channel descriptions, ordering, archiving, and the "subpages" requirement. A string array supports none of it, and renaming a channel orphans every post that carries the old <code>channelName</code>.</td>
-            <td><span class="pill pill-warn">Important</span> — the rename-orphans-posts bug is one gym admin away.</td>
+            <td><strong>Channel as an entity</strong> — a string in <code>channelNames</code></td>
+            <td>Per-channel permissions, descriptions, ordering</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
           <tr>
             <td><strong>Personal posts</strong> — no post entity outside gym channels</td>
-            <td>"View updates from friends" in the Feed requirement. Today that resolves to "your friend scheduled a public event" — friends have <strong>no posting surface at all</strong>. The requirement is met in name only.</td>
-            <td><span class="pill">Optional</span> — the Final Specs lists friend-directed posts as stretch.</td>
+            <td>"View updates from friends" in the Feed requirement</td>
+            <td><span class="pill">Optional</span></td>
           </tr>
           <tr>
-            <td><strong>Exercise / movement catalog</strong> — exercises are free-text maps inside each event</td>
-            <td>Every requirements doc names an exercise database as a needed resource ("I will create this or find a free API"), and it was never specified or built. Without it there is no autocomplete, no dedupe, and no way to answer "when did I last do this movement".</td>
-            <td><span class="pill">Optional</span> — and note the anti-scope: Forge does not compete on workout programming. Fix the <code>setDetails</code> round-trip bug first; that is the real defect.</td>
+            <td><strong>Exercise / movement catalog</strong> — free-text maps inside each event</td>
+            <td>Autocomplete, dedupe, movement history</td>
+            <td><span class="pill">Optional</span></td>
           </tr>
           <tr>
             <td><strong>Event RSVP state</strong> — no <code>attendeeStatus</code> map on the event</td>
-            <td>The Attend/Decline chips already exist in the DM UI and animate convincingly. They write nothing. A <code>{uid: 'going'|'declined'}</code> map on the event doc is the missing half.</td>
-            <td><span class="pill pill-warn">Important</span> — this is fake UI shipping today, not a future feature.</td>
+            <td>The Attend/Decline chips that write nothing today</td>
+            <td><span class="pill pill-warn">Important</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>User groups</strong> — "Create and join groups of other users to interact with" is an explicit Social page requirement in the Initial Requirements; the Final Specs demotes it to a stretch ("create groups of friends to share events and posts with"). Nothing anywhere implements it. The demotion is the later signal. See <a href="../01-product/features.html#unbuilt">features &rarr; groups</a>.</li>
+      <li><strong>Friend request as a first-class entity</strong> — currently a <code>DirectMessage</code> with <code>messageKind: 'friend_request'</code>. A request has a lifecycle — pending, accepted, declined, withdrawn, blocked — and none of it is representable. Consequences today: the other-user profile shows "Add Friend" with <strong>no pending state</strong>, so users fire duplicate requests until the service throws; declining pops the whole chat page while accepting does not; and there is no unfriend-then-reblock story. The duplicate-request bug is user-visible now.</li>
+      <li><strong>Gym membership approval state</strong> — only the kick half exists. "Remove from or accept users into managed community" is a must-have requirement. Membership is currently two arrays with no <code>pending</code> value and no request record, so there is no way for a gym to gate who joins. A rec-center beta means a real gym expects this.</li>
+      <li><strong>Moderation / report records</strong> — App Store guideline 1.2 requires a report/block mechanism for any UGC app; Forge has gym channels <em>and</em> DMs. There is no <code>reports</code> collection, no <code>blockedUserIds</code> field, no hidden-content flag. Hard iOS submission blocker, and D6 puts real external users in scope.</li>
+      <li><strong>Notification tokens</strong> — <span class="fname">push_service.dart</span> is empty, so invites, DMs, and event changes are all silent; you learn about them by opening the app. Even deferring push, the <em>token storage</em> shape needs deciding before it is retrofitted onto a live user table. <span class="tag tag-deferred">DEFERRED</span> to M5, trigger: retention becomes the problem worth solving.</li>
+      <li><strong>Account-deletion tombstones</strong> — there is no UI either. Deleting a user orphans their events, goals, plans, channel posts, comments, DM threads, avatar blob, and their uid inside every friend's <code>friendIds</code> and every gym's <code>memberUserIds</code>. A tombstone or soft-delete flag is needed so surviving references render as "Deleted user" instead of crashing. Hard iOS blocker, and the cascade is the real work.</li>
+      <li><strong>Recurring-event exceptions</strong> — client-side expansion means every occurrence is derived; there is nowhere to record that one of them moved or was cancelled. Plans dodge this by materialising real docs, which is why two mechanisms exist. The first user who cancels one week of a recurring workout hits it.</li>
+      <li><strong>Timezones</strong> — the goal period engine does flat date arithmetic. <code>ResetPeriod.monthly</code> is a flat 30-day add; the day grid starts at a hardcoded 4 AM and renders anything earlier at a negative offset, off-grid. No document in the corpus addresses timezones at all, so the result is silent wrong-day bugs that get worse with travel and DST.</li>
+      <li><strong>Channel as an entity</strong> — a string array cannot support per-channel write permissions ("users can post on <em>certain</em> channels"), channel descriptions, ordering, archiving, or the "subpages" requirement. Renaming a channel orphans every post that carries the old <code>channelName</code> — one gym admin away.</li>
+      <li><strong>Personal posts</strong> — today the Feed requirement resolves to "your friend scheduled a public event"; friends have <strong>no posting surface at all</strong>, so it is met in name only. The Final Specs lists friend-directed posts as stretch.</li>
+      <li><strong>Exercise / movement catalog</strong> — every requirements doc names an exercise database as a needed resource ("I will create this or find a free API"), and it was never specified or built. Without it there is no autocomplete, no dedupe, and no way to answer "when did I last do this movement". Note the anti-scope: Forge does not compete on workout programming. Fix the <code>setDetails</code> round-trip bug first; that is the real defect.</li>
+      <li><strong>Event RSVP state</strong> — the Attend/Decline chips already exist in the DM UI and animate convincingly, but write nothing. A <code>{uid: 'going'|'declined'}</code> map on the event doc is the missing half. This is fake UI shipping today, not a future feature.</li>
+    </ul>
   </section>
 
   <section id="next">

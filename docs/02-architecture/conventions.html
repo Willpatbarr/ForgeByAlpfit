@@ -71,16 +71,26 @@
         <thead><tr><th>Rule</th><th>Detail</th><th>Example</th></tr></thead>
         <tbody>
           <tr><td>Collection names</td><td><code>lowerCamelCase</code>, plural</td><td><span class="fname">events</span>, <span class="fname">goals</span>, <span class="fname">plans</span>, <span class="fname">channelPosts</span>, <span class="fname">directThreads</span>, <span class="fname">messages</span>, <span class="fname">comments</span></td></tr>
-          <tr><td>The one exception</td><td><span class="fname">user_preferences</span> is <code>snake_case</code> — and it is the one collection the app never touches. <span class="tag tag-decided">DECIDED</span> delete it rather than rename it.</td><td>—</td></tr>
-          <tr><td>Ownership</td><td>Owned data is a subcollection of the owner's user doc. No <code>ownerUid</code> filter needed; the path <em>is</em> the ownership, and the security rules key off the path parameter.</td><td><span class="fname">users/{uid}/events/{eventId}</span></td></tr>
-          <tr><td>Document ids</td><td>Firestore auto-ids by default. Two deliberate exceptions: <span class="fname">users/{uid}</span> uses the Firebase Auth uid, and <span class="fname">directThreads/{id}</span> uses <code>sorted(uidA, uidB).join('__')</code> so a thread can be addressed without a lookup query.</td><td><code>abc123__xyz789</code></td></tr>
-          <tr><td>Field names</td><td><code>lowerCamelCase</code>. <code>*Ids</code> for arrays of uids, <code>*At</code> for timestamps, <code>*Lower</code> for search-normalised copies, <code>is*</code> for bools.</td><td><code>inviteeIds</code>, <code>lastMessageAt</code>, <code>displayNameLower</code>, <code>isPublic</code></td></tr>
-          <tr><td>Denormalisation</td><td>Expected and correct for Firestore. Names are copied onto the referencing doc so a list render is one query, not N.</td><td><code>authorName</code>, <code>inviteeNames</code>, <code>locationGymName</code></td></tr>
-          <tr><td>Timestamps</td><td><span class="pill pill-warn">Inconsistent today</span> — <code>serverTimestamp()</code> on user docs, event creates, and channel posts; raw <code>Timestamp.now()</code> on goals, plans, plan-generated events, and DMs. <span class="tag tag-decided">DECIDED</span> <code>serverTimestamp()</code> everywhere, enforced in the rules.</td><td>—</td></tr>
-          <tr><td>Adding a collection</td><td>Three things, always together: the ref in <span class="fname">firestore_refs.dart</span>, a rule block in <span class="fname">firestore.rules</span>, and any composite index in <span class="fname">firestore.indexes.json</span>. Missing the third ships a runtime error to the user — that has already happened once.</td><td>See <a href="data-model.html#indexes">the missing <code>plans</code> index</a>.</td></tr>
+          <tr><td>The one exception</td><td><span class="fname">user_preferences</span> is <code>snake_case</code> <span class="tag tag-decided">DECIDED</span> delete it</td><td>—</td></tr>
+          <tr><td>Ownership</td><td>Owned data is a subcollection of the owner's user doc</td><td><span class="fname">users/{uid}/events/{eventId}</span></td></tr>
+          <tr><td>Document ids</td><td>Firestore auto-ids, with two deliberate exceptions</td><td><code>abc123__xyz789</code></td></tr>
+          <tr><td>Field names</td><td><code>lowerCamelCase</code>, with typed suffixes</td><td><code>inviteeIds</code>, <code>lastMessageAt</code>, <code>displayNameLower</code>, <code>isPublic</code></td></tr>
+          <tr><td>Denormalisation</td><td>Expected and correct for Firestore</td><td><code>authorName</code>, <code>inviteeNames</code>, <code>locationGymName</code></td></tr>
+          <tr><td>Timestamps</td><td><span class="pill pill-warn">Inconsistent today</span> <span class="tag tag-decided">DECIDED</span> <code>serverTimestamp()</code> everywhere</td><td>—</td></tr>
+          <tr><td>Adding a collection</td><td>Three things, always together: ref, rule, index</td><td>See <a href="data-model.html#indexes">the missing <code>plans</code> index</a>.</td></tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>The one exception</strong> — <span class="fname">user_preferences</span> is also the one collection the app never touches, so delete it rather than rename it.</li>
+      <li><strong>Ownership</strong> — no <code>ownerUid</code> filter needed; the path <em>is</em> the ownership, and the security rules key off the path parameter.</li>
+      <li><strong>Document ids</strong> — <span class="fname">users/{uid}</span> uses the Firebase Auth uid, and <span class="fname">directThreads/{id}</span> uses <code>sorted(uidA, uidB).join('__')</code> so a thread can be addressed without a lookup query.</li>
+      <li><strong>Field names</strong> — <code>*Ids</code> for arrays of uids, <code>*At</code> for timestamps, <code>*Lower</code> for search-normalised copies, <code>is*</code> for bools.</li>
+      <li><strong>Denormalisation</strong> — names are copied onto the referencing doc so a list render is one query, not N.</li>
+      <li><strong>Timestamps</strong> — <code>serverTimestamp()</code> on user docs, event creates, and channel posts; raw <code>Timestamp.now()</code> on goals, plans, plan-generated events, and DMs. The decided target is <code>serverTimestamp()</code> everywhere, enforced in the rules.</li>
+      <li><strong>Adding a collection</strong> — the ref in <span class="fname">firestore_refs.dart</span>, a rule block in <span class="fname">firestore.rules</span>, and any composite index in <span class="fname">firestore.indexes.json</span>. Missing the third ships a runtime error to the user — that has already happened once.</li>
+    </ul>
 
     <div class="callout">
       <strong>The trade-off this pattern makes, stated once.</strong> Path-as-ownership gives simple rules and cheap owner queries. It costs you cross-user queries: "all public events this week" needs a collection-group query and an index, which is why three of the seven indexes are COLLECTION_GROUP. It also means <strong>anything owned by two people has no home</strong> — which is exactly why collaborative event editing is impossible and why friend requests ended up as DM messages. Keep the pattern; know the edge.
@@ -97,23 +107,39 @@
         <tbody>
           <tr><td>A new screen</td><td><span class="fname">lib/features/&lt;feature&gt;/presentation/view/&lt;name&gt;_page.dart</span></td></tr>
           <tr><td>A bottom sheet or modal for an existing feature</td><td>The same <span class="fname">view/</span> folder, named <span class="fname">&lt;thing&gt;_sheet.dart</span></td></tr>
-          <tr><td>A widget used by exactly one screen</td><td>A private <code>_Widget</code> class in that screen's file. That is the existing habit and it is fine.</td></tr>
-          <tr><td>A widget used by two or more features</td><td><span class="fname">lib/widgets/</span> — currently home to just <span class="fname">storage_avatar.dart</span></td></tr>
-          <tr><td>A Firestore read or write</td><td><span class="fname">lib/services/&lt;domain&gt;_service.dart</span>, as a top-level function. <strong>Never call Firestore from a widget.</strong></td></tr>
-          <tr><td>A new collection path</td><td><span class="fname">lib/core/firebase/firestore_refs.dart</span> first, then the service. Plus rules and indexes — see above.</td></tr>
-          <tr><td>A typed model</td><td><span class="fname">lib/models/&lt;entity&gt;.dart</span>, with <code>fromDoc</code> / <code>toMap</code>. Hand-written; no code generation. <a href="data-model.html#headline"><code>Event</code> is first in the queue</a>.</td></tr>
-          <tr><td>A shared colour, spacing value, or text style</td><td><span class="fname">lib/core/constants/</span> — <span class="fname">colors.dart</span> (empty, fill it) or <span class="fname">app_text_styles.dart</span> (already real)</td></tr>
-          <tr><td>A validator — email format, non-empty, length</td><td><span class="fname">lib/core/util/validators.dart</span> <span class="small faint">(0 bytes; you'll be the first)</span></td></tr>
-          <tr><td>A date helper — period maths, day boundaries, timezone handling</td><td><span class="fname">lib/core/util/date_utils.dart</span> <span class="small faint">(0 bytes)</span></td></tr>
-          <tr><td>An error type</td><td><span class="fname">lib/core/errors/app_exception.dart</span> <span class="small faint">(0 bytes)</span>. One class. Not a <code>Result</code>/<code>Either</code> hierarchy.</td></tr>
-          <tr><td>A route</td><td><span class="fname">lib/app/router.dart</span>. Auth-gated routes go inside the <code>ShellRoute</code>; <span class="fname">/login</span> and <span class="fname">/register</span> stay outside it so the bottom nav doesn't render.</td></tr>
-          <tr><td>A test</td><td><span class="fname">test/</span>, mirroring the <span class="fname">lib/</span> path. <strong>The directory does not exist yet</strong> — see <a href="#testing">testing</a>.</td></tr>
-          <tr><td>Anything shaped like feed MVVM — a repository, a DTO, a viewmodel</td><td><strong>Nowhere.</strong> Those seven empty files are being deleted, not filled. Per D5 we are not adopting that layering. Put the logic in the service.</td></tr>
-          <tr><td>State that lives on one screen</td><td><code>setState</code> in that screen's <code>State</code> class. This is the house pattern and it is deliberate (D5).</td></tr>
-          <tr><td>State that genuinely crosses screens</td><td>Stop and ask. Today the answer is a hand-rolled <code>ChangeNotifier</code> singleton (<code>AuthStateNotifier</code>, <code>AvatarHeaderRefreshNotifier</code>). A third one is the trigger to reopen the Riverpod question — see <span class="tag tag-proposed">PROPOSED</span> D5.</td></tr>
+          <tr><td>A widget used by exactly one screen</td><td>A private <code>_Widget</code> class in that screen's file</td></tr>
+          <tr><td>A widget used by two or more features</td><td><span class="fname">lib/widgets/</span></td></tr>
+          <tr><td>A Firestore read or write</td><td><span class="fname">lib/services/&lt;domain&gt;_service.dart</span></td></tr>
+          <tr><td>A new collection path</td><td><span class="fname">lib/core/firebase/firestore_refs.dart</span> first, then the service</td></tr>
+          <tr><td>A typed model</td><td><span class="fname">lib/models/&lt;entity&gt;.dart</span>, with <code>fromDoc</code> / <code>toMap</code></td></tr>
+          <tr><td>A shared colour, spacing value, or text style</td><td><span class="fname">lib/core/constants/</span></td></tr>
+          <tr><td>A validator — email format, non-empty, length</td><td><span class="fname">lib/core/util/validators.dart</span> <span class="small faint">(0 bytes)</span></td></tr>
+          <tr><td>A date helper — period maths, day boundaries, timezones</td><td><span class="fname">lib/core/util/date_utils.dart</span> <span class="small faint">(0 bytes)</span></td></tr>
+          <tr><td>An error type</td><td><span class="fname">lib/core/errors/app_exception.dart</span> <span class="small faint">(0 bytes)</span></td></tr>
+          <tr><td>A route</td><td><span class="fname">lib/app/router.dart</span></td></tr>
+          <tr><td>A test</td><td><span class="fname">test/</span>, mirroring the <span class="fname">lib/</span> path</td></tr>
+          <tr><td>Anything shaped like feed MVVM — a repository, a DTO, a viewmodel</td><td><strong>Nowhere.</strong> Put the logic in the service.</td></tr>
+          <tr><td>State that lives on one screen</td><td><code>setState</code> in that screen's <code>State</code> class</td></tr>
+          <tr><td>State that genuinely crosses screens</td><td>Stop and ask</td></tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>A widget used by exactly one screen</strong> — a private class is the existing habit and it is fine.</li>
+      <li><strong>A widget used by two or more features</strong> — <span class="fname">lib/widgets/</span> is currently home to just <span class="fname">storage_avatar.dart</span>.</li>
+      <li><strong>A Firestore read or write</strong> — as a top-level function. <strong>Never call Firestore from a widget.</strong></li>
+      <li><strong>A new collection path</strong> — plus rules and indexes, see above.</li>
+      <li><strong>A typed model</strong> — hand-written; no code generation. <a href="data-model.html#headline"><code>Event</code> is first in the queue</a>.</li>
+      <li><strong>A shared colour, spacing value, or text style</strong> — <span class="fname">colors.dart</span> (empty, fill it) or <span class="fname">app_text_styles.dart</span> (already real).</li>
+      <li><strong>A validator</strong> — you'll be the first.</li>
+      <li><strong>An error type</strong> — one class. Not a <code>Result</code>/<code>Either</code> hierarchy.</li>
+      <li><strong>A route</strong> — auth-gated routes go inside the <code>ShellRoute</code>; <span class="fname">/login</span> and <span class="fname">/register</span> stay outside it so the bottom nav doesn't render.</li>
+      <li><strong>A test</strong> — <strong>the directory does not exist yet</strong>; see <a href="#testing">testing</a>.</li>
+      <li><strong>Feed-MVVM-shaped code</strong> — those seven empty files are being deleted, not filled. Per D5 we are not adopting that layering.</li>
+      <li><strong>State on one screen</strong> — this is the house pattern and it is deliberate (D5).</li>
+      <li><strong>State that crosses screens</strong> — today the answer is a hand-rolled <code>ChangeNotifier</code> singleton (<code>AuthStateNotifier</code>, <code>AvatarHeaderRefreshNotifier</code>). A third one is the trigger to reopen the Riverpod question — see <span class="tag tag-proposed">PROPOSED</span> D5.</li>
+    </ul>
   </section>
 
   <section id="git">
@@ -123,23 +149,9 @@
       <strong>The current commit log is unsearchable.</strong> Eleven commits, and the messages are <em>"a lot"</em>, <em>"a lot of stuff"</em>, <em>"lots of stuff got done"</em>, <em>"moippre stuff"</em>, <em>"added ealeier deisgn ideas"</em>, and <em>"asdgfasfdgarewgqrgv"</em>. <code>git log --oneline</code> currently tells you nothing about what changed, which means <code>git bisect</code>, <code>git blame</code>, and "when did this break" are all unavailable. That is a real cost the moment there is a bug worth tracing.
     </div>
 
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Convention</th><th>Format</th><th>Example</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>Branch names <span class="tag tag-decided">DECIDED</span></td>
-            <td><code>&lt;type&gt;/&lt;linear-id&gt;-&lt;slug&gt;</code>. Type is one of <code>feat</code>, <code>fix</code>, <code>chore</code>. Linear is where the work lives (D10), so the issue id belongs in the branch name.</td>
-            <td><code>fix/FOR-12-users-read-rule</code></td>
-          </tr>
-          <tr>
-            <td>Commit messages <span class="tag tag-proposed">PROPOSED</span></td>
-            <td><strong>One rule:</strong> <code>&lt;area&gt;: &lt;what changed&gt;</code> — one line, present tense, under 72 characters. Area is a <span class="fname">lib/</span> folder name or one of <code>rules</code>, <code>indexes</code>, <code>docs</code>, <code>android</code>, <code>ios</code>. That's the whole policy — no body required, no type taxonomy, no footer template.</td>
-            <td><code>rules: require auth to read /users</code><br><code>services: fix null startAt crash in event mapper</code><br><code>docs: add architecture pages</code></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Branch names</strong> <span class="tag tag-decided">DECIDED</span> — <code>&lt;type&gt;/&lt;linear-id&gt;-&lt;slug&gt;</code>, e.g. <code>fix/FOR-12-users-read-rule</code>. Type is one of <code>feat</code>, <code>fix</code>, <code>chore</code>. Linear is where the work lives (D10), so the issue id belongs in the branch name.</p>
+
+    <p><strong>Commit messages</strong> <span class="tag tag-proposed">PROPOSED</span> — <code>&lt;area&gt;: &lt;what changed&gt;</code>, one line, present tense, under 72 characters. Area is a <span class="fname">lib/</span> folder name or one of <code>rules</code>, <code>indexes</code>, <code>docs</code>, <code>android</code>, <code>ios</code>. That's the whole policy — no body required, no type taxonomy, no footer template. Examples: <code>rules: require auth to read /users</code>, <code>services: fix null startAt crash in event mapper</code>, <code>docs: add architecture pages</code>.</p>
 
     <p class="small muted">Not adopting: Conventional Commits, changelog generation, commit signing, squash policy, or PR templates. One developer, one branch at a time — the only thing worth buying here is a searchable log.</p>
   </section>
@@ -215,66 +227,79 @@
           <tr>
             <td><code>catch (_) {}</code> — swallowing the error entirely</td>
             <td><span class="fname">profile_page.dart</span> lines 91, 374, 721, 1002; <span class="fname">friends_service</span>; <span class="fname">gyms_service</span>; <span class="fname">plan_creator_sheet.dart</span> line 104</td>
-            <td><strong>The UI reports success for a write that never landed.</strong> A profile save can fail silently and the user is told it worked. This is worse than a crash — a crash you find out about.</td>
-            <td>Catch, surface it to the user, and rethrow or log. Once <span class="fname">core/errors/app_exception.dart</span> exists, wrap it. <strong>No <code>catch</code> block may be empty.</strong></td>
+            <td><strong>The UI reports success for a write that never landed</strong></td>
+            <td><strong>No <code>catch</code> block may be empty</strong></td>
           </tr>
           <tr>
             <td><code>try { } finally { }</code> with no <code>catch</code></td>
             <td><span class="fname">plan_creator_sheet.dart</span> lines 60&ndash;93</td>
-            <td>Same failure mode, quieter. A failed plan load shows an empty edit form as if the plan had no data.</td>
-            <td>Add the <code>catch</code>. If there is genuinely nothing to do, say so in a comment — but there usually is.</td>
+            <td>Same failure mode, quieter</td>
+            <td>Add the <code>catch</code></td>
           </tr>
           <tr>
             <td>Non-null casts on nullable Firestore fields</td>
             <td><code>events_service._mapDocToEvent</code> (<code>as Timestamp</code>); <span class="fname">event_creator_page.dart</span> line 1576 (<code>setDetails</code>); <span class="fname">calendar_page.dart</span> lines 1245, 1291 (<code>attendees</code>, <code>exercises</code>)</td>
-            <td>Runtime crash on data <strong>the app itself can write</strong>. Not hypothetical — <code>createEvent</code> writes the nullable field that <code>_mapDocToEvent</code> casts.</td>
-            <td>Null-check at the read boundary, or read through a typed model that does it once. Turning on <code>strict-casts</code> makes the compiler find these for you.</td>
+            <td>Runtime crash on data <strong>the app itself can write</strong></td>
+            <td>Null-check at the read boundary, or use a typed model</td>
           </tr>
           <tr>
             <td>Hardcoded <code>const []</code> placeholder lists</td>
             <td><span class="fname">create_page_hub.dart</span> lines 560, 564, 595, 598 — four <code>const &lt;_HubItemData&gt;[]</code> sections</td>
-            <td>A section that can <em>never</em> populate looks identical to an empty state. It reads as "no data yet" forever, to you and to a reviewer.</td>
-            <td>Don't render the section until it has a real source. If the source is planned, leave the section out and put it in Linear.</td>
+            <td>A section that can <em>never</em> populate looks like an empty state</td>
+            <td>Don't render the section until it has a real source</td>
           </tr>
           <tr>
             <td>Fake UI with unwired state</td>
-            <td><span class="fname">calendar_page.dart</span> lines 44&ndash;56 (hardcoded <code>'Friend 1'</code>, <code>'Ethan'</code>, <code>'Gym 1'</code>; <code>_filterStates</code> never read by any query); <span class="fname">direct_message_page.dart</span> line 147 (RSVP that only calls <code>setState</code>); <span class="fname">feed_page.dart</span> line 779 (comment sheet's "Done" discards the input)</td>
-            <td><strong>The worst pattern on this list.</strong> It animates convincingly, so a demo viewer and a future you both believe the feature exists. This is why the app looks more finished than it is.</td>
-            <td>Wire it or remove it. A missing feature is honest; a fake one is a trap you set for yourself.</td>
+            <td><span class="fname">calendar_page.dart</span> lines 44&ndash;56; <span class="fname">direct_message_page.dart</span> line 147; <span class="fname">feed_page.dart</span> line 779</td>
+            <td><strong>The worst pattern on this list</strong></td>
+            <td>Wire it or remove it</td>
           </tr>
           <tr>
             <td>Redeclared constants</td>
-            <td><code>Color(0xFF4D7CFF)</code> as a private const in 6+ files. The theme's actual seed colour (<code>deepPurple</code>) is never seen because every screen overrides it.</td>
-            <td>One brand change becomes a six-file edit, and the <code>MaterialApp</code> theme is decorative.</td>
-            <td>Fill <span class="fname">core/constants/colors.dart</span> and delete the copies as you touch each file.</td>
+            <td><code>Color(0xFF4D7CFF)</code> as a private const in 6+ files</td>
+            <td>One brand change becomes a six-file edit</td>
+            <td>Fill <span class="fname">core/constants/colors.dart</span></td>
           </tr>
           <tr>
             <td><code>setState</code> after <code>await</code> with no <code>mounted</code> guard</td>
             <td><span class="fname">profile_page.dart</span> lines 169, 208, 226, 250, 261</td>
-            <td>Exception if the user navigates away mid-request. Intermittent, hard to reproduce, and invisible without crash reporting.</td>
-            <td><code>if (!mounted) return;</code> immediately after every <code>await</code> that precedes a <code>setState</code>.</td>
+            <td>Exception if the user navigates away mid-request</td>
+            <td><code>if (!mounted) return;</code> after every <code>await</code></td>
           </tr>
           <tr>
             <td>Developer instructions rendered as end-user UI</td>
-            <td><span class="fname">channel_page.dart</span> lines 205&ndash;257 — tells the user to run <code>firebase login --reauth</code> and <code>firebase deploy --only firestore:indexes</code>, with a copy-to-clipboard console URL</td>
-            <td>A gym member sees a CLI tutorial. It also leaks the Firebase console URL for the project.</td>
-            <td>Generic user-facing error; log the detail. Fix the missing index instead — see <a href="data-model.html#indexes">indexes</a>.</td>
+            <td><span class="fname">channel_page.dart</span> lines 205&ndash;257</td>
+            <td>A gym member sees a CLI tutorial</td>
+            <td>Generic user-facing error; log the detail</td>
           </tr>
           <tr>
             <td>Dead code left in place</td>
-            <td>~380 lines across <span class="fname">social_page.dart</span> (lines 544, 566, 1858 — three unreachable builders holding the repo's only two TODOs) and <span class="fname">feed_page.dart</span> lines 794&ndash;927. Plus <code>_loadMessagesList</code>, which still runs a query per joined gym <strong>for a tab that was deleted</strong>.</td>
-            <td>It costs reads, it costs reading time, and it hides the two real TODOs in the repo where nobody will find them.</td>
+            <td>~380 lines: <span class="fname">social_page.dart</span> lines 544, 566, 1858; <span class="fname">feed_page.dart</span> lines 794&ndash;927</td>
+            <td>It costs reads, and hides the repo's only two TODOs</td>
             <td>Delete it. Git remembers.</td>
           </tr>
           <tr>
             <td>N+1 sequential <code>.get()</code> in a loop</td>
             <td><code>friends_service.getFriendIdsWithNames</code>; <code>gyms_service</code> member profiles; <span class="fname">profile_page.dart</span> lines 211, 235</td>
-            <td>Billed reads scale with friend count, and each failure is individually swallowed.</td>
-            <td>Batch with <code>whereIn</code> chunks, or use the name already denormalised on the doc you're holding.</td>
+            <td>Billed reads scale with friend count</td>
+            <td>Batch with <code>whereIn</code> chunks</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong><code>catch (_) {}</code></strong> — a profile save can fail silently and the user is told it worked. This is worse than a crash; a crash you find out about. Catch, surface it to the user, and rethrow or log. Once <span class="fname">core/errors/app_exception.dart</span> exists, wrap it.</li>
+      <li><strong><code>try { } finally { }</code></strong> — a failed plan load shows an empty edit form as if the plan had no data. If there is genuinely nothing to do in the <code>catch</code>, say so in a comment — but there usually is.</li>
+      <li><strong>Non-null casts</strong> — not hypothetical: <code>createEvent</code> writes the nullable field that <code>_mapDocToEvent</code> casts. A typed model does the null-check once. Turning on <code>strict-casts</code> makes the compiler find these for you.</li>
+      <li><strong><code>const []</code> placeholders</strong> — it reads as "no data yet" forever, to you and to a reviewer. If the source is planned, leave the section out and put it in Linear.</li>
+      <li><strong>Fake UI</strong> — <span class="fname">calendar_page.dart</span> hardcodes <code>'Friend 1'</code>, <code>'Ethan'</code>, <code>'Gym 1'</code> and <code>_filterStates</code> is never read by any query; <span class="fname">direct_message_page.dart</span> line 147 is an RSVP that only calls <code>setState</code>; <span class="fname">feed_page.dart</span> line 779 is a comment sheet whose "Done" discards the input. It animates convincingly, so a demo viewer and a future you both believe the feature exists — this is why the app looks more finished than it is. A missing feature is honest; a fake one is a trap you set for yourself.</li>
+      <li><strong>Redeclared constants</strong> — the theme's actual seed colour (<code>deepPurple</code>) is never seen because every screen overrides it, so the <code>MaterialApp</code> theme is decorative. Delete the copies as you touch each file.</li>
+      <li><strong><code>setState</code> after <code>await</code></strong> — intermittent, hard to reproduce, and invisible without crash reporting. Guard every <code>await</code> that precedes a <code>setState</code>.</li>
+      <li><strong>Developer instructions as UI</strong> — <span class="fname">channel_page.dart</span> tells the user to run <code>firebase login --reauth</code> and <code>firebase deploy --only firestore:indexes</code>, with a copy-to-clipboard console URL, which also leaks the Firebase console URL for the project. Fix the missing index instead — see <a href="data-model.html#indexes">indexes</a>.</li>
+      <li><strong>Dead code</strong> — the three unreachable builders in <span class="fname">social_page.dart</span> hold the repo's only two TODOs. Plus <code>_loadMessagesList</code>, which still runs a query per joined gym <strong>for a tab that was deleted</strong>. It costs reads, it costs reading time, and it hides those TODOs where nobody will find them.</li>
+      <li><strong>N+1 <code>.get()</code></strong> — each failure is individually swallowed. Use the name already denormalised on the doc you're holding.</li>
+    </ul>
   </section>
 
   <section id="next">

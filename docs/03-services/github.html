@@ -39,16 +39,12 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>GitHub stores the only copy of Forge's source that isn't on his laptop, at <a href="https://github.com/Willpatbarr/ForgeByAlpfit"><code class="fname">github.com/Willpatbarr/ForgeByAlpfit</code></a>. Later it runs the CI that answers the only two questions worth automating for a solo developer: <em>does it build</em> and <em>do the tests pass</em>.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>GitLab</td><td>More CI minutes on the free tier, but he already has a GitHub account and the repo already lives there — moving buys nothing.</td></tr>
-          <tr><td>Codemagic / Bitrise <span class="faint small">(Flutter-specialist CI)</span></td><td>Genuinely better at Flutter mobile builds, but a second vendor and a second config file for a project that doesn't yet have <em>one</em> test to run.</td></tr>
-          <tr><td>No CI at all, just push</td><td>Viable today and honestly close to correct — but the moment a build breaks on a tester's device instead of his, "it built on my machine" stops being an answer.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>GitLab</strong> — more CI minutes on the free tier, but he already has a GitHub account and the repo already lives there; moving buys nothing.</li>
+      <li><strong>Codemagic / Bitrise</strong> <span class="faint small">(Flutter-specialist CI)</span> — genuinely better at Flutter mobile builds, but a second vendor and a second config file for a project that doesn't yet have <em>one</em> test to run.</li>
+      <li><strong>No CI at all, just push</strong> — viable today and honestly close to correct, but the moment a build breaks on a tester's device instead of his, "it built on my machine" stops being an answer.</li>
+    </ul>
     <p><strong>Why GitHub wins:</strong> the repo is already there, Actions is in the same box with nothing extra to sign up for, and the free private-repo tier is genuinely unlimited.</p>
   </section>
 
@@ -61,26 +57,31 @@
           <tr>
             <td><strong>The private repo</strong></td>
             <td><span class="tier tier-t0">T0 Now</span></td>
-            <td>Already done. Source control is not optional.</td>
+            <td>Already done — source control is not optional</td>
           </tr>
           <tr>
             <td><strong>Actions: build check</strong></td>
             <td><span class="tier tier-t0">T0 Now</span></td>
-            <td>Cheap, one file, and it catches the class of breakage that <code>flutter analyze</code> provably cannot — the analyzer here is <code>flutter_lints</code> with <code>strict-casts</code> off, so it finds almost nothing.</td>
+            <td>Cheap, one file, catches what <code>flutter analyze</code> cannot</td>
           </tr>
           <tr>
             <td><strong>Actions: test run</strong></td>
             <td><span class="tier tier-t0">T0 Now</span> <span class="faint small">(blocked)</span></td>
-            <td>Blocked on there being a test. <strong>There is no <code class="fname">test/</code> directory and zero test files.</strong> Add the workflow now with the test step in it; it will pass trivially and start meaning something the day the first test lands (M2).</td>
+            <td>Blocked on there being a test — add the step anyway</td>
           </tr>
           <tr>
             <td><strong>Actions: iOS/Android release builds</strong></td>
             <td><span class="tier tier-t2">T2 When it hurts</span></td>
-            <td><strong>Named threshold: when manual builds become the release bottleneck — realistically past weekly releases.</strong> macOS runners cost ~10× Linux minutes, so this genuinely spends the free budget. Do not build it now.</td>
+            <td>When manual builds become the release bottleneck</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Actions: build check</strong> — the analyzer here is <code>flutter_lints</code> with <code>strict-casts</code> off, so it finds almost nothing; CI catches the class of breakage it provably cannot.</li>
+      <li><strong>Actions: test run</strong> — <strong>there is no <code class="fname">test/</code> directory and zero test files.</strong> Add the workflow now with the test step in it; it will pass trivially and start meaning something the day the first test lands (M2).</li>
+      <li><strong>Actions: iOS/Android release builds</strong> — <strong>named threshold: when manual builds become the release bottleneck, realistically past weekly releases.</strong> macOS runners cost ~10× Linux minutes, so this genuinely spends the free budget. Do not build it now.</li>
+    </ul>
     <div class="callout"><strong>When NOT to set this up yet:</strong> no branch protection rulesets, no required reviewers, no CODEOWNERS, no release automation, no matrix builds across three OSes. All of that is ceremony for a team of one. A single workflow file with <code>flutter pub get</code> / <code>flutter analyze</code> / <code>flutter test</code> / <code>flutter build apk --debug</code> is the whole T0 ask.</div>
   </section>
 
@@ -90,17 +91,24 @@
       <table>
         <thead><tr><th>Item</th><th>GitHub Free</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td>Private repositories</td><td><strong>Unlimited</strong>, with a reduced feature set <span class="faint small">(the omissions are team features — protected branches, code owners — none of which a solo dev needs)</span></td><td>n/a</td></tr>
-          <tr><td>Collaborators</td><td>Unlimited on public repos; listed as unlimited for private on the pricing page <span class="faint small">(the private-repo wording is less explicit than the public one — verify at <a href="https://github.com/pricing">github.com/pricing</a> if a teammate is imminent)</span></td><td>n/a</td></tr>
-          <tr><td><strong>Actions minutes (private repos)</strong></td><td><strong>2,000 minutes / month</strong></td><td><span class="pill pill-good">Hard stop, no bill.</span> GitHub's wording: "usage is blocked once you use up your quota." With no payment method on file there is <strong>no way to be charged</strong>.</td></tr>
+          <tr><td>Private repositories</td><td><strong>Unlimited</strong>, with a reduced feature set</td><td>n/a</td></tr>
+          <tr><td>Collaborators</td><td>Unlimited on public; listed unlimited for private</td><td>n/a</td></tr>
+          <tr><td><strong>Actions minutes (private repos)</strong></td><td><strong>2,000 minutes / month</strong></td><td><span class="pill pill-good">Hard stop, no bill</span></td></tr>
           <tr><td>Actions minutes (public repos)</td><td><strong>Free and unlimited</strong> on standard runners</td><td>n/a</td></tr>
           <tr><td>Actions artifact storage</td><td>500 MB</td><td>Blocked, or $0.25/GB-month if billing is enabled</td></tr>
           <tr><td>Actions cache storage</td><td>10 GB</td><td>Oldest entries evicted</td></tr>
-          <tr><td>Packages storage</td><td>500 MB <span class="faint small">(egress allowance not stated on the current docs pages — unverified)</span></td><td>Blocked</td></tr>
-          <tr><td>First paid tier</td><td><strong>GitHub Pro, $4/user/month</strong> — 3,000 Actions minutes, 1 GB artifact storage <span class="faint small">(confirm current price at <a href="https://github.com/pricing">github.com/pricing</a>)</span></td><td>—</td></tr>
+          <tr><td>Packages storage</td><td>500 MB <span class="faint small">(egress unverified)</span></td><td>Blocked</td></tr>
+          <tr><td>First paid tier</td><td><strong>GitHub Pro, $4/user/month</strong></td><td>—</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Private repositories</strong> — the omissions are team features (protected branches, code owners), none of which a solo dev needs.</li>
+      <li><strong>Collaborators</strong> — the private-repo wording on the pricing page is less explicit than the public one; verify at <a href="https://github.com/pricing">github.com/pricing</a> if a teammate is imminent.</li>
+      <li><strong>Actions minutes (private repos)</strong> — GitHub's wording: "usage is blocked once you use up your quota." With no payment method on file there is <strong>no way to be charged</strong>.</li>
+      <li><strong>Packages storage</strong> — the egress allowance is not stated on the current docs pages; unverified.</li>
+      <li><strong>First paid tier</strong> — GitHub Pro buys 3,000 Actions minutes and 1 GB artifact storage. Confirm the current price at <a href="https://github.com/pricing">github.com/pricing</a>.</li>
+    </ul>
 
     <h3>Runner minute pricing — the part that actually matters</h3>
     <div class="tablewrap">
@@ -159,17 +167,12 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-good">Lock-in: LOW</span></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>Almost nothing. Git history is fully distributed — every clone is a complete copy. The GitHub-only data is Issues, PR discussion, Releases, and Actions run history. Forge uses <a href="linear.html">Linear</a> for issues, so GitHub-only data is close to zero.</td></tr>
-          <tr><td>How do I export?</td><td><code>git clone --mirror</code> gets everything that matters. Settings → Migrations, or the REST API, exports issues/PRs if they ever get used.</td></tr>
-          <tr><td>What does migrating cost?</td><td><strong>An afternoon.</strong> Push the mirror to GitLab/Codeberg, rewrite one workflow file into their CI syntax, reconnect Cloudflare Pages. Nothing in the Flutter code knows GitHub exists.</td></tr>
-          <tr><td>Sticky bits</td><td>Actions YAML is GitHub-specific (rewrite, not port). The Cloudflare Pages build connection is tied to the GitHub repo and has to be re-made.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — almost nothing. Git history is fully distributed; every clone is a complete copy. The GitHub-only data is Issues, PR discussion, Releases, and Actions run history, and Forge uses <a href="linear.html">Linear</a> for issues, so that is close to zero.</li>
+      <li><strong>How to export</strong> — <code>git clone --mirror</code> gets everything that matters. Settings → Migrations, or the REST API, exports issues/PRs if they ever get used.</li>
+      <li><strong>What migrating costs</strong> — <strong>an afternoon.</strong> Push the mirror to GitLab/Codeberg, rewrite one workflow file into their CI syntax, reconnect Cloudflare Pages. Nothing in the Flutter code knows GitHub exists.</li>
+      <li><strong>Sticky bits</strong> — Actions YAML is GitHub-specific (rewrite, not port), and the Cloudflare Pages build connection is tied to the GitHub repo and has to be re-made.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -179,12 +182,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing. Perhaps 20–40 CI runs/month at ~5 min each on Linux ≈ 200 min, i.e. 10% of the free budget.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(beta)</span></td><td><strong>$0</strong></td><td>Nothing from users. The pressure comes from <em>release cadence</em>: if beta feedback drives daily builds, 2,000 Linux minutes is still comfortable — roughly 400 five-minute runs.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong>, unless macOS CI is added</td><td>Still nothing from user count. The only realistic way to blow the budget is adding a <code>macos-latest</code> iOS build job: at ~$0.062/min that is ~194 minutes of headroom, i.e. roughly a dozen iOS builds before the hard stop. If that becomes the bottleneck, GitHub Pro at $4/mo (3,000 min) is the cheapest fix — or keep iOS builds local.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing — ~10% of the free minute budget</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(beta)</span></td><td><strong>$0</strong></td><td>Nothing from users; pressure comes from release cadence</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong>, unless macOS CI is added</td><td>Still nothing from user count</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — perhaps 20–40 CI runs/month at ~5 min each on Linux ≈ 200 min, i.e. 10% of the free budget.</li>
+      <li><strong>~100 users</strong> — if beta feedback drives daily builds, 2,000 Linux minutes is still comfortable: roughly 400 five-minute runs.</li>
+      <li><strong>~1,000 users</strong> — the only realistic way to blow the budget is adding a <code>macos-latest</code> iOS build job: at ~$0.062/min that is ~194 minutes of headroom, i.e. roughly a dozen iOS builds before the hard stop. If that becomes the bottleneck, GitHub Pro at $4/mo (3,000 min) is the cheapest fix — or keep iOS builds local.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -193,14 +201,21 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0.</strong> Collaborators on a personal-account repo are free; GitHub Free's private repos are listed as unlimited-collaborator.</td></tr>
-          <tr><td>Does the free tier allow another member?</td><td>Yes. Settings → Collaborators → Add people. No org, no billing, no seat count.</td></tr>
-          <tr><td>Permission model</td><td>Personal repos give collaborators a single level: <strong>write access to everything</strong>. There is no Read/Triage/Maintain gradation without moving to an Organization (also free). If a teammate should not be able to force-push <code>main</code>, that is the reason to create a free org.</td></tr>
-          <tr><td>What actually changes</td><td>Two things stop being optional: (1) branch protection on <code>main</code> — a GitHub Free feature for <em>public</em> repos, requiring an org or Pro for private ones, so <strong>verify before promising it</strong>; (2) the CI workflow, which stops being a nicety and becomes the shared definition of "not broken".</td></tr>
-          <tr><td>Actions minutes</td><td>Still 2,000/month — the budget is per <em>account owner</em>, not per person. Two developers pushing means the same pool drains twice as fast.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0</strong> — personal-account repo collaborators are free</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes — Settings → Collaborators → Add people</td></tr>
+          <tr><td>Permission model</td><td>One level only: <strong>write access to everything</strong></td></tr>
+          <tr><td>What actually changes</td><td>Branch protection and CI stop being optional</td></tr>
+          <tr><td>Actions minutes</td><td>Still 2,000/month — per account owner, not per person</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Extra seat cost</strong> — GitHub Free's private repos are listed as unlimited-collaborator.</li>
+      <li><strong>Does the free tier allow another member</strong> — no org, no billing, no seat count.</li>
+      <li><strong>Permission model</strong> — there is no Read/Triage/Maintain gradation without moving to an Organization (also free). If a teammate should not be able to force-push <code>main</code>, that is the reason to create a free org.</li>
+      <li><strong>What actually changes</strong> — two things stop being optional: (1) branch protection on <code>main</code>, a GitHub Free feature for <em>public</em> repos that requires an org or Pro for private ones, so <strong>verify before promising it</strong>; (2) the CI workflow, which stops being a nicety and becomes the shared definition of "not broken".</li>
+      <li><strong>Actions minutes</strong> — two developers pushing means the same pool drains twice as fast.</li>
+    </ul>
   </section>
 
   <section id="next">

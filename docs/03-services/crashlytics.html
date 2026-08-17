@@ -39,34 +39,21 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>Crashlytics captures a stack trace, device, OS version, and breadcrumb trail every time Forge crashes on somebody else's phone, and groups those into ranked issues. Forge needs this specifically because it has <strong>identified crash paths it cannot currently observe</strong>: <code class="fname">events_service._mapDocToEvent</code> does an unchecked <code>(d['startAt'] as Timestamp)</code> cast on a field that <code>createEvent</code> writes as nullable, and <code class="fname">calendar_page.dart</code> and <code class="fname">event_creator_page.dart</code> have three more unchecked list casts — all reachable with data the app itself produces. Today, if any of those fire on a tester's phone, <strong>nobody finds out.</strong></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Sentry</strong> <span class="faint small">(the previous proposal in this doc set)</span></td><td>Better product in isolation — but Crashlytics is <strong>free with no event cap, inside a service already adopted, with zero marginal signup</strong>, and Sentry's one decisive advantage here was Flutter <em>web</em> support, which <a href="../01-product/decisions.html">D3</a> made irrelevant by cutting web as a target. <a href="index.html#rejected">Moved to "rejected as premature"</a> with a named trigger.</td></tr>
-          <tr><td>Firebase Analytics</td><td>Answers "what did users do", not "what broke". Different question; also deferred.</td></tr>
-          <tr><td><code>catch (e) { print(e) }</code></td><td>This is roughly the current state and it is worse than nothing — <code class="fname">profile_page.dart</code> has four <code>catch (_) {}</code> blocks that swallow write failures and <em>report success to the user</em>.</td></tr>
-          <tr><td>Nothing, and wait for bug reports</td><td>Works with one user (him). At 100 beta testers, most people who hit a crash uninstall silently rather than write to you.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>Sentry</strong> <span class="faint small">(the previous proposal in this doc set)</span> — better product in isolation, but Crashlytics is <strong>free with no event cap, inside a service already adopted, with zero marginal signup</strong>, and Sentry's one decisive advantage here was Flutter <em>web</em> support, which <a href="../01-product/decisions.html">D3</a> made irrelevant by cutting web as a target. <a href="index.html#rejected">Moved to "rejected as premature"</a> with a named trigger.</li>
+      <li><strong>Firebase Analytics</strong> — answers "what did users do", not "what broke". Different question; also deferred.</li>
+      <li><strong><code>catch (e) { print(e) }</code></strong> — roughly the current state, and it is worse than nothing: <code class="fname">profile_page.dart</code> has four <code>catch (_) {}</code> blocks that swallow write failures and <em>report success to the user</em>.</li>
+      <li><strong>Nothing, and wait for bug reports</strong> — works with one user (him). At 100 beta testers, most people who hit a crash uninstall silently rather than write to you.</li>
+    </ul>
     <p><strong>Why Crashlytics wins:</strong> free, unlimited, no new vendor, and it is already sitting inside the Firebase project — the marginal setup cost is one package and about twenty lines.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why this tier</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t1">T1 Before first real user</span></td>
-            <td>With <strong>M3, Ship to a device that isn't his</strong> — in the very first build that leaves his hands, and definitely before <strong>M4/M5</strong>.</td>
-            <td>The value of crash reporting is exactly proportional to how far the app is from the developer. On his own device he sees the stack trace in the debugger. On a tester's device he sees nothing at all. The transition happens at M3, so that is the trigger.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t1">T1 Before first real user</span></p>
+    <p><strong>Trigger:</strong> with <strong>M3, Ship to a device that isn't his</strong> — in the very first build that leaves his hands, and definitely before <strong>M4/M5</strong>.</p>
+    <p><strong>Why this tier:</strong> the value of crash reporting is exactly proportional to how far the app is from the developer. On his own device he sees the stack trace in the debugger. On a tester's device he sees nothing at all. The transition happens at M3, so that is the trigger.</p>
     <div class="callout"><strong>When NOT to set this up yet:</strong> not while he's the only user — a debugger is strictly better than a dashboard when you're holding the phone. And don't bolt on Firebase Performance Monitoring or Analytics at the same time "since you're in there"; they answer different questions and each is a new surface to ignore. Crashlytics alone, at M3.</div>
     <div class="callout warn"><strong>One honest caveat about ordering.</strong> Crashlytics is cheap and useful, but it is <em>observability</em>, not a fix. The <a href="firebase.html">open Firestore rule</a> (M1) and the store-blocking gaps (M2/M4) outrank it. Don't let installing a dashboard feel like progress on the things that are actually blocking.</div>
   </section>
@@ -77,13 +64,18 @@
       <table>
         <thead><tr><th>Item</th><th>Limit</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td><strong>Crashlytics</strong></td><td><strong>No cost, unlimited, on both Spark and Blaze.</strong> One of Firebase's always-free products. It <strong>does not require or trigger a Blaze upgrade.</strong></td><td>Nothing to exceed. There is no event cap and no Crashlytics bill.</td></tr>
-          <tr><td>Crash data retention</td><td><span class="pill pill-warn">Not confirmed</span> — verify at <a href="https://firebase.google.com/docs/crashlytics">firebase.google.com/docs/crashlytics</a> before relying on long-term history.</td><td>Older issues age out of the console.</td></tr>
-          <tr><td>BigQuery export <span class="faint small">(optional, for raw crash data)</span></td><td>Requires <strong>Blaze</strong>, and then BigQuery storage/query pricing applies.</td><td>Billed. Not needed — skip it.</td></tr>
-          <tr><td>First paid tier</td><td><strong>There isn't one.</strong> Crashlytics has no paid version.</td><td>—</td></tr>
+          <tr><td><strong>Crashlytics</strong></td><td><strong>No cost, unlimited, on both Spark and Blaze</strong></td><td>Nothing to exceed — no event cap, no bill</td></tr>
+          <tr><td>Crash data retention</td><td><span class="pill pill-warn">Not confirmed</span></td><td>Older issues age out of the console</td></tr>
+          <tr><td>BigQuery export <span class="faint small">(optional)</span></td><td>Requires <strong>Blaze</strong>, then BigQuery pricing applies</td><td>Billed — not needed, skip it</td></tr>
+          <tr><td>First paid tier</td><td><strong>There isn't one</strong> — no paid version exists</td><td>—</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Crashlytics</strong> — one of Firebase's always-free products. It <strong>does not require or trigger a Blaze upgrade.</strong></li>
+      <li><strong>Crash data retention</strong> — verify at <a href="https://firebase.google.com/docs/crashlytics">firebase.google.com/docs/crashlytics</a> before relying on long-term history.</li>
+      <li><strong>BigQuery export</strong> — for raw crash data; storage and query pricing applies once enabled.</li>
+    </ul>
     <div class="callout"><strong>No surprise-bill risk whatsoever.</strong> This is the single cleanest entry on the whole service map: free, unlimited, no card, no quota, no upgrade path to accidentally trip. Compare with <a href="index.html#rejected">Sentry's free tier</a>, which caps events per month and starts dropping them — that cap is the thing you'd be paying to avoid.</div>
 
     <h3>Platform support — the fact that killed Sentry's case</h3>
@@ -93,10 +85,13 @@
         <tbody>
           <tr><td>iOS</td><td><span class="pill pill-good">Supported</span></td><td>Yes — a shipping target</td></tr>
           <tr><td>Android</td><td><span class="pill pill-good">Supported</span></td><td>Yes — a shipping target</td></tr>
-          <tr><td>Flutter <strong>web</strong></td><td><span class="pill pill-bad">Not supported</span> <span class="faint small">(absent from the plugin support matrix at <a href="https://firebase.google.com/docs/flutter/setup">firebase.google.com/docs/flutter/setup</a>; inferred from that absence rather than an explicit statement)</span></td><td><strong>No.</strong> <a href="../01-product/decisions.html">D3</a> is iOS + Android only. The web/macOS/Windows/Linux scaffolds exist because Flutter created them, not because anyone targets them.</td></tr>
+          <tr><td>Flutter <strong>web</strong></td><td><span class="pill pill-bad">Not supported</span></td><td><strong>No</strong> — <a href="../01-product/decisions.html">D3</a> is iOS + Android only</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Flutter web</strong> — absent from the plugin support matrix at <a href="https://firebase.google.com/docs/flutter/setup">firebase.google.com/docs/flutter/setup</a>; inferred from that absence rather than an explicit statement. The web/macOS/Windows/Linux scaffolds exist because Flutter created them, not because anyone targets them.</li>
+    </ul>
     <p>This is worth stating plainly because it is the entire reason the Sentry decision flipped: Sentry was proposed on the assumption that the beta would run on web. It won't. Once web is out of scope, Crashlytics' only real weakness disappears and it wins on cost, integration, and setup effort simultaneously.</p>
   </section>
 
@@ -126,13 +121,18 @@
       <table>
         <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>Crashlytics SDK config</td><td><span class="pill pill-good">No</span> — it reads the existing <code class="fname">google-services.json</code> / <code class="fname">GoogleService-Info.plist</code>. <strong>No new key of any kind.</strong></td><td>Already committed</td><td>Already committed</td><td>n/a</td></tr>
+          <tr><td>Crashlytics SDK config</td><td><span class="pill pill-good">No</span> — <strong>no new key of any kind</strong></td><td>Already committed</td><td>Already committed</td><td>n/a</td></tr>
           <tr><td>Gradle plugin line, <code>firebase.json</code> <code>uploadDebugSymbols</code></td><td><span class="pill pill-good">No</span> — build config, commit it</td><td>Committed</td><td>Committed</td><td>n/a</td></tr>
-          <tr><td>iOS dSYM files</td><td><span class="pill pill-good">No</span>, but do not commit them — build artifacts, uploaded by the build phase</td><td>Build output, gitignored</td><td>Uploaded to Firebase</td><td>n/a</td></tr>
-          <tr><td>Fastlane/CI service account for dSYM upload <span class="faint small">(only if CI ever builds iOS — T2)</span></td><td><span class="pill pill-bad">YES</span></td><td>Outside the repo</td><td>GitHub Actions secret</td><td><code>GOOGLE_APPLICATION_CREDENTIALS=</code></td></tr>
+          <tr><td>iOS dSYM files</td><td><span class="pill pill-good">No</span>, but do not commit them</td><td>Build output, gitignored</td><td>Uploaded to Firebase</td><td>n/a</td></tr>
+          <tr><td>Fastlane/CI service account for dSYM upload <span class="faint small">(T2 only)</span></td><td><span class="pill pill-bad">YES</span></td><td>Outside the repo</td><td>GitHub Actions secret</td><td><code>GOOGLE_APPLICATION_CREDENTIALS=</code></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Crashlytics SDK config</strong> — it reads the existing <code class="fname">google-services.json</code> / <code class="fname">GoogleService-Info.plist</code>.</li>
+      <li><strong>iOS dSYM files</strong> — build artifacts, uploaded by the build phase.</li>
+      <li><strong>Fastlane/CI service account</strong> — only needed if CI ever builds iOS, which is T2.</li>
+    </ul>
     <p><strong>Never commit a real secret</strong> — though notably, <strong>Crashlytics introduces none.</strong> It is the only service on this map that adds zero credentials, because it authenticates with the client config that already ships in the app. That config is <a href="firebase.html#secrets-config">not a secret</a>.</p>
     <div class="callout warn"><strong>The real privacy question here isn't keys, it's payloads.</strong> Crash reports carry whatever you put in them. Rules for Forge: use the Firebase <strong>uid</strong> as the identifier, never the email or <code>contactInfo</code>; never <code>log()</code> DM contents or channel-post text; and remember that <strong>crash reports are user data</strong> — Crashlytics collection has to be disclosed in the App Store privacy questionnaire and the Play Data safety form. See <a href="apple-developer.html">Apple</a> and <a href="google-play.html">Google Play</a>.</div>
   </section>
@@ -140,17 +140,12 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-good">Lock-in: LOW</span></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>Crash history — stack traces, affected-user counts, trends. Real but strictly diagnostic; nothing a user would miss and nothing the app reads back.</td></tr>
-          <tr><td>How do I export?</td><td><strong>Poorly.</strong> There is no "download my crashes" button. The only bulk path is the <strong>BigQuery export</strong>, which requires Blaze and has to be enabled <em>before</em> the crashes you want — it is not retroactive. Practically: if crash history ever needs preserving, enable BigQuery export up front or accept losing it.</td></tr>
-          <tr><td>What does migrating cost?</td><td><strong>Half a day.</strong> Swap the package, re-point the two global error handlers, redo the symbol-upload build step. The <code>recordError</code> call sites you added in step 8 are the portable, valuable part and mostly survive a swap.</td></tr>
-          <tr><td>Realistic exit</td><td>The named trigger on the <a href="index.html#rejected">rejected list</a>: he wants <em>one</em> error tool spanning Flutter and his Swift projects. That's when Sentry comes back — and it would be a genuine reason, not a regret.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — crash history: stack traces, affected-user counts, trends. Real but strictly diagnostic; nothing a user would miss and nothing the app reads back.</li>
+      <li><strong>How to export</strong> — <strong>poorly.</strong> There is no "download my crashes" button. The only bulk path is the <strong>BigQuery export</strong>, which requires Blaze and has to be enabled <em>before</em> the crashes you want; it is not retroactive. Practically: if crash history ever needs preserving, enable BigQuery export up front or accept losing it.</li>
+      <li><strong>What migrating costs</strong> — <strong>half a day.</strong> Swap the package, re-point the two global error handlers, redo the symbol-upload build step. The <code>recordError</code> call sites added in step 8 are the portable, valuable part and mostly survive a swap.</li>
+      <li><strong>Realistic exit</strong> — the named trigger on the <a href="index.html#rejected">rejected list</a>: he wants <em>one</em> error tool spanning Flutter and his Swift projects. That's when Sentry comes back, and it would be a genuine reason, not a regret.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -159,12 +154,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing. Handful of reports; every one is worth reading individually. This is where the known cast crashes should surface first — before strangers hit them.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta)</span></td><td><strong>$0</strong></td><td>Nothing on cost — no event cap exists to hit. What breaks is <strong>attention</strong>: a single unchecked cast fires across dozens of sessions and the dashboard fills with one issue repeated. That's Crashlytics working correctly; the fix is triage discipline, sorted by affected-user count. <span class="faint small">(A capped free tier like Sentry's would start <em>dropping</em> events here — the reason cost isn't in this cell.)</span></td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong></td><td>Still free, still unlimited. Crashlytics is one of the very few services on this map whose cost line is genuinely flat at every scale — contrast <a href="firebase.html#cost-scale">Firestore's ~$25–40/mo</a> at the same point. The constraint at 1,000 users is human: crash-free-users percentage becomes the number to watch instead of individual issues.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing — a handful of reports, each worth reading</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta)</span></td><td><strong>$0</strong></td><td>Nothing on cost; what breaks is <strong>attention</strong></td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong></td><td>Still free, still unlimited</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — this is where the known cast crashes should surface first, before strangers hit them.</li>
+      <li><strong>~100 users</strong> — no event cap exists to hit. A single unchecked cast fires across dozens of sessions and the dashboard fills with one issue repeated. That's Crashlytics working correctly; the fix is triage discipline, sorted by affected-user count. <span class="faint small">(A capped free tier like Sentry's would start <em>dropping</em> events here — the reason cost isn't in this row.)</span></li>
+      <li><strong>~1,000 users</strong> — Crashlytics is one of the very few services on this map whose cost line is genuinely flat at every scale; contrast <a href="firebase.html#cost-scale">Firestore's ~$25–40/mo</a> at the same point. The constraint at 1,000 users is human: crash-free-users percentage becomes the number to watch instead of individual issues.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -173,13 +173,18 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0.</strong> No seats — inherits <a href="firebase.html#teammate-delta">Firebase project IAM</a>. <span class="faint small">(Worth contrasting: per-seat pricing is a standard cost of dedicated error-tracking vendors.)</span></td></tr>
-          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited members with no cap and no upgrade.</td></tr>
-          <tr><td>Permission model</td><td>Firebase Viewer is enough to <em>read</em> Crashlytics — which makes it a safe thing to grant a designer or a Rec Center contact without giving them Firestore write access. Editor is needed to change settings or enable BigQuery export.</td></tr>
-          <tr><td>What actually changes</td><td>Issue <strong>assignment</strong> starts mattering, and the natural move is linking Crashlytics issues to <a href="linear.html">Linear</a> so a crash becomes a tracked ticket rather than a dashboard row two people both assume the other saw. Also: with two developers, "disable collection in debug" (step 6) stops being optional hygiene — two people's local crashes will otherwise drown the real signal.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0</strong>, no seats — inherits <a href="firebase.html#teammate-delta">Firebase project IAM</a></td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited members with no cap and no upgrade</td></tr>
+          <tr><td>Permission model</td><td>Firebase Viewer is enough to <em>read</em> Crashlytics</td></tr>
+          <tr><td>What actually changes</td><td>Issue <strong>assignment</strong> starts mattering</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Extra seat cost</strong> — worth contrasting: per-seat pricing is a standard cost of dedicated error-tracking vendors.</li>
+      <li><strong>Permission model</strong> — Viewer makes Crashlytics a safe thing to grant a designer or a Rec Center contact without giving them Firestore write access. Editor is needed to change settings or enable BigQuery export.</li>
+      <li><strong>What actually changes</strong> — the natural move is linking Crashlytics issues to <a href="linear.html">Linear</a> so a crash becomes a tracked ticket rather than a dashboard row two people both assume the other saw. Also, with two developers, "disable collection in debug" (step 6) stops being optional hygiene: two people's local crashes will otherwise drown the real signal.</li>
+    </ul>
   </section>
 
   <section id="next">

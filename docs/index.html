@@ -42,23 +42,30 @@
         <tbody>
           <tr>
             <td>Is it built?</td>
-            <td><span class="pill pill-good">Substantially</span> &mdash; 58 Dart files, ~16,300 lines. Auth, feed, calendar with recurrence, event CRUD, goals, plans, friend requests, gym channels and DMs all run on live Firestore.</td>
+            <td><span class="pill pill-good">Substantially</span> &mdash; 58 Dart files, ~16,300 lines, on live Firestore</td>
           </tr>
           <tr>
             <td>Is it shippable?</td>
-            <td><span class="pill pill-bad">No</span> &mdash; the entire user table is world-readable without authentication, there are zero tests, both bundle IDs are <span class="fname">com.example.*</span>, and release builds are signed with debug keys.</td>
+            <td><span class="pill pill-bad">No</span> &mdash; four blockers, worst first: a world-readable user table</td>
           </tr>
           <tr>
             <td>What's the actual risk?</td>
-            <td>Several screens look finished and aren't. A grep for <span class="fname">TODO</span> returns two hits, both in dead code &mdash; so the incompleteness is invisible to tooling and only visible by reading. See <a href="01-product/features.html">features</a>.</td>
+            <td>Several screens look finished and aren't &mdash; see <a href="01-product/features.html">features</a></td>
           </tr>
           <tr>
             <td>Who is it for, first?</td>
-            <td>A beta at the BYU-I Rec Center &mdash; real external users, which is what makes account deletion, moderation and a privacy policy real work rather than paperwork.</td>
+            <td>A beta at the BYU-I Rec Center &mdash; real external users</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>Built</strong> &mdash; auth, feed, calendar with recurrence, event CRUD, goals, plans, friend requests, gym channels and DMs all run on live Firestore.</li>
+      <li><strong>Not shippable</strong> &mdash; the entire user table is world-readable without authentication, there are zero tests, both bundle IDs are <span class="fname">com.example.*</span>, and release builds are signed with debug keys.</li>
+      <li><strong>The risk</strong> &mdash; a grep for <span class="fname">TODO</span> returns two hits, both in dead code, so the incompleteness is invisible to tooling and only visible by reading.</li>
+      <li><strong>Who for</strong> &mdash; real external users are what make account deletion, moderation and a privacy policy real work rather than paperwork.</li>
+    </ul>
 
     <div class="callout danger">
       <strong>The single next action:</strong> restrict the <span class="fname">/users</span> read rule in <span class="fname">firestore.rules</span> to authenticated users. Right now it says <span class="fname">allow read: if true</span>, which means every user's email, contact info, friend list and gym list is readable by anyone with the project id, signed in or not. It is the smallest issue in <a href="04-plan/milestones.html#m1">Milestone 1</a> and the highest-severity item in the project. Nothing else should start before it.

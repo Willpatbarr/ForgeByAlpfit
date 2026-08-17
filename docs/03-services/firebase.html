@@ -39,33 +39,20 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>Firebase is Forge's whole backend: Auth (email/password), Firestore (every user, event, goal, plan, channel post, and DM), and Storage (avatars at <code class="fname">avatars/{uid}/profile</code>), all in one Google Cloud project — <code class="fname">forge-by-alpfit</code>, project number <code>532850332803</code>. The Flutter client talks to it directly with no server layer in between, which is why it is fast to build on and expensive to leave.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>Supabase / Postgres</td><td>Would be a rewrite of all 15 service files, not a swap — there is no repository seam to swap behind.</td></tr>
-          <tr><td>Custom API gateway in front of Firebase <span class="faint small">(from "Ideas for Future")</span></td><td>Textbook premature abstraction for one developer with zero real users; <span class="tag tag-deferred">DEFERRED</span> with a trigger, see <a href="../01-product/decisions.html">D1</a>.</td></tr>
-          <tr><td>Auth0 / Clerk for identity only</td><td>Firebase Auth is already wired and already free to 50K MAU; adding a second identity vendor buys nothing.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>Supabase / Postgres</strong> — would be a rewrite of all 15 service files, not a swap: there is no repository seam to swap behind.</li>
+      <li><strong>Custom API gateway in front of Firebase</strong> <span class="faint small">(from "Ideas for Future")</span> — textbook premature abstraction for one developer with zero real users; <span class="tag tag-deferred">DEFERRED</span> with a trigger, see <a href="../01-product/decisions.html">D1</a>.</li>
+      <li><strong>Auth0 / Clerk for identity only</strong> — Firebase Auth is already wired and already free to 50K MAU; adding a second identity vendor buys nothing.</li>
+    </ul>
     <p><strong>Why Firebase wins:</strong> it is already built on, and nothing today has cleared the trigger that would justify paying the migration cost.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t0">T0 Now</span></td>
-            <td>Already adopted — this is not a future decision</td>
-            <td>D1 <span class="tag tag-locked">LOCKED</span>: Flutter + Firebase. The app does not run without it. There is no "not yet" option.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t0">T0 Now</span></p>
+    <p><strong>Trigger:</strong> already adopted — this is not a future decision.</p>
+    <p><strong>Why:</strong> D1 <span class="tag tag-locked">LOCKED</span>: Flutter + Firebase. The app does not run without it. There is no "not yet" option.</p>
     <div class="callout"><strong>When NOT to do more:</strong> do not add Cloud Functions, Analytics, Remote Config, or Performance Monitoring right now. Each is a new surface with no user asking for it. Their triggers live on the <a href="index.html#rejected">service map's rejected list</a>.</div>
   </section>
 
@@ -83,7 +70,7 @@
         <tbody>
           <tr><td>Card on file</td><td>No</td><td><strong>Yes, required</strong></td></tr>
           <tr><td>Free allowance</td><td>The quotas below</td><td><strong>The same quotas, included every month, before any charge starts</strong></td></tr>
-          <tr><td>What happens past the allowance</td><td><strong>Hard stop.</strong> Requests are refused. Spark cannot spend money.</td><td><strong>It bills you.</strong> No hard stop for Firestore or Storage.</td></tr>
+          <tr><td>What happens past the allowance</td><td><strong>Hard stop</strong> — requests refused; Spark cannot spend</td><td><strong>It bills you</strong> — no hard stop for Firestore or Storage</td></tr>
           <tr><td>Cloud Storage usable?</td><td><strong>No</strong> — as of 3 Feb 2026</td><td>Yes</td></tr>
           <tr><td>Cloud Functions usable?</td><td>No</td><td>Yes</td></tr>
         </tbody>
@@ -101,13 +88,18 @@
           <tr><td>Firestore document writes</td><td><strong>20,000 / day</strong></td></tr>
           <tr><td>Firestore document deletes</td><td>20,000 / day</td></tr>
           <tr><td>Firestore network egress</td><td>10 GiB / month</td></tr>
-          <tr><td>Authentication</td><td>50,000 monthly active users, then Google Cloud Identity Platform rates <span class="faint small">(per-MAU rate above 50K: verify at <a href="https://cloud.google.com/identity-platform/pricing">cloud.google.com/identity-platform/pricing</a>)</span></td><td><a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a></td></tr>
-          <tr><td>Cloud Storage <span class="faint small">(modern <code>*.firebasestorage.app</code> bucket, which is what Forge has)</span></td><td>Billed under Google Cloud Storage rates with the GCS "Always Free" tier — which only applies in <code>us-central1</code>, <code>us-east1</code>, <code>us-west1</code>. <strong>Confirm Forge's bucket region, because that determines whether avatars are free at all.</strong></td><td><a href="https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024">Storage changes FAQ</a></td></tr>
-          <tr><td>Hosting <span class="faint small">(configured but not load-bearing — see <a href="cloudflare-pages.html">Cloudflare Pages</a>)</span></td><td>10 GB storage, 360 MB/day transfer</td><td><a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a></td></tr>
-          <tr><td>App Check, Cloud Messaging, Crashlytics</td><td><strong>Free on both plans, forever, and none of them forces a Blaze upgrade.</strong></td><td><a href="https://firebase.google.com/docs/projects/billing/firebase-pricing-plans">Pricing plans</a></td></tr>
+          <tr><td>Authentication</td><td>50,000 monthly active users, then Identity Platform rates</td><td><a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a></td></tr>
+          <tr><td>Cloud Storage</td><td>GCS rates + the GCS "Always Free" tier <span class="faint small">(US regions only)</span></td><td><a href="https://firebase.google.com/docs/storage/faqs-storage-changes-announced-sept-2024">Storage changes FAQ</a></td></tr>
+          <tr><td>Hosting</td><td>10 GB storage, 360 MB/day transfer</td><td><a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a></td></tr>
+          <tr><td>App Check, Cloud Messaging, Crashlytics</td><td><strong>Free on both plans, forever</strong> — no Blaze upgrade forced</td><td><a href="https://firebase.google.com/docs/projects/billing/firebase-pricing-plans">Pricing plans</a></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Authentication</strong> — above 50,000 MAU it moves to Google Cloud Identity Platform rates. Per-MAU rate above 50K: verify at <a href="https://cloud.google.com/identity-platform/pricing">cloud.google.com/identity-platform/pricing</a>.</li>
+      <li><strong>Cloud Storage</strong> — Forge has the modern <code>*.firebasestorage.app</code> bucket. It is billed under Google Cloud Storage rates, and the GCS "Always Free" tier only applies in <code>us-central1</code>, <code>us-east1</code>, <code>us-west1</code>. <strong>Confirm Forge's bucket region, because that determines whether avatars are free at all.</strong></li>
+      <li><strong>Hosting</strong> — configured but not load-bearing; see <a href="cloudflare-pages.html">Cloudflare Pages</a>.</li>
+    </ul>
 
     <h3>First paid rates (Firestore, <code>nam5</code> US multi-region)</h3>
     <div class="tablewrap">
@@ -182,18 +174,21 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-bad">Lock-in: HIGH</span> — <strong>the highest in the entire stack, by a wide margin.</strong> Every other service on the map could be swapped in a weekend. This one could not.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Honest answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>Everything. Every <code>users/</code> doc plus its <code>events</code>, <code>goals</code>, <code>plans</code>, <code>channelPosts</code> subcollections; every <code>directThreads</code> doc and message; every avatar in Storage; and every user's password. There is no second copy of any of it.</td></tr>
-          <tr><td>How do I export Firestore?</td><td><code>gcloud firestore export gs://BUCKET</code> — a full dump in Firestore's own binary format. It restores to Firestore. It is a backup, not a migration path; converting it to anything else is a script you have to write.</td></tr>
-          <tr><td>How do I export Auth?</td><td><code>firebase auth:export users.json --format=json</code>. This <em>does</em> include password hashes, in Firebase's scrypt variant with project-specific parameters. The Admin SDK's user listing does <strong>not</strong> include hashes.</td></tr>
-          <tr><td>What does leaving actually cost?</td><td>Concretely: (1) stand up Postgres/Supabase and hand-translate a schemaless document model that has <strong>one</strong> Dart model class (<code class="fname">goal.dart</code>) and passes untyped <code>Map&lt;String,dynamic&gt;</code> everywhere else; (2) rewrite <strong>all 15 files in <code class="fname">lib/services/</code></strong>, because they are free functions calling <code>FirebaseAuth.instance.currentUser</code> directly with <em>no repository interface and no abstraction seam</em>; (3) rewrite every <code>StreamBuilder</code> in the UI, because live snapshot streams are the app's core interaction model and Postgres does not hand you those for free; (4) either import scrypt hashes into a system that can verify Firebase's scrypt variant, or force a password reset on every user; (5) re-encode the security model — <code class="fname">firestore.rules</code> is 206 lines that encode the entire friend-request handshake and would become server code.</td></tr>
-          <tr><td>What would make this cheaper?</td><td>A repository interface between the UI and Firestore. Not worth building today for its own sake — but if it ever gets built for testability, it halves the migration cost as a side effect.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — everything. Every <code>users/</code> doc plus its <code>events</code>, <code>goals</code>, <code>plans</code>, <code>channelPosts</code> subcollections; every <code>directThreads</code> doc and message; every avatar in Storage; and every user's password. There is no second copy of any of it.</li>
+      <li><strong>How to export Firestore</strong> — <code>gcloud firestore export gs://BUCKET</code>, a full dump in Firestore's own binary format. It restores to Firestore. It is a backup, not a migration path; converting it to anything else is a script you have to write.</li>
+      <li><strong>How to export Auth</strong> — <code>firebase auth:export users.json --format=json</code>. This <em>does</em> include password hashes, in Firebase's scrypt variant with project-specific parameters. The Admin SDK's user listing does <strong>not</strong> include hashes.</li>
+      <li><strong>What leaving actually costs</strong> — five distinct pieces of work:
+        <ul>
+          <li>Stand up Postgres/Supabase and hand-translate a schemaless document model that has <strong>one</strong> Dart model class (<code class="fname">goal.dart</code>) and passes untyped <code>Map&lt;String,dynamic&gt;</code> everywhere else.</li>
+          <li>Rewrite <strong>all 15 files in <code class="fname">lib/services/</code></strong>, because they are free functions calling <code>FirebaseAuth.instance.currentUser</code> directly with <em>no repository interface and no abstraction seam</em>.</li>
+          <li>Rewrite every <code>StreamBuilder</code> in the UI, because live snapshot streams are the app's core interaction model and Postgres does not hand you those for free.</li>
+          <li>Either import scrypt hashes into a system that can verify Firebase's scrypt variant, or force a password reset on every user.</li>
+          <li>Re-encode the security model — <code class="fname">firestore.rules</code> is 206 lines that encode the entire friend-request handshake and would become server code.</li>
+        </ul>
+      </li>
+      <li><strong>What would make this cheaper</strong> — a repository interface between the UI and Firestore. Not worth building today for its own sake, but if it ever gets built for testability it halves the migration cost as a side effect.</li>
+    </ul>
     <p>Stated plainly: <strong>Forge is not portable and pretending otherwise would be dishonest.</strong> It is still the right call. ~16,300 working lines depend on it, there are effectively zero real users to migrate, and the D1 trigger (a second non-Flutter client, or Firestore reads past $25/mo) has not fired.</p>
   </section>
 
@@ -207,21 +202,26 @@
           <tr>
             <td><strong>~10 users</strong><br><span class="faint small">him + a few friends</span></td>
             <td><strong>$0</strong></td>
-            <td>Nothing. Miles inside 50K reads/day. This is roughly today.</td>
+            <td>Nothing — miles inside 50K reads/day</td>
           </tr>
           <tr>
             <td><strong>~100 users</strong><br><span class="faint small">the Rec Center beta, M5</span></td>
             <td><strong>~$0–3/mo</strong></td>
-            <td>Plausibly crosses 50K reads/day on a busy day. <strong>Rough arithmetic:</strong> 100 users × 5 app opens/day × ~300 reads per calendar+feed open ≈ 150K reads/day → ~100K/day billed → ~$0.06/day ≈ <strong>$1.80/mo</strong>. Not scary. But the <strong><code>limit(100)</code> search breaks here</strong> — <code class="fname">search_service.dart</code> fetches the first 100 user docs and filters in memory, so at 101 users people become silently unfindable. That is a functional failure, not a cost one, and it lands exactly at this checkpoint.</td>
+            <td>May cross 50K reads/day; <code>limit(100)</code> search breaks</td>
           </tr>
           <tr>
             <td><strong>~1,000 users</strong></td>
             <td><strong>~$25–40/mo</strong> <span class="faint small">(estimate, not a quote)</span></td>
-            <td>Same arithmetic ×10: ~1.5M reads/day ≈ 45M reads/mo, minus ~1.5M free → ~43.5M × $0.06/100K ≈ <strong>$26/mo</strong> in reads alone, before writes, storage, or egress. <strong>This is precisely the D1 trigger</strong> ("Firestore read cost past $25/mo") — which means the read-amplification fixes are not optional hygiene, they are what keeps the architecture decision from being forced. Also at this scale: <code>dmAllowedBetween()</code>'s 3–4 <code>get()</code> calls sit close to Firestore's 10-<code>get()</code>-per-rule-evaluation ceiling, and 1 GiB of Firestore storage starts to be a real number.</td>
+            <td>The D1 trigger fires — Firestore reads past $25/mo</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — this is roughly today. Nothing breaks.</li>
+      <li><strong>~100 users</strong> — plausibly crosses 50K reads/day on a busy day. <strong>Rough arithmetic:</strong> 100 users × 5 app opens/day × ~300 reads per calendar+feed open ≈ 150K reads/day → ~100K/day billed → ~$0.06/day ≈ <strong>$1.80/mo</strong>. Not scary. But the <strong><code>limit(100)</code> search breaks here</strong> — <code class="fname">search_service.dart</code> fetches the first 100 user docs and filters in memory, so at 101 users people become silently unfindable. That is a functional failure, not a cost one, and it lands exactly at this checkpoint.</li>
+      <li><strong>~1,000 users</strong> — same arithmetic ×10: ~1.5M reads/day ≈ 45M reads/mo, minus ~1.5M free → ~43.5M × $0.06/100K ≈ <strong>$26/mo</strong> in reads alone, before writes, storage, or egress. <strong>This is precisely the D1 trigger</strong> ("Firestore read cost past $25/mo") — which means the read-amplification fixes are not optional hygiene, they are what keeps the architecture decision from being forced. Also at this scale: <code>dmAllowedBetween()</code>'s 3–4 <code>get()</code> calls sit close to Firestore's 10-<code>get()</code>-per-rule-evaluation ceiling, and 1 GiB of Firestore storage starts to be a real number.</li>
+    </ul>
     <p class="small muted">Every figure in the middle column is arithmetic from the free-tier rates above applied to assumptions about usage, clearly labelled. Nobody has measured Forge's actual reads-per-session. <strong>Measure it before trusting it</strong> — the Firebase console's Usage tab gives the real number for free.</p>
   </section>
 
@@ -231,13 +231,18 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0.</strong> Firebase bills project usage, not people.</td></tr>
-          <tr><td>Permission model</td><td>Google Cloud IAM on the <code>forge-by-alpfit</code> project. Grant <em>Editor</em> for a working teammate; keep <em>Owner</em> to one person so billing and deletion stay with him. Add via Firebase console → Project settings → Users and permissions.</td></tr>
-          <tr><td>Does the free tier allow a second member?</td><td>Yes, with no cap. Quotas are shared across everyone using the project, not multiplied per person.</td></tr>
-          <tr><td>The actual risk</td><td>Not cost — <strong>blast radius</strong>. Anyone with Editor can deploy rules to production, and there is <strong>no staging project</strong>. A second person makes a separate <code>forge-by-alpfit-dev</code> project go from "nice to have" to "the thing that stops a teammate wiping real data."</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0</strong> — Firebase bills project usage, not people</td></tr>
+          <tr><td>Permission model</td><td>Google Cloud IAM on the <code>forge-by-alpfit</code> project</td></tr>
+          <tr><td>Does the free tier allow a second member?</td><td>Yes, with no cap — quotas are shared, not multiplied</td></tr>
+          <tr><td>The actual risk</td><td>Not cost — <strong>blast radius</strong></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Does the free tier allow a second member</strong> — quotas are shared across everyone using the project, not multiplied per person.</li>
+      <li><strong>Permission model</strong> — grant <em>Editor</em> for a working teammate; keep <em>Owner</em> to one person so billing and deletion stay with him. Add via Firebase console → Project settings → Users and permissions.</li>
+      <li><strong>The actual risk</strong> — anyone with Editor can deploy rules to production, and there is <strong>no staging project</strong>. A second person makes a separate <code>forge-by-alpfit-dev</code> project go from "nice to have" to "the thing that stops a teammate wiping real data."</li>
+    </ul>
   </section>
 
   <section id="next">

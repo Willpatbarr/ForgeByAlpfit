@@ -33,7 +33,7 @@
   <header class="pagehead">
     <div class="crumb"><a href="../index.html">Forge docs</a> / <a href="index.html">Source</a> / Contradictions</div>
     <h1>Contradictions Ledger</h1>
-    <div class="whatthisis"><strong>What this is:</strong> every place your notes disagree with themselves, or with the code, merged into one table with a resolution for each. Nothing here is left open. Read the eight rows marked <span class="pill pill-warn">Yes</span> — those are scope calls where you should overrule us if we guessed wrong.</div>
+    <div class="whatthisis"><strong>What this is:</strong> every place your notes disagree with themselves, or with the code, merged into one ledger with a resolution for each. Nothing here is left open. Read the eight marked <span class="pill pill-warn">needs your call</span> &mdash; those are scope calls where you should overrule us if we guessed wrong.</div>
   </header>
 
   <section id="summary">
@@ -43,17 +43,32 @@
       <div class="grid">
         <div>
           <h3>60 conflicts</h3>
-          <p class="small muted">Merged from three intake passes: 25 from the requirements/vision docs, 17 from the senior-project set, and every docs-claim-vs-code conflict from the code audit. Overlaps between passes are merged into single rows citing both sources.</p>
+          <p class="small muted">Merged from three intake passes: 25 from the requirements/vision docs, 17 from the senior-project set, and every docs-claim-vs-code conflict from the code audit. Overlaps between passes are merged into single records citing both sources.</p>
         </div>
         <div>
           <h3>52 resolved here <span class="pill pill-good">No input needed</span></h3>
           <p class="small muted">Implementation calls, stale-doc corrections, and the six already settled by standing decisions D1&ndash;D10.</p>
         </div>
         <div>
-          <h3>8 need your eye <span class="pill pill-warn">Yes</span></h3>
+          <h3>8 need your eye <span class="pill pill-warn">needs your call</span></h3>
           <p class="small muted">Scope questions &mdash; what the product <em>is</em>, who it's for, whether a feature exists at all. Each has a resolution and a recommended default so nothing is blocked, but you should be the one to say no.</p>
         </div>
       </div>
+    </div>
+
+    <h3>The eight that need your call</h3>
+    <div class="callout warn">
+      <p>These are the only eight of the sixty that are waiting on you. Each is written up in full below, and repeated as a checklist in <a href="#next">What to do next</a>.</p>
+      <ul>
+        <li><strong>4</strong> &mdash; Performance tracking &amp; programming scope <span class="small faint">&sect;1 Product scope</span></li>
+        <li><strong>5</strong> &mdash; Live workout session screen <span class="small faint">&sect;1 Product scope</span></li>
+        <li><strong>6</strong> &mdash; Gym discovery (map vs search) <span class="small faint">&sect;1 Product scope</span></li>
+        <li><strong>7</strong> &mdash; Who the stakeholder is <span class="small faint">&sect;1 Product scope</span></li>
+        <li><strong>17</strong> &mdash; Workout co-editing <span class="small faint">&sect;2 Features</span></li>
+        <li><strong>18</strong> &mdash; Friend groups <span class="small faint">&sect;2 Features</span></li>
+        <li><strong>20</strong> &mdash; Notifications &amp; push <span class="small faint">&sect;2 Features</span></li>
+        <li><strong>40</strong> &mdash; State management / Riverpod <span class="small faint">&sect;4 Architecture &amp; tech</span></li>
+      </ul>
     </div>
 
     <h3>The three biggest</h3>
@@ -63,790 +78,723 @@
         <tbody>
           <tr>
             <td>12</td>
-            <td><strong>Goals: stretch goal or the core of the app?</strong> The Final Specs lists "create goals" under Stretch; a dedicated requirements doc, a full class design, a shipped feed widget, and ~1,000 lines of the app's best code all disagree.</td>
-            <td>Must-have. Direction of travel wins over one line in one document. <span class="tag tag-decided">DECIDED</span> (D2)</td>
+            <td>Goals: stretch goal, or the core of the app?</td>
+            <td>Must-have &mdash; direction of travel beats one line <span class="tag tag-decided">DECIDED</span> (D2)</td>
           </tr>
           <tr>
             <td>45</td>
-            <td><strong>The status docs describe a different app than the one that exists.</strong> <span class="fname">PROJECT_STATUS.md</span> calls an app with empty services "Production-Ready Core"; the real app is ~16,300 lines with a world-readable user table and zero tests.</td>
-            <td>The code is ground truth. All four markdown status files are historical &mdash; plan from the code, not from them. <span class="tag tag-decided">DECIDED</span></td>
+            <td>The status docs describe a different app than the one that exists</td>
+            <td>Code is ground truth; all four status files are historical <span class="tag tag-decided">DECIDED</span></td>
           </tr>
           <tr>
             <td>1</td>
-            <td><strong>What is Forge?</strong> A three-platform AlpFit company (consumer app + gym software + trainer software, each with its own website and mobile app), or one consumer mobile app.</td>
-            <td>One consumer iOS/Android app. Gym capability is an account type inside Forge. Trainer platform and standalone gym software are cut, not deferred. <span class="tag tag-locked">LOCKED</span> (D4)</td>
+            <td>What is Forge? A three-platform company, or one consumer app?</td>
+            <td>One consumer app; gym is an account type inside it <span class="tag tag-locked">LOCKED</span> (D4)</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>12</strong> &mdash; the Final Specs lists "create goals" under Stretch; a dedicated requirements doc, a full class design, a shipped feed widget, and ~1,000 lines of the app's best code all disagree.</li>
+      <li><strong>45</strong> &mdash; <span class="fname">PROJECT_STATUS.md</span> calls an app with empty services "Production-Ready Core"; the real app is ~16,300 lines with a world-readable user table and zero tests. Plan from the code, not from them.</li>
+      <li><strong>1</strong> &mdash; a three-platform AlpFit company (consumer app + gym software + trainer software, each with its own website and mobile app), or one consumer mobile app. Trainer platform and standalone gym software are cut, not deferred.</li>
+    </ul>
 
     <div class="callout">
-      <strong>How these were resolved.</strong> Direction of travel beats any single note. Recency usually wins, unless the older note is a worked-through spec and the newer one is an offhand line. Specificity beats vagueness. <strong>The code is ground truth</strong> &mdash; if a doc claims something the code contradicts, the doc is stale. And no conflict was averaged into a mushy middle: each row picks one position and records the other as the road not taken.
+      <strong>How these were resolved.</strong> Direction of travel beats any single note. Recency usually wins, unless the older note is a worked-through spec and the newer one is an offhand line. Specificity beats vagueness. <strong>The code is ground truth</strong> &mdash; if a doc claims something the code contradicts, the doc is stale. And no conflict was averaged into a mushy middle: each record picks one position and records the other as the road not taken.
     </div>
   </section>
 
   <section id="scope">
     <h2>1. Product scope</h2>
-    <p class="small muted">What the product is and who it's for. Most of the <span class="pill pill-warn">Yes</span> rows live here.</p>
+    <p class="small muted">What the product is and who it's for. Most of the <span class="pill pill-warn">needs your call</span> records live here.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>1</td>
-            <td>Three-platform AlpFit strategy</td>
-            <td>AlpFit is three products &mdash; consumer app, gym software, trainer software &mdash; each "usable independently or together", and gym + trainer each get a <em>website and mobile application</em>. Consumer app can "connect and communicate with your trainer". <span class="fname">AlpFit Mission Statement_Goals</span></td>
-            <td>No trainer role, trainer account type, or trainer feature exists in any later doc or anywhere in the code. Account type is <code>user</code> | <code>gym</code> only. <span class="fname">Final Specs</span>, <span class="fname">Forge Initial Requirements</span>, <span class="fname">auth_service.dart</span></td>
-            <td>Consumer iOS/Android app only. Trainer platform and standalone gym software are <strong>cut, not deferred</strong>; the "website and mobile app" promises die with them. Road not taken: an AlpFit product suite. Per D4 and the settled scope statement.</td>
-            <td><span class="tag tag-locked">LOCKED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>2</td>
-            <td>Gym account: core or "much later"?</td>
-            <td>"Eventually as a <strong>stretch goal</strong> the actual management of a fitness center would also be a user. That would come <strong>much later</strong> though." <span class="fname">Pre-Proposal</span></td>
-            <td>Gym registration type at signup <span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span>; a whole "Gyms only" requirements block <span class="fname">Forge Initial Requirements</span>; gym channels as a headline feature <span class="fname">Forge Proposal</span>; a gym-side beta cohort <span class="fname">Bigger Rec Manager Meeting</span>; and it is <strong>built</strong> &mdash; gym accounts, channels, posts, member rosters, kicks.</td>
-            <td>The gym account type stays and is the differentiator. Pre-Proposal is the earliest doc in the set; every later artifact and the code overrule it. Per D4.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>3</td>
-            <td>Target platforms</td>
-            <td>Flutter chosen because it "will allow me to easily deploy to mobile, desktop, and web clients without having to create extra code"; targets listed as iOS/Android, desktop, web. <span class="fname">Forge Proposal</span>, <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td>Only web is deploy-configured (Firebase Hosting &rarr; <span class="fname">build/web</span>). <strong>Linux throws <code>UnsupportedError</code></strong> in <span class="fname">firebase_options.dart</span>. macOS/Windows/Linux scaffolds are untested and unreachable. No user ever asked for desktop. <span class="fname">code</span></td>
-            <td><strong>iOS + Android only.</strong> The other targets exist because Flutter generates them, not because anyone wanted them. Desktop/web <span class="tag tag-deferred">DEFERRED</span> &mdash; trigger: a gym admin asks to moderate from a desktop browser. Per D3.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>4</td>
-            <td>Performance tracking &amp; programming scope</td>
-            <td>"Database of movements", "track <strong>maxes</strong> on each movement", and "insights on when you've done a given movement better and what has impacted it (e.g. to a certain song, certain time, or before or after another movement)". <span class="fname">AlpFit Overview</span></td>
-            <td>Load-bearing anti-scope: "There are many apps that focus on delivering high quality programming or meal planning tools. <strong>This app would not try to enter that market</strong>, but merely touch on those." <span class="fname">Forge Proposal</span> &mdash; and none of the three features appear in any later doc or anywhere in the code. Exercise names are free text; there is no movement entity and no PR record.</td>
-            <td><strong>Anti-scope holds.</strong> Forge plans workouts socially; it does not prescribe programming or analyse performance. Max tracking, movement insights, and the movement catalog stay cut. Road not taken: a movement catalog with PR history &mdash; a genuinely different product. <em>Recommended default: keep cut.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>5</td>
-            <td>Live workout session screen</td>
-            <td>Six requirements for an in-progress workout screen: elapsed timer, current set/exercise, full exercise+set list, on-the-fly plan adjustment, workout name, "Font should be Poppins with no bold or styled text". <span class="fname">Workout Page Requirements Spec</span></td>
-            <td>No such screen appears in <span class="fname">AlpFit Mission</span>, <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, or the code. Workouts are only <em>planned</em> and <em>scheduled</em>, never <em>executed</em>.</td>
-            <td>Out of scope for v1. This is the single largest unattributed scope in the corpus &mdash; it has a spec and no requirement lineage. It is an execution/tracking feature and pulls against the social thesis (row 4). Road not taken: Forge as a during-the-workout companion. <em>Recommended default: stay cut.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>6</td>
-            <td>Gym discovery</td>
-            <td>"Mapping system or a list at first" <span class="fname">AlpFit Mission</span>; "different gyms will have the most popular workouts that can be seen from a <strong>map view similar to pokemon go</strong>" <span class="fname">AlpFit Overview</span></td>
-            <td>Search only &mdash; Social &rarr; Search. <span class="fname">Final Specs</span>. Code has a single search box (<span class="fname">search_service.dart</span>, <code>limit(100)</code> + in-memory filter). No map, no geo data, no gym location entity.</td>
-            <td>Search only. The map was <strong>silently dropped</strong> &mdash; never deferred, never argued against. We are making the drop explicit rather than reviving it: it needs geo data the product does not collect. Road not taken: map-based gym discovery as the hook. <em>Recommended default: keep cut.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>7</td>
-            <td>Who the stakeholder is</td>
-            <td>"Stakeholders with Contact information: <strong>TBD</strong>" <span class="fname">Forge Proposal</span> &mdash; the partnership was aspirational at proposal time.</td>
-            <td>"Stakeholder: <strong>BYU-I Recreation Center</strong> (largest gym in Rexburg)" <span class="fname">PROJECT_SUMMARY.md</span>; a rec-manager meeting doc exists <span class="fname">Bigger Rec Manager Meeting</span>; reasons given are "the gym I use / largest gym in rexburg / I want to support the school / most accessible" <span class="fname">Elevator Pitch</span></td>
-            <td>BYU-I Rec Center is the beta channel (D6), and that makes account deletion, moderation, and a privacy policy real T1 work. But it was chosen for <em>convenience</em>, not validated as a design partner, and the meeting doc is an ask list containing zero stakeholder-originated requirements. <em>Recommended default: use it as a beta channel, not as a design authority.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>8</td>
-            <td>Definition of done</td>
-            <td>"I will know the project is done when the above requirements have been met&hellip; the product would be valid and <strong>demo-able</strong> to portray the full scope of the app's goals." <span class="fname">Forge Proposal</span></td>
-            <td>Real external users via a BYU-I Rec Center beta. <span class="fname">Bigger Rec Manager Meeting</span>, D6</td>
-            <td>"Demo-able" is dead &mdash; it was a grading criterion. Done means a stranger can use it: account deletion, moderation, a privacy policy, and no fake controls in shipping screens. Road not taken: shipping the demo.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>9</td>
-            <td>Monetization</td>
-            <td>One stretch line: "Sign up for some kind of paid premium gym account service for gyms to hold better communities." <span class="fname">Final Specs</span></td>
-            <td>"No monetization, pricing, subscription, or revenue model appears in any of the 12 files" &mdash; including no answer to who pays for a gym's hosted community. <span class="fname">senior-project set</span></td>
-            <td>One line across ~20 documents is not a business model. Left open on purpose. Per D8 &mdash; trigger: three separate gyms ask for something a free tier can't do.</td>
-            <td><span class="tag tag-deferred">DEFERRED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>10</td>
-            <td>Landing page name</td>
-            <td>"Dashboard" <span class="fname">AlpFit Mission</span>; the hybrid "feed dashboard widget" / "fed dashboard widget" [sic] <span class="fname">Goal Requirements #12, #13</span> &mdash; the rename was never fully absorbed.</td>
-            <td>"Feed" <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, <span class="fname">Feed Page Widget Modules</span>, and <span class="fname">feed_page.dart</span></td>
-            <td><strong>Feed.</strong> Three docs plus the code against one. "Dashboard" appears nowhere in the shipped app. Purge the word from all new docs.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>11</td>
-            <td>The five-page IA</td>
-            <td>Dashboard / Calendar / Create / Social / Settings-Profile <span class="fname">AlpFit Mission</span>; Feed / Calendar / <strong>Event Creator</strong> / Social / Profile <span class="fname">Forge Initial Requirements</span></td>
-            <td>Bottom nav of four &mdash; Feed, Calendar, Social, Profile <span class="fname">Final Specs</span> &mdash; vs the code, which ships five tabs including Create. <span class="fname">bottom_nav.dart</span></td>
-            <td>Five tabs: <strong>Feed, Calendar, Create, Social, Profile</strong>. The code settles it; the Final Specs' four-tab bar is an omission, not a decision.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>1</td><td>Three-platform AlpFit strategy</td><td>Consumer app only; trainer and gym platforms cut, not deferred</td></tr>
+          <tr><td>2</td><td>Gym account: core or "much later"?</td><td>The gym account type stays &mdash; it is the differentiator</td></tr>
+          <tr><td>3</td><td>Target platforms</td><td>iOS + Android only; desktop and web deferred</td></tr>
+          <tr><td>4</td><td>Performance tracking scope <span class="pill pill-warn">needs your call</span></td><td>Anti-scope holds; max tracking and movement insights stay cut</td></tr>
+          <tr><td>5</td><td>Live workout session screen <span class="pill pill-warn">needs your call</span></td><td>Out of scope for v1 &mdash; a spec with no requirement lineage</td></tr>
+          <tr><td>6</td><td>Gym discovery <span class="pill pill-warn">needs your call</span></td><td>Search only; the map was silently dropped and stays cut</td></tr>
+          <tr><td>7</td><td>Who the stakeholder is <span class="pill pill-warn">needs your call</span></td><td>BYU-I Rec Center is a beta channel, not a design authority</td></tr>
+          <tr><td>8</td><td>Definition of done</td><td>Done means a stranger can use it, not "demo-able"</td></tr>
+          <tr><td>9</td><td>Monetization</td><td>Left open on purpose; one stretch line is not a model</td></tr>
+          <tr><td>10</td><td>Landing page name</td><td>Feed. Purge "Dashboard" from all new docs</td></tr>
+          <tr><td>11</td><td>The five-page IA</td><td>Five tabs: Feed, Calendar, Create, Social, Profile</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>1 &middot; Three-platform AlpFit strategy <span class="tag tag-locked">LOCKED</span></h3>
+        <p><strong>A:</strong> AlpFit is three products &mdash; consumer app, gym software, trainer software &mdash; each "usable independently or together", and gym + trainer each get a <em>website and mobile application</em>. Consumer app can "connect and communicate with your trainer". <span class="fname">AlpFit Mission Statement_Goals</span></p>
+        <p><strong>B:</strong> no trainer role, trainer account type, or trainer feature exists in any later doc or anywhere in the code. Account type is <code>user</code> | <code>gym</code> only. <span class="fname">Final Specs</span>, <span class="fname">Forge Initial Requirements</span>, <span class="fname">auth_service.dart</span></p>
+        <p><strong>Resolution:</strong> consumer iOS/Android app only. Trainer platform and standalone gym software are <strong>cut, not deferred</strong>; the "website and mobile app" promises die with them. Road not taken: an AlpFit product suite. Per D4 and the settled scope statement.</p>
+      </div>
+
+      <div class="card">
+        <h3>2 &middot; Gym account: core or "much later"? <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "eventually as a <strong>stretch goal</strong> the actual management of a fitness center would also be a user. That would come <strong>much later</strong> though." <span class="fname">Pre-Proposal</span></p>
+        <p><strong>B:</strong> gym registration type at signup <span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span>; a whole "Gyms only" requirements block <span class="fname">Forge Initial Requirements</span>; gym channels as a headline feature <span class="fname">Forge Proposal</span>; a gym-side beta cohort <span class="fname">Bigger Rec Manager Meeting</span>; and it is <strong>built</strong> &mdash; gym accounts, channels, posts, member rosters, kicks.</p>
+        <p><strong>Resolution:</strong> the gym account type stays and is the differentiator. Pre-Proposal is the earliest doc in the set; every later artifact and the code overrule it. Per D4.</p>
+      </div>
+
+      <div class="card">
+        <h3>3 &middot; Target platforms <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> Flutter chosen because it "will allow me to easily deploy to mobile, desktop, and web clients without having to create extra code"; targets listed as iOS/Android, desktop, web. <span class="fname">Forge Proposal</span>, <span class="fname">PROJECT_SUMMARY.md</span></p>
+        <p><strong>B:</strong> only web is deploy-configured (Firebase Hosting &rarr; <span class="fname">build/web</span>). <strong>Linux throws <code>UnsupportedError</code></strong> in <span class="fname">firebase_options.dart</span>. macOS/Windows/Linux scaffolds are untested and unreachable. No user ever asked for desktop. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> <strong>iOS + Android only.</strong> The other targets exist because Flutter generates them, not because anyone wanted them. Desktop/web <span class="tag tag-deferred">DEFERRED</span>. Per D3.</p>
+        <p><strong>Revisit when:</strong> a gym admin asks to moderate from a desktop browser.</p>
+      </div>
+
+      <div class="card">
+        <h3>4 &middot; Performance tracking &amp; programming scope <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "database of movements", "track <strong>maxes</strong> on each movement", and "insights on when you've done a given movement better and what has impacted it (e.g. to a certain song, certain time, or before or after another movement)". <span class="fname">AlpFit Overview</span></p>
+        <p><strong>B:</strong> load-bearing anti-scope: "There are many apps that focus on delivering high quality programming or meal planning tools. <strong>This app would not try to enter that market</strong>, but merely touch on those." <span class="fname">Forge Proposal</span> &mdash; and none of the three features appear in any later doc or anywhere in the code. Exercise names are free text; there is no movement entity and no PR record.</p>
+        <p><strong>Resolution:</strong> <strong>anti-scope holds.</strong> Forge plans workouts socially; it does not prescribe programming or analyse performance. Max tracking, movement insights, and the movement catalog stay cut. Road not taken: a movement catalog with PR history &mdash; a genuinely different product. <em>Recommended default: keep cut.</em></p>
+        <p><strong>Revisit when:</strong> you decide Forge tracks performance, not just plans it.</p>
+      </div>
+
+      <div class="card">
+        <h3>5 &middot; Live workout session screen <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> six requirements for an in-progress workout screen: elapsed timer, current set/exercise, full exercise+set list, on-the-fly plan adjustment, workout name, "Font should be Poppins with no bold or styled text". <span class="fname">Workout Page Requirements Spec</span></p>
+        <p><strong>B:</strong> no such screen appears in <span class="fname">AlpFit Mission</span>, <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, or the code. Workouts are only <em>planned</em> and <em>scheduled</em>, never <em>executed</em>.</p>
+        <p><strong>Resolution:</strong> out of scope for v1. This is the single largest unattributed scope in the corpus &mdash; it has a spec and no requirement lineage. It is an execution/tracking feature and pulls against the social thesis (record 4). Road not taken: Forge as a during-the-workout companion. <em>Recommended default: stay cut.</em></p>
+        <p><strong>Revisit when:</strong> it turns out to be your newest thinking rather than an abandoned idea.</p>
+      </div>
+
+      <div class="card">
+        <h3>6 &middot; Gym discovery <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "mapping system or a list at first" <span class="fname">AlpFit Mission</span>; "different gyms will have the most popular workouts that can be seen from a <strong>map view similar to pokemon go</strong>" <span class="fname">AlpFit Overview</span></p>
+        <p><strong>B:</strong> search only &mdash; Social &rarr; Search. <span class="fname">Final Specs</span>. Code has a single search box (<span class="fname">search_service.dart</span>, <code>limit(100)</code> + in-memory filter). No map, no geo data, no gym location entity.</p>
+        <p><strong>Resolution:</strong> search only. The map was <strong>silently dropped</strong> &mdash; never deferred, never argued against. We are making the drop explicit rather than reviving it: it needs geo data the product does not collect. Road not taken: map-based gym discovery as the hook. <em>Recommended default: keep cut.</em></p>
+        <p><strong>Revisit when:</strong> beta testers can't find their gym by name, or a gym asks for a discovery surface.</p>
+      </div>
+
+      <div class="card">
+        <h3>7 &middot; Who the stakeholder is <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "Stakeholders with Contact information: <strong>TBD</strong>" <span class="fname">Forge Proposal</span> &mdash; the partnership was aspirational at proposal time.</p>
+        <p><strong>B:</strong> "Stakeholder: <strong>BYU-I Recreation Center</strong> (largest gym in Rexburg)" <span class="fname">PROJECT_SUMMARY.md</span>; a rec-manager meeting doc exists <span class="fname">Bigger Rec Manager Meeting</span>; reasons given are "the gym I use / largest gym in rexburg / I want to support the school / most accessible" <span class="fname">Elevator Pitch</span></p>
+        <p><strong>Resolution:</strong> BYU-I Rec Center is the beta channel (D6), and that makes account deletion, moderation, and a privacy policy real T1 work. But it was chosen for <em>convenience</em>, not validated as a design partner, and the meeting doc is an ask list containing zero stakeholder-originated requirements. <em>Recommended default: use it as a beta channel, not as a design authority.</em></p>
+      </div>
+
+      <div class="card">
+        <h3>8 &middot; Definition of done <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "I will know the project is done when the above requirements have been met&hellip; the product would be valid and <strong>demo-able</strong> to portray the full scope of the app's goals." <span class="fname">Forge Proposal</span></p>
+        <p><strong>B:</strong> real external users via a BYU-I Rec Center beta. <span class="fname">Bigger Rec Manager Meeting</span>, D6</p>
+        <p><strong>Resolution:</strong> "demo-able" is dead &mdash; it was a grading criterion. Done means a stranger can use it: account deletion, moderation, a privacy policy, and no fake controls in shipping screens. Road not taken: shipping the demo.</p>
+      </div>
+
+      <div class="card">
+        <h3>9 &middot; Monetization <span class="tag tag-deferred">DEFERRED</span></h3>
+        <p><strong>A:</strong> one stretch line: "Sign up for some kind of paid premium gym account service for gyms to hold better communities." <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> "No monetization, pricing, subscription, or revenue model appears in any of the 12 files" &mdash; including no answer to who pays for a gym's hosted community. <span class="fname">senior-project set</span></p>
+        <p><strong>Resolution:</strong> one line across ~20 documents is not a business model. Left open on purpose. Per D8.</p>
+        <p><strong>Revisit when:</strong> three separate gyms ask for something a free tier can't do.</p>
+      </div>
+
+      <div class="card">
+        <h3>10 &middot; Landing page name <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "Dashboard" <span class="fname">AlpFit Mission</span>; the hybrid "feed dashboard widget" / "fed dashboard widget" [sic] <span class="fname">Goal Requirements #12, #13</span> &mdash; the rename was never fully absorbed.</p>
+        <p><strong>B:</strong> "Feed" <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, <span class="fname">Feed Page Widget Modules</span>, and <span class="fname">feed_page.dart</span></p>
+        <p><strong>Resolution:</strong> <strong>Feed.</strong> Three docs plus the code against one. "Dashboard" appears nowhere in the shipped app. Purge the word from all new docs.</p>
+      </div>
+
+      <div class="card">
+        <h3>11 &middot; The five-page IA <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> Dashboard / Calendar / Create / Social / Settings-Profile <span class="fname">AlpFit Mission</span>; Feed / Calendar / <strong>Event Creator</strong> / Social / Profile <span class="fname">Forge Initial Requirements</span></p>
+        <p><strong>B:</strong> bottom nav of four &mdash; Feed, Calendar, Social, Profile <span class="fname">Final Specs</span> &mdash; vs the code, which ships five tabs including Create. <span class="fname">bottom_nav.dart</span></p>
+        <p><strong>Resolution:</strong> five tabs: <strong>Feed, Calendar, Create, Social, Profile</strong>. The code settles it; the Final Specs' four-tab bar is an omission, not a decision.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="features">
     <h2>2. Features</h2>
     <p class="small muted">Does the feature exist, is it must-have or stretch, and did it actually get built.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>12</td>
-            <td>Goals: must-have or stretch?</td>
-            <td>"Create goals" is listed under <strong>Stretch</strong> requirements <span class="fname">Final Specs</span>. And Goals appear in <strong>no</strong> requirements doc at all &mdash; not in IR's five pages, not in the Proposal's seven major features, not in PROJECT_SUMMARY's feature list.</td>
-            <td>A dedicated requirements doc <span class="fname">Goal Requirements</span>, a full class design <span class="fname">Forge_Goal_Class_Design</span>, a live Goals widget on the feed grid <span class="fname">Feed Page Widget Modules</span>, and ~1,000 lines of the app's most polished code &mdash; <span class="fname">models/goal.dart</span>, <span class="fname">goals_service.dart</span>, <span class="fname">goal_creator_sheet.dart</span>, feed check-in rings.</td>
-            <td><strong>Must-have.</strong> Direction of travel wins: the Final Specs is the later <em>document</em>, but every goal artifact post-dates it in <em>activity</em>. Road not taken: goals as a post-launch add-on. Per D2.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>13</td>
-            <td>How many event types?</td>
-            <td><strong>Three</strong>: "create events of three types: workout, goal, and basic event". <span class="fname">AlpFit Mission</span></td>
-            <td><strong>Two</strong>: basic and workout. <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>. Code: <code>eventType &isin; 'basic' | 'workout'</code>, and goals live in their own collection. <span class="fname">events_service.dart</span></td>
-            <td>Two event types. <strong>Goals are their own entity, not an event type</strong> &mdash; which is the right call anyway, since a goal is a period counter and an event is an appointment (see row 31).</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>14</td>
-            <td>Calendar view modes</td>
-            <td>Three competing lists: "month, week, or day" <span class="fname">AlpFit Mission</span>; "<strong>year</strong>, month, multi, day" <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span>; "daily, multi day, and monthly" <span class="fname">Final Specs</span></td>
-            <td>Code ships exactly three: Day, <strong>Multi = a fixed 4 days</strong> (<span class="fname">calendar_page.dart:594</span>), and Month. No year view. No true week view. <span class="fname">calendar_page.dart</span></td>
-            <td>Code wins: <strong>Day / Multi(4) / Month</strong>. Year view is cut &mdash; a year grid of gym sessions is unreadable. A true 7-day week view is <span class="tag tag-deferred">DEFERRED</span>, trigger: two beta testers ask for it. Do not describe "week" as shipped.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>15</td>
-            <td>Calendar source filtering</td>
-            <td>An explicit requirement: "filter which event sources are shown", alongside "show which events came from where (gyms, friends, self)". <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span>. Survives in the Final Specs only as an assumed clause &mdash; "provided the event owner is not filtered out in the calendar view".</td>
-            <td>The filter popup is <strong>entirely fake</strong>: hardcoded <code>'You'</code>, <code>'Friend 1'</code>, <code>'Ethan'</code>, <code>'Gym 1'</code> at <span class="fname">calendar_page.dart:44-56</span>, and <code>_filterStates</code> is never read by any query.</td>
-            <td>The feature <strong>does not exist</strong>; the control that claims it does is the clearest doc-vs-code lie in the repo. Keep the requirement and wire it (T1). A fake control in a shipping screen is worse than no control &mdash; if it isn't wired before a beta, delete the popup.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>16</td>
-            <td>Create an event by tapping a time</td>
-            <td>"Start creating an event by clicking on a time of day" &mdash; the calendar is an entry point to the Event Creator. <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td>Not implemented. Tapping empty grid space does nothing. <span class="fname">calendar_page.dart</span></td>
-            <td>Keep the requirement &mdash; it is the natural gesture and it is cheap. T2, after the filter (row 15) and the fake-detail-sheet stub. Not a scope change, just unbuilt.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>17</td>
-            <td>Workout co-editing</td>
-            <td>"Invite friends to <strong>edit</strong> workout" &mdash; shared authorship of a workout event. <span class="fname">Forge Initial Requirements</span></td>
-            <td>Absent from the Final Specs, which only has "invite friends to either kind of event" &mdash; participation, not editing. And architecturally impossible in the code: <code>allow write: if request.auth.uid == userId</code> means <strong>only the owner can ever edit</strong>. <span class="fname">firestore.rules</span></td>
-            <td>Cut. It needs a shared-ownership model the data layer does not have (events are subcollections of one user), so it is not a small addition. The drop looks unintentional, which is why it is flagged. Road not taken: collaboratively authored workouts. <em>Recommended default: stay cut; invitees participate, the owner edits.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>18</td>
-            <td>Friend groups</td>
-            <td>"Create and join <strong>groups</strong> of other users to interact with" &mdash; a third social tier beyond friends and gyms, listed as a Social page requirement. <span class="fname">Forge Initial Requirements</span></td>
-            <td>Demoted to Stretch &mdash; "create groups of friends to share events and posts with" <span class="fname">Final Specs</span> &mdash; and then <strong>not implemented at all</strong>: no group entity, no collection, no rules, no index, no UI. <span class="fname">code</span></td>
-            <td>Cut. A group is a third membership model on top of friends and gyms, and the gym channel already covers "a set of people who talk to each other". Road not taken: friend groups as private mini-communities. <em>Recommended default: keep cut; revisit only if a gym asks for sub-communities.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>19</td>
-            <td>User-authored posts</td>
-            <td>Users "post to communities" <span class="fname">AlpFit Mission</span>; "users can interact with and post on certain channels of a gym's community" <span class="fname">AlpFit Overview</span>, <span class="fname">Forge Proposal</span></td>
-            <td>"Make posts for friends to see" is <strong>Stretch</strong> <span class="fname">Final Specs</span>. Code: gym channel posts exist and work; there is <strong>no personal post entity at all</strong>, so the feed's "updates from friends" actually means "your friend scheduled something". <span class="fname">updates_service.dart</span></td>
-            <td>Split the collision &mdash; these were never the same feature. <strong>Community posting is must-have and built.</strong> <strong>Friend-directed personal posts stay cut</strong>: a personal timeline is a different product and would multiply the moderation surface. The feed must stop implying friends post.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>20</td>
-            <td>Notifications &amp; push</td>
-            <td>Push-driven refresh "to avoid having to reopen the app each time", workout reminders, attendance confirmation, buddy-cancellation alerts <span class="fname">AlpFit Overview</span>; lock-screen goal check-in (stretch) and a goal-archival notification <span class="fname">Goal Requirements</span></td>
-            <td><strong>Zero</strong> notification requirements in the Final Specs, must-have or stretch. None in any senior-project doc either. <span class="fname">push_service.dart</span> is <strong>0 bytes</strong> &mdash; invites, DMs, and friend requests are completely silent.</td>
-            <td>No push in v1. This is the largest silent drop with a live product cost: a social scheduling app where you only learn about an invite by opening the app. FCM is free when adopted. Road not taken: notification-driven engagement from day one. <em>Recommended default: no push before the beta; revisit the moment retention is the problem worth solving.</em></td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>21</td>
-            <td>Themes</td>
-            <td>"Adjust user settings and <strong>themes</strong>" listed under the Settings page. <span class="fname">AlpFit Mission</span></td>
-            <td>"Edit color theme of app" is <strong>Stretch</strong> <span class="fname">Final Specs</span>. Code: one hardcoded <code>Color(0xFF4D7CFF)</code> re-declared in at least six files, and <span class="fname">core/constants/colors.dart</span> is empty.</td>
-            <td>Cut. You cannot theme an app that has no color constant. The real work hiding behind this row is consolidating the six copies of forge blue into one place &mdash; do that instead.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>22</td>
-            <td>Feed widget editability</td>
-            <td>"Edit the widgets available on the feed page" is <strong>Stretch</strong>. <span class="fname">Final Specs</span></td>
-            <td>A concrete <strong>5&times;6 grid</strong> with per-widget position/size, designed precisely so "we can easily move the widgets around and resize them" &mdash; a later, implementation-grade doc. <span class="fname">Feed Page Widget Modules</span>. But the code ships a fixed hand-built layout and <code>buildBasicFeedWidget</code> is dead code. <span class="fname">feed_page.dart:92</span></td>
-            <td>The grid doc is later and more considered, but it did not survive into the code, and its own coordinates do not close (Next Workout p=0:0 h=3 w=4, Goals p=0:2 h=2 w=4, Friends p=4:0 h=4 w=1 overlap or exceed 5&times;6 under either reading of <code>row:col</code>). <span class="tag tag-deferred">DEFERRED</span> &mdash; trigger: a second widget type is wanted. Confirm the coordinate convention before building anything on it.</td>
-            <td><span class="tag tag-deferred">DEFERRED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>23</td>
-            <td>Add-existing-event / reusable event backlog</td>
-            <td>"Adding an event prompts you for a new event or <strong>add existing event</strong>"; the Create page holds "created events to edit or add to calendar" &mdash; a created-but-unscheduled backlog. <span class="fname">AlpFit Mission</span></td>
-            <td>Event creation ends at "user taps Create Event, at which point the event is saved" &mdash; no template or backlog concept. <span class="fname">Final Specs</span></td>
-            <td>The idea survived, under different names: <strong>Plans</strong> materialize repeated events and the <strong>Create hub</strong> browses your existing workouts/plans/goals to reuse. Both are shipped. The Mission-era wording is superseded, not dropped. Road not taken: an explicit unscheduled-event backlog.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>24</td>
-            <td>Gym community page "and subpages"</td>
-            <td>Gyms can "create and manage community page <strong>and subpages</strong>" &mdash; a must-have Gyms-only requirement. <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td>Code: a flat <code>channelNames</code> array on the gym's user doc, with <code>channelName</code> as a string field on each post. <strong>No subpages.</strong> And the community page's main pane is an <strong>empty state</strong> &mdash; there is no gym feed. <span class="fname">social_page.dart</span>, <span class="fname">channel_posts_service.dart</span></td>
-            <td>"Subpages" means <strong>channels</strong> &mdash; same concept, older word. One level, no nesting. The genuine gap is the empty community pane: a gym community page that shows nothing is a T1 defect, not a missing stretch feature.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>25</td>
-            <td>Gym membership approval</td>
-            <td>Gyms can "remove from or <strong>accept users into</strong> managed community"; joining "may be instant or require approval, depending on the gym's configuration". <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span></td>
-            <td>Code: <code>addGym</code> joins <strong>instantly</strong>, unconditionally. Only the kick half exists (<code>gym removes member</code>). There is no request, no queue, no approval state. <span class="fname">gyms_service.dart</span></td>
-            <td>Instant join for v1 &mdash; it matches the thesis (join before your first visit, with no gatekeeper). Approval is <span class="tag tag-deferred">DEFERRED</span>, trigger: a gym asks to gate its community. Remove the "accept users into" claim from the requirement list until then.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>26</td>
-            <td>Moderation</td>
-            <td>Three must-have requirements: gyms "moderate posts and interactions", "remove from or accept users into a community", plus the hedge "community management and moderation workflows are <strong>not yet fully defined</strong>". <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span></td>
-            <td><span class="fname">moderation_service.dart</span> is <strong>0 bytes</strong>. There is no reporting, no blocking, no hiding, no content filtering. The only control is delete &mdash; and <code>isCurrentUserGymOwner</code> is literally <code>uid == gymUid</code>, so <strong>a post's own author cannot delete their own post</strong>. <span class="fname">channel_posts_service.dart:357</span></td>
-            <td>Moderation is <strong>T1 and blocking</strong>, not a stretch nicety: App Store guideline 1.2 requires report/block for UGC apps. Fix the owner check (author OR gym), then add report + block. The "not yet fully defined" hedge is now defined by this row.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>27</td>
-            <td>Typography</td>
-            <td>"Font should be <strong>Poppins</strong> with no bold or styled text" &mdash; the only typography directive in the entire corpus, and it sits on an orphan spec. <span class="fname">Workout Page Requirements Spec</span></td>
-            <td>No typography direction anywhere else. <span class="fname">Goal Requirements</span> was authored in RobotoMono. Code: Poppins is the app-wide font <span class="fname">app/app.dart</span>, used <em>with</em> weights in <span class="fname">app_text_styles.dart</span>.</td>
-            <td>Poppins is the app font &mdash; the code already agrees. The "no bold or styled text" clause was scoped to one screen that does not exist (row 5) and is dropped. Not a conflict so much as an unpropagated rule that turned out to be half-right.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>12</td><td>Goals: must-have or stretch?</td><td>Must-have &mdash; direction of travel wins</td></tr>
+          <tr><td>13</td><td>How many event types?</td><td>Two. Goals are their own entity, not an event type</td></tr>
+          <tr><td>14</td><td>Calendar view modes</td><td>Day / Multi(4) / Month. Year cut, true week deferred</td></tr>
+          <tr><td>15</td><td>Calendar source filtering</td><td>Does not exist &mdash; wire the filter or delete the fake popup</td></tr>
+          <tr><td>16</td><td>Create an event by tapping a time</td><td>Keep the requirement. Unbuilt, not descoped. T2</td></tr>
+          <tr><td>17</td><td>Workout co-editing <span class="pill pill-warn">needs your call</span></td><td>Cut &mdash; needs a shared-ownership model the data layer lacks</td></tr>
+          <tr><td>18</td><td>Friend groups <span class="pill pill-warn">needs your call</span></td><td>Cut. Gym channels already cover the same need</td></tr>
+          <tr><td>19</td><td>User-authored posts</td><td>Community posting ships; personal posts stay cut</td></tr>
+          <tr><td>20</td><td>Notifications &amp; push <span class="pill pill-warn">needs your call</span></td><td>No push in v1</td></tr>
+          <tr><td>21</td><td>Themes</td><td>Cut. Consolidate the six copies of forge blue instead</td></tr>
+          <tr><td>22</td><td>Feed widget editability</td><td>Deferred &mdash; the grid doc's own coordinates do not close</td></tr>
+          <tr><td>23</td><td>Add-existing-event backlog</td><td>Superseded by Plans and the Create hub, not dropped</td></tr>
+          <tr><td>24</td><td>Gym community page "and subpages"</td><td>"Subpages" means channels. One level, no nesting</td></tr>
+          <tr><td>25</td><td>Gym membership approval</td><td>Instant join for v1; approval deferred</td></tr>
+          <tr><td>26</td><td>Moderation</td><td>T1 and blocking &mdash; App Store 1.2 requires report/block</td></tr>
+          <tr><td>27</td><td>Typography</td><td>Poppins app-wide; the "no bold" clause is dropped</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>12 &middot; Goals: must-have or stretch? <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "create goals" is listed under <strong>Stretch</strong> requirements <span class="fname">Final Specs</span>. And Goals appear in <strong>no</strong> requirements doc at all &mdash; not in IR's five pages, not in the Proposal's seven major features, not in PROJECT_SUMMARY's feature list.</p>
+        <p><strong>B:</strong> a dedicated requirements doc <span class="fname">Goal Requirements</span>, a full class design <span class="fname">Forge_Goal_Class_Design</span>, a live Goals widget on the feed grid <span class="fname">Feed Page Widget Modules</span>, and ~1,000 lines of the app's most polished code &mdash; <span class="fname">models/goal.dart</span>, <span class="fname">goals_service.dart</span>, <span class="fname">goal_creator_sheet.dart</span>, feed check-in rings.</p>
+        <p><strong>Resolution:</strong> <strong>must-have.</strong> Direction of travel wins: the Final Specs is the later <em>document</em>, but every goal artifact post-dates it in <em>activity</em>. Road not taken: goals as a post-launch add-on. Per D2.</p>
+      </div>
+
+      <div class="card">
+        <h3>13 &middot; How many event types? <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> <strong>three</strong>: "create events of three types: workout, goal, and basic event". <span class="fname">AlpFit Mission</span></p>
+        <p><strong>B:</strong> <strong>two</strong>: basic and workout. <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>. Code: <code>eventType &isin; 'basic' | 'workout'</code>, and goals live in their own collection. <span class="fname">events_service.dart</span></p>
+        <p><strong>Resolution:</strong> two event types. <strong>Goals are their own entity, not an event type</strong> &mdash; which is the right call anyway, since a goal is a period counter and an event is an appointment (see record 31).</p>
+      </div>
+
+      <div class="card">
+        <h3>14 &middot; Calendar view modes <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> three competing lists: "month, week, or day" <span class="fname">AlpFit Mission</span>; "<strong>year</strong>, month, multi, day" <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span>; "daily, multi day, and monthly" <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> code ships exactly three: Day, <strong>Multi = a fixed 4 days</strong> (<span class="fname">calendar_page.dart:594</span>), and Month. No year view. No true week view. <span class="fname">calendar_page.dart</span></p>
+        <p><strong>Resolution:</strong> code wins: <strong>Day / Multi(4) / Month</strong>. Year view is cut &mdash; a year grid of gym sessions is unreadable. A true 7-day week view is <span class="tag tag-deferred">DEFERRED</span>. Do not describe "week" as shipped.</p>
+        <p><strong>Revisit when:</strong> two beta testers ask for a week view.</p>
+      </div>
+
+      <div class="card">
+        <h3>15 &middot; Calendar source filtering <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> an explicit requirement: "filter which event sources are shown", alongside "show which events came from where (gyms, friends, self)". <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span>. Survives in the Final Specs only as an assumed clause &mdash; "provided the event owner is not filtered out in the calendar view".</p>
+        <p><strong>B:</strong> the filter popup is <strong>entirely fake</strong>: hardcoded <code>'You'</code>, <code>'Friend 1'</code>, <code>'Ethan'</code>, <code>'Gym 1'</code> at <span class="fname">calendar_page.dart:44-56</span>, and <code>_filterStates</code> is never read by any query.</p>
+        <p><strong>Resolution:</strong> the feature <strong>does not exist</strong>; the control that claims it does is the clearest doc-vs-code lie in the repo. Keep the requirement and wire it (T1). A fake control in a shipping screen is worse than no control &mdash; if it isn't wired before a beta, delete the popup.</p>
+      </div>
+
+      <div class="card">
+        <h3>16 &middot; Create an event by tapping a time <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "start creating an event by clicking on a time of day" &mdash; the calendar is an entry point to the Event Creator. <span class="fname">Forge Initial Requirements</span>, <span class="fname">PROJECT_SUMMARY.md</span></p>
+        <p><strong>B:</strong> not implemented. Tapping empty grid space does nothing. <span class="fname">calendar_page.dart</span></p>
+        <p><strong>Resolution:</strong> keep the requirement &mdash; it is the natural gesture and it is cheap. T2, after the filter (record 15) and the fake-detail-sheet stub. Not a scope change, just unbuilt.</p>
+      </div>
+
+      <div class="card">
+        <h3>17 &middot; Workout co-editing <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "invite friends to <strong>edit</strong> workout" &mdash; shared authorship of a workout event. <span class="fname">Forge Initial Requirements</span></p>
+        <p><strong>B:</strong> absent from the Final Specs, which only has "invite friends to either kind of event" &mdash; participation, not editing. And architecturally impossible in the code: <code>allow write: if request.auth.uid == userId</code> means <strong>only the owner can ever edit</strong>. <span class="fname">firestore.rules</span></p>
+        <p><strong>Resolution:</strong> cut. It needs a shared-ownership model the data layer does not have (events are subcollections of one user), so it is not a small addition. The drop looks unintentional, which is why it is flagged. Road not taken: collaboratively authored workouts. <em>Recommended default: stay cut; invitees participate, the owner edits.</em></p>
+        <p><strong>Revisit when:</strong> two users ask to build one workout together.</p>
+      </div>
+
+      <div class="card">
+        <h3>18 &middot; Friend groups <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "create and join <strong>groups</strong> of other users to interact with" &mdash; a third social tier beyond friends and gyms, listed as a Social page requirement. <span class="fname">Forge Initial Requirements</span></p>
+        <p><strong>B:</strong> demoted to Stretch &mdash; "create groups of friends to share events and posts with" <span class="fname">Final Specs</span> &mdash; and then <strong>not implemented at all</strong>: no group entity, no collection, no rules, no index, no UI. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> cut. A group is a third membership model on top of friends and gyms, and the gym channel already covers "a set of people who talk to each other". Road not taken: friend groups as private mini-communities. <em>Recommended default: keep cut.</em></p>
+        <p><strong>Revisit when:</strong> a gym asks for sub-communities, or friends ask to plan in a fixed crew.</p>
+      </div>
+
+      <div class="card">
+        <h3>19 &middot; User-authored posts <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> users "post to communities" <span class="fname">AlpFit Mission</span>; "users can interact with and post on certain channels of a gym's community" <span class="fname">AlpFit Overview</span>, <span class="fname">Forge Proposal</span></p>
+        <p><strong>B:</strong> "make posts for friends to see" is <strong>Stretch</strong> <span class="fname">Final Specs</span>. Code: gym channel posts exist and work; there is <strong>no personal post entity at all</strong>, so the feed's "updates from friends" actually means "your friend scheduled something". <span class="fname">updates_service.dart</span></p>
+        <p><strong>Resolution:</strong> split the collision &mdash; these were never the same feature. <strong>Community posting is must-have and built.</strong> <strong>Friend-directed personal posts stay cut</strong>: a personal timeline is a different product and would multiply the moderation surface. The feed must stop implying friends post.</p>
+      </div>
+
+      <div class="card">
+        <h3>20 &middot; Notifications &amp; push <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> push-driven refresh "to avoid having to reopen the app each time", workout reminders, attendance confirmation, buddy-cancellation alerts <span class="fname">AlpFit Overview</span>; lock-screen goal check-in (stretch) and a goal-archival notification <span class="fname">Goal Requirements</span></p>
+        <p><strong>B:</strong> <strong>zero</strong> notification requirements in the Final Specs, must-have or stretch. None in any senior-project doc either. <span class="fname">push_service.dart</span> is <strong>0 bytes</strong> &mdash; invites, DMs, and friend requests are completely silent.</p>
+        <p><strong>Resolution:</strong> no push in v1. This is the largest silent drop with a live product cost: a social scheduling app where you only learn about an invite by opening the app. FCM is free when adopted. Road not taken: notification-driven engagement from day one. <em>Recommended default: no push before the beta.</em></p>
+        <p><strong>Revisit when:</strong> retention is the problem worth solving, or a tester says they missed an invite.</p>
+      </div>
+
+      <div class="card">
+        <h3>21 &middot; Themes <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "adjust user settings and <strong>themes</strong>" listed under the Settings page. <span class="fname">AlpFit Mission</span></p>
+        <p><strong>B:</strong> "edit color theme of app" is <strong>Stretch</strong> <span class="fname">Final Specs</span>. Code: one hardcoded <code>Color(0xFF4D7CFF)</code> re-declared in at least six files, and <span class="fname">core/constants/colors.dart</span> is empty.</p>
+        <p><strong>Resolution:</strong> cut. You cannot theme an app that has no color constant. The real work hiding behind this record is consolidating the six copies of forge blue into one place &mdash; do that instead.</p>
+      </div>
+
+      <div class="card">
+        <h3>22 &middot; Feed widget editability <span class="tag tag-deferred">DEFERRED</span></h3>
+        <p><strong>A:</strong> "edit the widgets available on the feed page" is <strong>Stretch</strong>. <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> a concrete <strong>5&times;6 grid</strong> with per-widget position/size, designed precisely so "we can easily move the widgets around and resize them" &mdash; a later, implementation-grade doc. <span class="fname">Feed Page Widget Modules</span>. But the code ships a fixed hand-built layout and <code>buildBasicFeedWidget</code> is dead code. <span class="fname">feed_page.dart:92</span></p>
+        <p><strong>Resolution:</strong> the grid doc is later and more considered, but it did not survive into the code, and its own coordinates do not close (Next Workout p=0:0 h=3 w=4, Goals p=0:2 h=2 w=4, Friends p=4:0 h=4 w=1 overlap or exceed 5&times;6 under either reading of <code>row:col</code>). Confirm the coordinate convention before building anything on it.</p>
+        <p><strong>Revisit when:</strong> a second widget type is wanted.</p>
+      </div>
+
+      <div class="card">
+        <h3>23 &middot; Add-existing-event / reusable event backlog <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "adding an event prompts you for a new event or <strong>add existing event</strong>"; the Create page holds "created events to edit or add to calendar" &mdash; a created-but-unscheduled backlog. <span class="fname">AlpFit Mission</span></p>
+        <p><strong>B:</strong> event creation ends at "user taps Create Event, at which point the event is saved" &mdash; no template or backlog concept. <span class="fname">Final Specs</span></p>
+        <p><strong>Resolution:</strong> the idea survived, under different names: <strong>Plans</strong> materialize repeated events and the <strong>Create hub</strong> browses your existing workouts/plans/goals to reuse. Both are shipped. The Mission-era wording is superseded, not dropped. Road not taken: an explicit unscheduled-event backlog.</p>
+      </div>
+
+      <div class="card">
+        <h3>24 &middot; Gym community page "and subpages" <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> gyms can "create and manage community page <strong>and subpages</strong>" &mdash; a must-have Gyms-only requirement. <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, <span class="fname">PROJECT_SUMMARY.md</span></p>
+        <p><strong>B:</strong> code: a flat <code>channelNames</code> array on the gym's user doc, with <code>channelName</code> as a string field on each post. <strong>No subpages.</strong> And the community page's main pane is an <strong>empty state</strong> &mdash; there is no gym feed. <span class="fname">social_page.dart</span>, <span class="fname">channel_posts_service.dart</span></p>
+        <p><strong>Resolution:</strong> "subpages" means <strong>channels</strong> &mdash; same concept, older word. One level, no nesting. The genuine gap is the empty community pane: a gym community page that shows nothing is a T1 defect, not a missing stretch feature.</p>
+      </div>
+
+      <div class="card">
+        <h3>25 &middot; Gym membership approval <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> gyms can "remove from or <strong>accept users into</strong> managed community"; joining "may be instant or require approval, depending on the gym's configuration". <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> code: <code>addGym</code> joins <strong>instantly</strong>, unconditionally. Only the kick half exists (<code>gym removes member</code>). There is no request, no queue, no approval state. <span class="fname">gyms_service.dart</span></p>
+        <p><strong>Resolution:</strong> instant join for v1 &mdash; it matches the thesis (join before your first visit, with no gatekeeper). Approval is <span class="tag tag-deferred">DEFERRED</span>. Remove the "accept users into" claim from the requirement list until then.</p>
+        <p><strong>Revisit when:</strong> a gym asks to gate its community.</p>
+      </div>
+
+      <div class="card">
+        <h3>26 &middot; Moderation <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> three must-have requirements: gyms "moderate posts and interactions", "remove from or accept users into a community", plus the hedge "community management and moderation workflows are <strong>not yet fully defined</strong>". <span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> <span class="fname">moderation_service.dart</span> is <strong>0 bytes</strong>. There is no reporting, no blocking, no hiding, no content filtering. The only control is delete &mdash; and <code>isCurrentUserGymOwner</code> is literally <code>uid == gymUid</code>, so <strong>a post's own author cannot delete their own post</strong>. <span class="fname">channel_posts_service.dart:357</span></p>
+        <p><strong>Resolution:</strong> moderation is <strong>T1 and blocking</strong>, not a stretch nicety: App Store guideline 1.2 requires report/block for UGC apps. Fix the owner check (author OR gym), then add report + block. The "not yet fully defined" hedge is now defined by this record.</p>
+      </div>
+
+      <div class="card">
+        <h3>27 &middot; Typography <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "font should be <strong>Poppins</strong> with no bold or styled text" &mdash; the only typography directive in the entire corpus, and it sits on an orphan spec. <span class="fname">Workout Page Requirements Spec</span></p>
+        <p><strong>B:</strong> no typography direction anywhere else. <span class="fname">Goal Requirements</span> was authored in RobotoMono. Code: Poppins is the app-wide font <span class="fname">app/app.dart</span>, used <em>with</em> weights in <span class="fname">app_text_styles.dart</span>.</p>
+        <p><strong>Resolution:</strong> Poppins is the app font &mdash; the code already agrees. The "no bold or styled text" clause was scoped to one screen that does not exist (record 5) and is dropped. Not a conflict so much as an unpropagated rule that turned out to be half-right.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="data">
     <h2>3. Data model</h2>
     <p class="small muted">Entity shape and semantics. Several of these are the code being wrong rather than the docs.</p>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>28</td>
-            <td>Goal check-ins: scheduled or not</td>
-            <td>Opening narrative: users "set a recurring set of days and times that they go and checkup on the goal". <span class="fname">Goal Requirements</span></td>
-            <td>Same file, answers #3 and #5: "Originally I was thinking they should be but <strong>I've changed my mind</strong>&hellip; The more important time frame will be the reset period"; "<code>checkupFrequency</code> can be scrapped&hellip; I am scrapping scheduled checkups." <span class="fname">Goal Requirements</span></td>
-            <td>This is <strong>him changing his mind mid-document</strong>, not a real disagreement. Latest position is current: period-based check-in counts, no schedule. <span class="fname">Forge_Goal_Class_Design</span> confirms by omitting any schedule, and the code implements it.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>29</td>
-            <td>Goal class: first sketch vs final design</td>
-            <td>First sketch: <code>checkupFrequency: Int</code>, <code>resetFrequency: Float?</code> (an arbitrary numeric period), <code>nextCheckupStatus: Bool</code>, <code>checkupHistory</code>, with generic <code>set__</code>/<code>get__</code>. <span class="fname">Goal Requirements</span></td>
-            <td>Final: <code>requiredCheckupsPerPeriod: int</code>, <code>resetPeriod: ResetPeriod</code> (enum: daily/weekly/biweekly/monthly), <code>currentCheckupsCompleted</code>, <code>periodHistory: List&lt;GoalPeriodRecord&gt;</code>. <span class="fname">Forge_Goal_Class_Design</span></td>
-            <td>Final design. It is <strong>explicitly the resolution of the sketch</strong> &mdash; the same file's 18 answers scrap the fields listed above them &mdash; and it shipped near-verbatim as <span class="fname">lib/models/goal.dart</span>. Known cost, accept it: the enum cannot express an arbitrary period; "6 workouts every 2 weeks" survives only because <code>biweekly</code> exists.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>30</td>
-            <td>Where goal business logic lives</td>
-            <td>The <code>Goal</code> class owns <code>checkup()</code> and a private <code>reset()</code>. <span class="fname">Goal Requirements</span></td>
-            <td>"The Goal class should be a <strong>DATA MODEL only</strong>" &mdash; period resetting and archiving of expired goals belong in a separate <code>GoalService</code>. <span class="fname">Forge_Goal_Class_Design</span></td>
-            <td>GoalService. Later, more considered, and <strong>the code already agrees</strong> &mdash; <span class="fname">goals_service.dart</span> (292 lines) holds the transactional check-in and period rollover. This one is closed.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>31</td>
-            <td>Goal model vs a calendar-centric product</td>
-            <td>Explicit design axis: "<strong>Period-based progress (NOT scheduled timestamps)</strong>". <span class="fname">Forge_Goal_Class_Design</span></td>
-            <td>The rest of the app is thoroughly timestamp-driven &mdash; events with <code>startAt</code>, day/multi/month calendar views, "events happening that day". <span class="fname">Forge Initial Requirements</span>, <span class="fname">code</span></td>
-            <td><strong>Both are correct for their own domain.</strong> A goal is a habit counter; an event is an appointment. Do <em>not</em> merge them into a hybrid &mdash; that is exactly the mushy middle to avoid. State the boundary once in the data model doc: goals never appear on the calendar grid, events never satisfy a check-in automatically.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>32</td>
-            <td><code>ResetPeriod.monthly</code></td>
-            <td>An enum member named <code>monthly</code>, alongside daily/weekly/biweekly &mdash; implying a calendar month. <span class="fname">Forge_Goal_Class_Design</span></td>
-            <td>Implemented as a flat <strong>30-day add</strong>. <span class="fname">goals_service.dart</span> <code>_periodEnd</code></td>
-            <td>The code is ground truth about <em>what exists</em>, not about what is right. A "monthly" goal that drifts five days a year will be reported as a bug by the first beta tester. Fix to a real calendar month. Cheap, contained.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>33</td>
-            <td>Goal history retention</td>
-            <td>"At reset the current progress is <strong>stored to history</strong> and a new period begins automatically"; <code>periodHistory</code> feeds <code>getOverallCompletionRate()</code> and "some way that the user can see the entire checkup history". <span class="fname">Forge_Goal_Class_Design</span>, <span class="fname">Goal Requirements #12</span></td>
-            <td><code>updateGoalForCurrentUser</code> <strong>wipes <code>periodHistory</code> and resets <code>currentCheckupsCompleted</code> to 0</strong> &mdash; renaming a goal destroys every period it ever recorded. Documented in-code as "Edit behavior (v1)". <span class="fname">goals_service.dart</span></td>
-            <td>Spec wins; the code is a defect, not a decision. Silent destruction of user history on a rename is the kind of thing that ends a beta. T1 fix: only recompute periods when the period-defining fields actually change.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>34</td>
-            <td>What "private" means</td>
-            <td>Basic event: "set public or private view status" &mdash; visibility not scoped to anyone. Workout event: public = "<strong>all friends</strong> can view", private = "only invitees can view". Two different meanings <em>in one document</em>. <span class="fname">Forge Initial Requirements</span></td>
-            <td>"Different <strong>levels</strong> of visibility, <strong>including</strong> public or private" &mdash; implies three or more, none of them enumerated. <span class="fname">Final Specs</span>. Code: a single <code>isPublic</code> bool; rules grant read to owner, invitee, or (<code>isPublic</code> &amp;&amp; (owner is my friend || owner is a gym I joined)). <span class="fname">firestore.rules</span></td>
-            <td>Code wins: <strong>two levels, one meaning.</strong> "Public" means visible to your friends and to fellow members of gyms you belong to &mdash; <strong>never to the world</strong>. The Final Specs' third level was never defined and is dropped. Write this sentence once in the data model doc and stop paraphrasing it.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>35</td>
-            <td>Exercise / set schema</td>
-            <td>"Users can add <strong>reps and weight for each set</strong>"; "exercises, sets, reps, and weights defined during creation and <strong>edited later</strong>". A three-level hierarchy: workout &rarr; exercise &rarr; set{reps, weight}. <span class="fname">Final Specs</span></td>
-            <td>The schema <strong>does not round-trip</strong>: the creator writes <code>setDetails: [{reps, weight}]</code> (<span class="fname">event_creator_page.dart:1689</span>) while <code>_mapDocToEvent</code> flattens to <code>{name, sets, weight}</code>, reading a top-level <code>weight</code> key <strong>that is never written</strong> &mdash; so the calendar always renders blank weights. And per-set editing is unbuilt: every set gets identical reps/weight (<span class="fname">:1650</span>).</td>
-            <td>Requirement stands; the code is broken. Two separate T1 fixes: repair the read path so weights display, and build per-set inputs. Note the doc says "edited later" &mdash; the edit sheet exists, so only the data shape is at fault.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>36</td>
-            <td>Plans</td>
-            <td><strong>No prose document anywhere describes Plans.</strong> Not in the requirements docs, not in the vision docs, not in the senior-project set.</td>
-            <td>A <code>users/{uid}/plans/{planId}</code> collection with its own rules, an events-by-<code>planId</code> composite index, and 496 + 658 lines of shipped service and UI. <span class="fname">plans_service.dart</span>, <span class="fname">plan_creator_sheet.dart</span></td>
-            <td>Plans exist and stay &mdash; they are the multi-week program concept the notes kept circling (row 23). Write the requirement retroactively. Known defects to carry: generation cap is 250 on create but <strong>180 on update</strong>, plan lookup is by <em>name</em> (ambiguous with duplicates), and <code>findPlanByNameForCurrentUser</code> needs a <code>name+updatedAt</code> index that is not in <span class="fname">firestore.indexes.json</span>.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>37</td>
-            <td>Two competing repetition mechanisms</td>
-            <td>Events carry a <code>recurrence</code> map (<code>weekly | monthly | every_other_day | custom_weekly | none</code>) expanded <strong>client-side</strong> &mdash; one stored doc, N rendered occurrences. <span class="fname">events_service.dart</span></td>
-            <td>Plans instead <strong>materialize real event docs</strong>, in batches chunked at 300, with an "update upcoming instances?" dialog. <span class="fname">plans_service.dart</span></td>
-            <td>Keep both, but give each a job and write it down: <strong>recurrence = one repeating event</strong> (a standing Tuesday session); <strong>Plans = a multi-week program</strong> of different workouts. Without a stated boundary these will collide &mdash; a recurring event inside a plan would double-render. Neither is averaged away.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>38</td>
-            <td>Account-type detection</td>
-            <td><code>accountType == 'gym'</code> &mdash; the field written at registration. <span class="fname">event_creator_page.dart</span>, <span class="fname">auth_service.dart</span></td>
-            <td>A three-way heuristic: <code>accountType=='gym'</code> <em>OR</em> non-empty <code>channelNames</code> <em>OR</em> the doc merely <em>contains</em> a <code>memberUserIds</code> key &mdash; because gym-only fields are never initialized at signup. <span class="fname">social_page.dart:117-155</span></td>
-            <td><code>accountType</code> is the single source of truth. Initialize <code>memberUserIds</code> and <code>channelNames</code> at registration and delete the heuristic. Related and worse: rules validate no field shapes at all, so a client can write <code>accountType: 'gym'</code> onto its own doc and become a gym.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>28</td><td>Goal check-ins: scheduled or not</td><td>Period-based counts, no schedule &mdash; he changed his mind mid-doc</td></tr>
+          <tr><td>29</td><td>Goal class: sketch vs final design</td><td>Final design; it shipped near-verbatim as goal.dart</td></tr>
+          <tr><td>30</td><td>Where goal business logic lives</td><td>GoalService. The code already agrees</td></tr>
+          <tr><td>31</td><td>Goal model vs a calendar product</td><td>Both correct. Keep goals and events separate &mdash; no hybrid</td></tr>
+          <tr><td>32</td><td><code>ResetPeriod.monthly</code></td><td>Code is wrong. Fix to a real calendar month</td></tr>
+          <tr><td>33</td><td>Goal history retention</td><td>Spec wins; wiping history on rename is a T1 defect</td></tr>
+          <tr><td>34</td><td>What "private" means</td><td>Two levels, one meaning. Public never means the world</td></tr>
+          <tr><td>35</td><td>Exercise / set schema</td><td>Requirement stands; the read path and per-set inputs are broken</td></tr>
+          <tr><td>36</td><td>Plans</td><td>Plans stay. Write the requirement retroactively</td></tr>
+          <tr><td>37</td><td>Two competing repetition mechanisms</td><td>Keep both: recurrence is one event, Plans is a program</td></tr>
+          <tr><td>38</td><td>Account-type detection</td><td><code>accountType</code> is the source of truth; delete the heuristic</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>28 &middot; Goal check-ins: scheduled or not <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> opening narrative: users "set a recurring set of days and times that they go and checkup on the goal". <span class="fname">Goal Requirements</span></p>
+        <p><strong>B:</strong> same file, answers #3 and #5: "Originally I was thinking they should be but <strong>I've changed my mind</strong>&hellip; The more important time frame will be the reset period"; "<code>checkupFrequency</code> can be scrapped&hellip; I am scrapping scheduled checkups." <span class="fname">Goal Requirements</span></p>
+        <p><strong>Resolution:</strong> this is <strong>him changing his mind mid-document</strong>, not a real disagreement. Latest position is current: period-based check-in counts, no schedule. <span class="fname">Forge_Goal_Class_Design</span> confirms by omitting any schedule, and the code implements it.</p>
+      </div>
+
+      <div class="card">
+        <h3>29 &middot; Goal class: first sketch vs final design <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> first sketch: <code>checkupFrequency: Int</code>, <code>resetFrequency: Float?</code> (an arbitrary numeric period), <code>nextCheckupStatus: Bool</code>, <code>checkupHistory</code>, with generic <code>set__</code>/<code>get__</code>. <span class="fname">Goal Requirements</span></p>
+        <p><strong>B:</strong> final: <code>requiredCheckupsPerPeriod: int</code>, <code>resetPeriod: ResetPeriod</code> (enum: daily/weekly/biweekly/monthly), <code>currentCheckupsCompleted</code>, <code>periodHistory: List&lt;GoalPeriodRecord&gt;</code>. <span class="fname">Forge_Goal_Class_Design</span></p>
+        <p><strong>Resolution:</strong> final design. It is <strong>explicitly the resolution of the sketch</strong> &mdash; the same file's 18 answers scrap the fields listed above them &mdash; and it shipped near-verbatim as <span class="fname">lib/models/goal.dart</span>. Known cost, accept it: the enum cannot express an arbitrary period; "6 workouts every 2 weeks" survives only because <code>biweekly</code> exists.</p>
+      </div>
+
+      <div class="card">
+        <h3>30 &middot; Where goal business logic lives <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> the <code>Goal</code> class owns <code>checkup()</code> and a private <code>reset()</code>. <span class="fname">Goal Requirements</span></p>
+        <p><strong>B:</strong> "the Goal class should be a <strong>DATA MODEL only</strong>" &mdash; period resetting and archiving of expired goals belong in a separate <code>GoalService</code>. <span class="fname">Forge_Goal_Class_Design</span></p>
+        <p><strong>Resolution:</strong> GoalService. Later, more considered, and <strong>the code already agrees</strong> &mdash; <span class="fname">goals_service.dart</span> (292 lines) holds the transactional check-in and period rollover. This one is closed.</p>
+      </div>
+
+      <div class="card">
+        <h3>31 &middot; Goal model vs a calendar-centric product <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> explicit design axis: "<strong>Period-based progress (NOT scheduled timestamps)</strong>". <span class="fname">Forge_Goal_Class_Design</span></p>
+        <p><strong>B:</strong> the rest of the app is thoroughly timestamp-driven &mdash; events with <code>startAt</code>, day/multi/month calendar views, "events happening that day". <span class="fname">Forge Initial Requirements</span>, <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> <strong>both are correct for their own domain.</strong> A goal is a habit counter; an event is an appointment. Do <em>not</em> merge them into a hybrid &mdash; that is exactly the mushy middle to avoid. State the boundary once in the data model doc: goals never appear on the calendar grid, events never satisfy a check-in automatically.</p>
+      </div>
+
+      <div class="card">
+        <h3>32 &middot; <code>ResetPeriod.monthly</code> <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> an enum member named <code>monthly</code>, alongside daily/weekly/biweekly &mdash; implying a calendar month. <span class="fname">Forge_Goal_Class_Design</span></p>
+        <p><strong>B:</strong> implemented as a flat <strong>30-day add</strong>. <span class="fname">goals_service.dart</span> <code>_periodEnd</code></p>
+        <p><strong>Resolution:</strong> the code is ground truth about <em>what exists</em>, not about what is right. A "monthly" goal that drifts five days a year will be reported as a bug by the first beta tester. Fix to a real calendar month. Cheap, contained.</p>
+      </div>
+
+      <div class="card">
+        <h3>33 &middot; Goal history retention <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "at reset the current progress is <strong>stored to history</strong> and a new period begins automatically"; <code>periodHistory</code> feeds <code>getOverallCompletionRate()</code> and "some way that the user can see the entire checkup history". <span class="fname">Forge_Goal_Class_Design</span>, <span class="fname">Goal Requirements #12</span></p>
+        <p><strong>B:</strong> <code>updateGoalForCurrentUser</code> <strong>wipes <code>periodHistory</code> and resets <code>currentCheckupsCompleted</code> to 0</strong> &mdash; renaming a goal destroys every period it ever recorded. Documented in-code as "Edit behavior (v1)". <span class="fname">goals_service.dart</span></p>
+        <p><strong>Resolution:</strong> spec wins; the code is a defect, not a decision. Silent destruction of user history on a rename is the kind of thing that ends a beta. T1 fix: only recompute periods when the period-defining fields actually change.</p>
+      </div>
+
+      <div class="card">
+        <h3>34 &middot; What "private" means <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> basic event: "set public or private view status" &mdash; visibility not scoped to anyone. Workout event: public = "<strong>all friends</strong> can view", private = "only invitees can view". Two different meanings <em>in one document</em>. <span class="fname">Forge Initial Requirements</span></p>
+        <p><strong>B:</strong> "different <strong>levels</strong> of visibility, <strong>including</strong> public or private" &mdash; implies three or more, none of them enumerated. <span class="fname">Final Specs</span>. Code: a single <code>isPublic</code> bool; rules grant read to owner, invitee, or (<code>isPublic</code> &amp;&amp; (owner is my friend || owner is a gym I joined)). <span class="fname">firestore.rules</span></p>
+        <p><strong>Resolution:</strong> code wins: <strong>two levels, one meaning.</strong> "Public" means visible to your friends and to fellow members of gyms you belong to &mdash; <strong>never to the world</strong>. The Final Specs' third level was never defined and is dropped. Write this sentence once in the data model doc and stop paraphrasing it.</p>
+      </div>
+
+      <div class="card">
+        <h3>35 &middot; Exercise / set schema <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "users can add <strong>reps and weight for each set</strong>"; "exercises, sets, reps, and weights defined during creation and <strong>edited later</strong>". A three-level hierarchy: workout &rarr; exercise &rarr; set{reps, weight}. <span class="fname">Final Specs</span></p>
+        <p><strong>B:</strong> the schema <strong>does not round-trip</strong>: the creator writes <code>setDetails: [{reps, weight}]</code> (<span class="fname">event_creator_page.dart:1689</span>) while <code>_mapDocToEvent</code> flattens to <code>{name, sets, weight}</code>, reading a top-level <code>weight</code> key <strong>that is never written</strong> &mdash; so the calendar always renders blank weights. And per-set editing is unbuilt: every set gets identical reps/weight (<span class="fname">:1650</span>).</p>
+        <p><strong>Resolution:</strong> requirement stands; the code is broken. Two separate T1 fixes: repair the read path so weights display, and build per-set inputs. Note the doc says "edited later" &mdash; the edit sheet exists, so only the data shape is at fault.</p>
+      </div>
+
+      <div class="card">
+        <h3>36 &middot; Plans <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> <strong>no prose document anywhere describes Plans.</strong> Not in the requirements docs, not in the vision docs, not in the senior-project set.</p>
+        <p><strong>B:</strong> a <code>users/{uid}/plans/{planId}</code> collection with its own rules, an events-by-<code>planId</code> composite index, and 496 + 658 lines of shipped service and UI. <span class="fname">plans_service.dart</span>, <span class="fname">plan_creator_sheet.dart</span></p>
+        <p><strong>Resolution:</strong> Plans exist and stay &mdash; they are the multi-week program concept the notes kept circling (record 23). Write the requirement retroactively. Known defects to carry: generation cap is 250 on create but <strong>180 on update</strong>, plan lookup is by <em>name</em> (ambiguous with duplicates), and <code>findPlanByNameForCurrentUser</code> needs a <code>name+updatedAt</code> index that is not in <span class="fname">firestore.indexes.json</span>.</p>
+      </div>
+
+      <div class="card">
+        <h3>37 &middot; Two competing repetition mechanisms <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> events carry a <code>recurrence</code> map (<code>weekly | monthly | every_other_day | custom_weekly | none</code>) expanded <strong>client-side</strong> &mdash; one stored doc, N rendered occurrences. <span class="fname">events_service.dart</span></p>
+        <p><strong>B:</strong> Plans instead <strong>materialize real event docs</strong>, in batches chunked at 300, with an "update upcoming instances?" dialog. <span class="fname">plans_service.dart</span></p>
+        <p><strong>Resolution:</strong> keep both, but give each a job and write it down: <strong>recurrence = one repeating event</strong> (a standing Tuesday session); <strong>Plans = a multi-week program</strong> of different workouts. Without a stated boundary these will collide &mdash; a recurring event inside a plan would double-render. Neither is averaged away.</p>
+      </div>
+
+      <div class="card">
+        <h3>38 &middot; Account-type detection <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> <code>accountType == 'gym'</code> &mdash; the field written at registration. <span class="fname">event_creator_page.dart</span>, <span class="fname">auth_service.dart</span></p>
+        <p><strong>B:</strong> a three-way heuristic: <code>accountType=='gym'</code> <em>OR</em> non-empty <code>channelNames</code> <em>OR</em> the doc merely <em>contains</em> a <code>memberUserIds</code> key &mdash; because gym-only fields are never initialized at signup. <span class="fname">social_page.dart:117-155</span></p>
+        <p><strong>Resolution:</strong> <code>accountType</code> is the single source of truth. Initialize <code>memberUserIds</code> and <code>channelNames</code> at registration and delete the heuristic. Related and worse: rules validate no field shapes at all, so a client can write <code>accountType: 'gym'</code> onto its own doc and become a gym.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="arch">
     <h2>4. Architecture &amp; tech</h2>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>39</td>
-            <td>Direct-to-Firebase vs an API gateway</td>
-            <td>The Flutter client talks <strong>directly</strong> to Firebase over HTTPS via the Firebase SDKs. <span class="fname">Final Specs</span>, and ~16,300 lines of code that do exactly this.</td>
-            <td>"Change architecture to light-weight frontend and an <strong>API-gateway</strong> to handle data fetching&hellip; so that the data storage is completely abstracted from the frontend" &mdash; for events, friends, and posts. <span class="fname">Ideas for Future</span>. Plus the never-revisited hedge "Google Firebase services (unless research points to better options)" and a Week 6 task "research cloud service solutions". <span class="fname">Forge Proposal</span></td>
-            <td>Flutter + Firebase is <strong>locked</strong> &mdash; the app runs on it and a solo dev does not rewrite a working backend. The gateway is a <em>declared future reversal</em>, not a live conflict: <span class="tag tag-deferred">DEFERRED</span> with a trigger &mdash; a second client that isn't Flutter, or Firestore read cost past $25/mo. The research caveat expired by inertia; we are making that explicit. Per D1.</td>
-            <td><span class="tag tag-locked">LOCKED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>40</td>
-            <td>State management</td>
-            <td>"No state management package installed", "no clear pattern established" <span class="fname">ARCHITECTURE_ANALYSIS.md</span> &mdash; with the recommendation "choose and implement state management (<strong>Riverpod recommended</strong>)", repeated as "if you want to use Riverpod (already referenced), add it to pubspec.yaml" <span class="fname">PROJECT_STATUS.md</span></td>
-            <td>Code: <code>setState</code> + raw <code>StreamBuilder</code> everywhere, two hand-rolled singletons, <span class="fname">di_providers.dart</span> empty, no repository interfaces. <strong>Riverpod was recommended twice and adopted zero times</strong> across six months of shipping.</td>
-            <td><strong>Keep <code>setState</code> + <code>StreamBuilder</code>. Do not do a Riverpod migration.</strong> A working app does not need rewriting for a solo dev, and the recommendation losing twice to reality is itself the signal. Introduce Riverpod <em>only</em> where state genuinely crosses screens. Road not taken: a clean Riverpod + DI + repository rewrite. <strong>This is the most reversible-but-expensive call in the plan.</strong> Per D5.</td>
-            <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td><span class="pill pill-warn">Yes</span></td>
-          </tr>
-
-          <tr>
-            <td>41</td>
-            <td>Where services live</td>
-            <td>"Services at <span class="fname">lib/services/</span> &mdash; <strong>consider moving</strong> to <span class="fname">lib/core/services/</span> for consistency". <span class="fname">ARCHITECTURE_ANALYSIS.md §4</span></td>
-            <td>Same file, later section: "Services Location: <strong>Keep at lib/services/ OR move</strong> to lib/core/services/" &mdash; it raises the question twice and declines to decide both times, listing Option A and Option B structures. <span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
-            <td>Keep <span class="fname">lib/services/</span>. Everything is already there, moving 15 files buys nothing, and this is a free decision that has been costing attention for six months. Decided so it stops coming back.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>42</td>
-            <td>Privacy stance on user documents</td>
-            <td>"Anyone can read user accounts (needed for friend lists, gym lists, etc.)" &mdash; <code>allow read: if true</code> on <code>/users/{userId}</code>, defended by an inline comment. <span class="fname">FIRESTORE_RULES_SETUP.md</span>, <span class="fname">firestore.rules</span></td>
-            <td>The same file makes <code>user_preferences</code> strictly owner-only, and elsewhere offers <code>allow read: if true</code> only as a troubleshooting escape hatch. Meanwhile the app <strong>only ever reads user docs while signed in</strong>. <span class="fname">code</span></td>
-            <td>The justification is false. <strong>The entire user table &mdash; emails, contact info, friend graphs &mdash; is world-readable unauthenticated, with no App Check.</strong> This is the single highest-severity item in the project. T0/T1: change to <code>if request.auth != null</code> and split a public profile projection from <code>email</code>/<code>contactInfo</code>. Note the committed Firebase config files are <em>normal and fine</em> &mdash; the exposure is the rules file, not the keys.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>43</td>
-            <td>Where the docs are hosted</td>
-            <td>Firebase Hosting is already configured and cached &mdash; <span class="fname">firebase.json</span> points at <span class="fname">build/web</span>, and <span class="fname">.firebase/hosting.*.cache</span> exists.</td>
-            <td>Docs render via <strong>Cloudflare Pages</strong>, for consistency with his other projects. D9</td>
-            <td>Cloudflare Pages for this docs site. Firebase Hosting stays <em>only</em> if it turns out to be load-bearing for the app's own web build &mdash; which, given row 3 (mobile only), it probably is not.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>44</td>
-            <td>The clean-architecture layer contract</td>
-            <td>Feature-based clean architecture with <code>data</code>/<code>domain</code>/<code>presentation</code> layers per feature; recommendations to "set up proper dependency injection" and "create base classes/interfaces for repositories"; verdict "<strong>KEEP &amp; REFINE / DON'T START OVER</strong>". <span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
-            <td>14 of 15 services are <strong>top-level free functions</strong> calling <code>FirebaseAuth.instance.currentUser</code> directly. No repository interface, no seam for testing. The one feature with a full MVVM skeleton &mdash; feed &mdash; has <strong>seven 0-byte files</strong>. <span class="fname">code</span></td>
-            <td>Do <strong>not</strong> retrofit the layer contract; it lost to reality and rewriting it buys a solo dev nothing this quarter. <strong>Delete the empty scaffold</strong> (feed data/domain/viewmodel, <span class="fname">core/errors</span>, <span class="fname">core/util</span>, <span class="fname">di_providers.dart</span>) so a directory tree stops implying a plan nobody is following. Road not taken: full clean architecture.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>39</td><td>Direct-to-Firebase vs an API gateway</td><td>Flutter + Firebase locked; the gateway is deferred</td></tr>
+          <tr><td>40</td><td>State management <span class="pill pill-warn">needs your call</span></td><td>Keep <code>setState</code> + <code>StreamBuilder</code>. No Riverpod migration</td></tr>
+          <tr><td>41</td><td>Where services live</td><td>Keep <span class="fname">lib/services/</span>. Decided so it stops coming back</td></tr>
+          <tr><td>42</td><td>Privacy stance on user documents</td><td>World-readable user table &mdash; highest-severity item. Lock it down</td></tr>
+          <tr><td>43</td><td>Where the docs are hosted</td><td>Cloudflare Pages for this docs site</td></tr>
+          <tr><td>44</td><td>The clean-architecture layer contract</td><td>Do not retrofit. Delete the empty scaffold</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>39 &middot; Direct-to-Firebase vs an API gateway <span class="tag tag-locked">LOCKED</span></h3>
+        <p><strong>A:</strong> the Flutter client talks <strong>directly</strong> to Firebase over HTTPS via the Firebase SDKs. <span class="fname">Final Specs</span>, and ~16,300 lines of code that do exactly this.</p>
+        <p><strong>B:</strong> "change architecture to light-weight frontend and an <strong>API-gateway</strong> to handle data fetching&hellip; so that the data storage is completely abstracted from the frontend" &mdash; for events, friends, and posts. <span class="fname">Ideas for Future</span>. Plus the never-revisited hedge "Google Firebase services (unless research points to better options)" and a Week 6 task "research cloud service solutions". <span class="fname">Forge Proposal</span></p>
+        <p><strong>Resolution:</strong> Flutter + Firebase is <strong>locked</strong> &mdash; the app runs on it and a solo dev does not rewrite a working backend. The gateway is a <em>declared future reversal</em>, not a live conflict: <span class="tag tag-deferred">DEFERRED</span>. The research caveat expired by inertia; we are making that explicit. Per D1.</p>
+        <p><strong>Revisit when:</strong> a second client that isn't Flutter appears, or Firestore read cost passes $25/mo.</p>
+      </div>
+
+      <div class="card">
+        <h3>40 &middot; State management <span class="tag tag-proposed">PROPOSED</span> <span class="pill pill-warn">needs your call</span></h3>
+        <p><strong>A:</strong> "no state management package installed", "no clear pattern established" <span class="fname">ARCHITECTURE_ANALYSIS.md</span> &mdash; with the recommendation "choose and implement state management (<strong>Riverpod recommended</strong>)", repeated as "if you want to use Riverpod (already referenced), add it to pubspec.yaml" <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> code: <code>setState</code> + raw <code>StreamBuilder</code> everywhere, two hand-rolled singletons, <span class="fname">di_providers.dart</span> empty, no repository interfaces. <strong>Riverpod was recommended twice and adopted zero times</strong> across six months of shipping.</p>
+        <p><strong>Resolution:</strong> <strong>keep <code>setState</code> + <code>StreamBuilder</code>. Do not do a Riverpod migration.</strong> A working app does not need rewriting for a solo dev, and the recommendation losing twice to reality is itself the signal. Introduce Riverpod <em>only</em> where state genuinely crosses screens. Road not taken: a clean Riverpod + DI + repository rewrite. <strong>This is the most reversible-but-expensive call in the plan.</strong> Per D5.</p>
+      </div>
+
+      <div class="card">
+        <h3>41 &middot; Where services live <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "services at <span class="fname">lib/services/</span> &mdash; <strong>consider moving</strong> to <span class="fname">lib/core/services/</span> for consistency". <span class="fname">ARCHITECTURE_ANALYSIS.md §4</span></p>
+        <p><strong>B:</strong> same file, later section: "Services Location: <strong>Keep at lib/services/ OR move</strong> to lib/core/services/" &mdash; it raises the question twice and declines to decide both times, listing Option A and Option B structures. <span class="fname">ARCHITECTURE_ANALYSIS.md</span></p>
+        <p><strong>Resolution:</strong> keep <span class="fname">lib/services/</span>. Everything is already there, moving 15 files buys nothing, and this is a free decision that has been costing attention for six months. Decided so it stops coming back.</p>
+      </div>
+
+      <div class="card">
+        <h3>42 &middot; Privacy stance on user documents <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "anyone can read user accounts (needed for friend lists, gym lists, etc.)" &mdash; <code>allow read: if true</code> on <code>/users/{userId}</code>, defended by an inline comment. <span class="fname">FIRESTORE_RULES_SETUP.md</span>, <span class="fname">firestore.rules</span></p>
+        <p><strong>B:</strong> the same file makes <code>user_preferences</code> strictly owner-only, and elsewhere offers <code>allow read: if true</code> only as a troubleshooting escape hatch. Meanwhile the app <strong>only ever reads user docs while signed in</strong>. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> the justification is false. <strong>The entire user table &mdash; emails, contact info, friend graphs &mdash; is world-readable unauthenticated, with no App Check.</strong> This is the single highest-severity item in the project. T0/T1: change to <code>if request.auth != null</code> and split a public profile projection from <code>email</code>/<code>contactInfo</code>. Note the committed Firebase config files are <em>normal and fine</em> &mdash; the exposure is the rules file, not the keys.</p>
+      </div>
+
+      <div class="card">
+        <h3>43 &middot; Where the docs are hosted <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> Firebase Hosting is already configured and cached &mdash; <span class="fname">firebase.json</span> points at <span class="fname">build/web</span>, and <span class="fname">.firebase/hosting.*.cache</span> exists.</p>
+        <p><strong>B:</strong> docs render via <strong>Cloudflare Pages</strong>, for consistency with his other projects. D9</p>
+        <p><strong>Resolution:</strong> Cloudflare Pages for this docs site. Firebase Hosting stays <em>only</em> if it turns out to be load-bearing for the app's own web build &mdash; which, given record 3 (mobile only), it probably is not.</p>
+      </div>
+
+      <div class="card">
+        <h3>44 &middot; The clean-architecture layer contract <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> feature-based clean architecture with <code>data</code>/<code>domain</code>/<code>presentation</code> layers per feature; recommendations to "set up proper dependency injection" and "create base classes/interfaces for repositories"; verdict "<strong>KEEP &amp; REFINE / DON'T START OVER</strong>". <span class="fname">ARCHITECTURE_ANALYSIS.md</span></p>
+        <p><strong>B:</strong> 14 of 15 services are <strong>top-level free functions</strong> calling <code>FirebaseAuth.instance.currentUser</code> directly. No repository interface, no seam for testing. The one feature with a full MVVM skeleton &mdash; feed &mdash; has <strong>seven 0-byte files</strong>. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> do <strong>not</strong> retrofit the layer contract; it lost to reality and rewriting it buys a solo dev nothing this quarter. <strong>Delete the empty scaffold</strong> (feed data/domain/viewmodel, <span class="fname">core/errors</span>, <span class="fname">core/util</span>, <span class="fname">di_providers.dart</span>) so a directory tree stops implying a plan nobody is following. Road not taken: full clean architecture.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="stale">
     <h2>5. Docs vs code &mdash; staleness</h2>
     <div class="callout warn">
-      <strong>Every row in this section resolves the same way: the code wins and the document is historical.</strong> The four markdown files in <span class="fname">forge_senior_project_version/</span> describe the repo on 2026-02-07 and were never updated. They understate the app by roughly the entire build. Do not plan from them.
+      <strong>Every record in this section resolves the same way: the code wins and the document is historical.</strong> The four markdown files in <span class="fname">forge_senior_project_version/</span> describe the repo on 2026-02-07 and were never updated. They understate the app by roughly the entire build. Do not plan from them.
     </div>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>45</td>
-            <td>"Production-Ready Core"</td>
-            <td>"Current Status: <strong>Production-Ready Core</strong>", "No urgent fixes required", "The structure is clean, professional, and ready for growth!" <span class="fname">PROJECT_STATUS.md</span></td>
-            <td>Debug-signed release builds, <code>com.example.*</code> bundle ids on both platforms, a world-readable user table, zero tests, no moderation, no account deletion, no push. Not shippable to any store. <span class="fname">code</span></td>
-            <td>The most misleading file in the repo &mdash; and it contradicts <em>itself</em>, since the same file lists every service as an empty placeholder. Mark it historical or delete it. Never say the app is nearly done.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>46</td>
-            <td>Which services are empty</td>
-            <td>"Empty Service Files (12 files)&hellip; <span class="fname">auth_service.dart</span>, <span class="fname">search_service.dart</span>" and similar. <span class="fname">PROJECT_STATUS.md</span></td>
-            <td>Both are <strong>fully implemented</strong> (67 and 62 lines). The real count is <strong>21</strong> 0-byte files, and the doc omits all ten under <span class="fname">core/</span>. <span class="fname">code</span></td>
-            <td>Code wins. The four genuinely empty services that matter are <span class="fname">push_service</span>, <span class="fname">moderation_service</span>, <span class="fname">presence_service</span>, <span class="fname">link_preview_service</span> &mdash; and the first two are store blockers (row 49).</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>47</td>
-            <td>Placeholder file counts</td>
-            <td>Headings claim "Empty Service Files (<strong>12 files</strong>)" and "Empty Feature Files (<strong>7 files</strong>)". <span class="fname">PROJECT_STATUS.md</span></td>
-            <td>The lists directly beneath those headings contain <strong>6</strong> and <strong>6</strong> entries. Self-contradictory within one file. <span class="fname">PROJECT_STATUS.md</span></td>
-            <td>Neither number is right. 21 of 58 <span class="fname">.dart</span> files are 0 bytes. Use the code's count.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>48</td>
-            <td>"Flutter analyze: No issues found!"</td>
-            <td>Claimed as a quality gate: zero lint errors, zero compile errors, analyze clean. <span class="fname">PROJECT_STATUS.md</span></td>
-            <td><span class="fname">analysis_options.yaml</span> is <strong>one line</strong> &mdash; <code>include: package:flutter_lints/flutter.yaml</code> &mdash; with <code>strict-casts</code>, <code>strict-raw-types</code> and <code>strict-inference</code> all off. Which is exactly why the unchecked <code>as Timestamp</code> and <code>as List&lt;String&gt;</code> casts compile clean. <span class="fname">code</span></td>
-            <td>The claim is technically true and completely uninformative: it measures the lint config, not the code. <strong>Never cite "analyze is clean" as evidence of anything</strong> in any doc. Turn on <code>strict-casts</code> and expect it to light up.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>49</td>
-            <td>"Intentional placeholders"</td>
-            <td>"These are <strong>intentional placeholders</strong>&hellip; They won't break the app." <span class="fname">PROJECT_STATUS.md</span></td>
-            <td><span class="fname">push_service.dart</span> and <span class="fname">moderation_service.dart</span> being empty are <strong>two App Store review blockers</strong> (guideline 1.2 report/block for UGC; silence on every invite and DM). <span class="fname">code</span></td>
-            <td>Not cosmetic. Both are T1 line items in the plan, not "placeholders".</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>50</td>
-            <td>Feed status</td>
-            <td>Completed: "Feed page <strong>initial implementation</strong>". <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td><span class="fname">feed_page.dart</span> is <strong>1,333 lines</strong> and fully live &mdash; next-workout card, goal check-in rings, friends list, merged updates stream, like and comment on posts. <span class="fname">code</span></td>
-            <td>Massively understated. Code wins. (Real feed defects to carry instead: the comment sheet's "Done" button silently discards the typed comment at <span class="fname">:779</span>, and ~135 lines of dead card widgets with a mock image placeholder.)</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>51</td>
-            <td>Service layer / backend status</td>
-            <td>"Service layer implementation", "state management", "<strong>backend integration</strong>" all listed as In progress / Planned. <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td>Eleven working services on live Firestore &mdash; events (803 lines), plans (496), goals (292), DMs (408), friends, gyms, channel posts, updates, search, avatars, auth. <span class="fname">code</span></td>
-            <td>Both are essentially done. The doc describes a pre-backend app that stopped existing in February. (State management is the one item that really did stay unresolved &mdash; see row 40.)</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>52</td>
-            <td>Routing</td>
-            <td>"<span class="fname">router.dart</span> is defined with GoRouter but <strong>not used</strong>"; "<span class="fname">main.dart</span> bypasses router"; "<code>go_router</code> imported but not in pubspec.yaml". <span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
-            <td>"Fixed <span class="fname">main.dart</span> to use router properly&hellip; Router is now functional and integrated" <span class="fname">PROJECT_STATUS.md</span> &mdash; and the code confirms all three were fixed long ago (<code>go_router ^14.0.0</code> resolved 14.8.1, 5 shell routes + auth redirect).</td>
-            <td>Both docs are dead; the code settles it. STATUS reads as the fix report for ARCH's findings and both shipped in the same commit era.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>53</td>
-            <td>Auth status</td>
-            <td>"We are <strong>building</strong> the login screen"; "<span class="fname">auth_service.dart</span> exists but is <strong>empty</strong>"; "<span class="fname">main.dart</span> currently calls <code>signInAnonymously()</code>"; "Profile page has edit UI but <strong>no Firestore persistence</strong>". <span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span></td>
-            <td>All four are obsolete: login and register are complete, <code>AuthService</code> is implemented, anonymous sign-in is gone, and profile edits persist. The very commit that added this doc is titled "added login/out, registering, account editing". <span class="fname">code</span></td>
-            <td>A mid-session handoff note that was overtaken <em>inside the same commit</em>. Historical. One design decision from it does survive and is still true: registration branches on account type.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>54</td>
-            <td>Goals in the rules doc</td>
-            <td>The pasted rules block contains <strong>no <code>goals</code> match block</strong>. <span class="fname">FIRESTORE_RULES_SETUP.md</span></td>
-            <td>The same file's summary asserts "Goals: users can read/write their own goals in <code>users/{userId}/goals/{goalId}</code>". <span class="fname">FIRESTORE_RULES_SETUP.md</span></td>
-            <td>The real <span class="fname">firestore.rules</span> does contain the goals block, so the summary line is the later edit and the pasted block is stale. Code wins.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>55</td>
-            <td>Rules doc coverage</td>
-            <td>Documents four rule blocks: <code>users</code>, <code>users/*/events</code>, <code>users/*/channelPosts</code> (+comments), <code>user_preferences</code>. It is the only markdown that was ever updated &mdash; five commits. <span class="fname">FIRESTORE_RULES_SETUP.md</span></td>
-            <td>The real <span class="fname">firestore.rules</span> (206 lines) additionally has <code>goals</code>, <code>plans</code>, and <code>directThreads</code> + <code>messages</code>. And <code>user_preferences</code> &mdash; the one collection the doc covers fully &mdash; is <strong>referenced nowhere in <span class="fname">lib/</span></strong>. A dead ruleset.</td>
-            <td>Even the living doc drifted. Delete it; <span class="fname">firestore.rules</span> is the documentation. Drop the dead <code>user_preferences</code> rules while you are in there.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>56</td>
-            <td>README</td>
-            <td>"# forge_senior_project_version / A new Flutter project." &mdash; 55 bytes. <span class="fname">README.md</span></td>
-            <td>Six months of work and ~16,300 lines. <span class="fname">code</span></td>
-            <td>The untouched <code>flutter create</code> stub. Nobody outside the course was ever expected to clone this. Rewrite it when the directory is renamed to <span class="fname">app/</span> (D7).</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>57</td>
-            <td>Mockups</td>
-            <td>Next steps are "Review and implement Feed page <strong>mockups</strong>" and "Implement remaining page mockups in order" <span class="fname">PROJECT_SUMMARY.md</span>; a "full draft of page UIs and a full <strong>style guide</strong>" is scheduled for Week 4 <span class="fname">Forge Proposal</span>. The course rubric also requires a GUI prototype (screenshot, drawing, pic).</td>
-            <td><strong>No image, mockup, wireframe, or style guide exists anywhere</strong> &mdash; zero embedded images across all 19 source documents, and nothing in the repo. The two large .docx files are large because of embedded fonts, not media. <span class="fname">intake A, intake B</span></td>
-            <td>The mockups are not in the source set. Either they live outside the repo or they were never made. This is a real gap, not a stale claim: <strong>there is no visual design reference of any kind</strong>, and the only concrete visual rule in the whole corpus is one font directive on an orphan page (row 27). Flagged as an open question on the <a href="index.html">source index</a>.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>45</td><td>"Production-Ready Core"</td><td>Most misleading file in the repo. Mark historical or delete</td></tr>
+          <tr><td>46</td><td>Which services are empty</td><td>Code wins. Four genuinely empty services matter</td></tr>
+          <tr><td>47</td><td>Placeholder file counts</td><td>Neither number is right &mdash; 21 of 58 files are 0 bytes</td></tr>
+          <tr><td>48</td><td>"Flutter analyze: No issues found!"</td><td>True but uninformative. Never cite it as evidence</td></tr>
+          <tr><td>49</td><td>"Intentional placeholders"</td><td>Not cosmetic &mdash; push and moderation are store blockers</td></tr>
+          <tr><td>50</td><td>Feed status</td><td>Massively understated. Code wins</td></tr>
+          <tr><td>51</td><td>Service layer / backend status</td><td>Both essentially done since February</td></tr>
+          <tr><td>52</td><td>Routing</td><td>Both docs are dead; the code settles it</td></tr>
+          <tr><td>53</td><td>Auth status</td><td>Historical &mdash; overtaken inside the same commit</td></tr>
+          <tr><td>54</td><td>Goals in the rules doc</td><td>The summary is right; the pasted block is stale</td></tr>
+          <tr><td>55</td><td>Rules doc coverage</td><td>Even the living doc drifted. Delete it</td></tr>
+          <tr><td>56</td><td>README</td><td>The <code>flutter create</code> stub. Rewrite it at the D7 rename</td></tr>
+          <tr><td>57</td><td>Mockups</td><td>No visual design reference exists anywhere. A real gap</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>45 &middot; "Production-Ready Core" <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "Current Status: <strong>Production-Ready Core</strong>", "No urgent fixes required", "The structure is clean, professional, and ready for growth!" <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> debug-signed release builds, <code>com.example.*</code> bundle ids on both platforms, a world-readable user table, zero tests, no moderation, no account deletion, no push. Not shippable to any store. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> the most misleading file in the repo &mdash; and it contradicts <em>itself</em>, since the same file lists every service as an empty placeholder. Mark it historical or delete it. Never say the app is nearly done.</p>
+      </div>
+
+      <div class="card">
+        <h3>46 &middot; Which services are empty <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "Empty Service Files (12 files)&hellip; <span class="fname">auth_service.dart</span>, <span class="fname">search_service.dart</span>" and similar. <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> both are <strong>fully implemented</strong> (67 and 62 lines). The real count is <strong>21</strong> 0-byte files, and the doc omits all ten under <span class="fname">core/</span>. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> code wins. The four genuinely empty services that matter are <span class="fname">push_service</span>, <span class="fname">moderation_service</span>, <span class="fname">presence_service</span>, <span class="fname">link_preview_service</span> &mdash; and the first two are store blockers (record 49).</p>
+      </div>
+
+      <div class="card">
+        <h3>47 &middot; Placeholder file counts <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> headings claim "Empty Service Files (<strong>12 files</strong>)" and "Empty Feature Files (<strong>7 files</strong>)". <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> the lists directly beneath those headings contain <strong>6</strong> and <strong>6</strong> entries. Self-contradictory within one file. <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>Resolution:</strong> neither number is right. 21 of 58 <span class="fname">.dart</span> files are 0 bytes. Use the code's count.</p>
+      </div>
+
+      <div class="card">
+        <h3>48 &middot; "Flutter analyze: No issues found!" <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> claimed as a quality gate: zero lint errors, zero compile errors, analyze clean. <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> <span class="fname">analysis_options.yaml</span> is <strong>one line</strong> &mdash; <code>include: package:flutter_lints/flutter.yaml</code> &mdash; with <code>strict-casts</code>, <code>strict-raw-types</code> and <code>strict-inference</code> all off. Which is exactly why the unchecked <code>as Timestamp</code> and <code>as List&lt;String&gt;</code> casts compile clean. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> the claim is technically true and completely uninformative: it measures the lint config, not the code. <strong>Never cite "analyze is clean" as evidence of anything</strong> in any doc. Turn on <code>strict-casts</code> and expect it to light up.</p>
+      </div>
+
+      <div class="card">
+        <h3>49 &middot; "Intentional placeholders" <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "these are <strong>intentional placeholders</strong>&hellip; They won't break the app." <span class="fname">PROJECT_STATUS.md</span></p>
+        <p><strong>B:</strong> <span class="fname">push_service.dart</span> and <span class="fname">moderation_service.dart</span> being empty are <strong>two App Store review blockers</strong> (guideline 1.2 report/block for UGC; silence on every invite and DM). <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> not cosmetic. Both are T1 line items in the plan, not "placeholders".</p>
+      </div>
+
+      <div class="card">
+        <h3>50 &middot; Feed status <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> completed: "Feed page <strong>initial implementation</strong>". <span class="fname">PROJECT_SUMMARY.md</span></p>
+        <p><strong>B:</strong> <span class="fname">feed_page.dart</span> is <strong>1,333 lines</strong> and fully live &mdash; next-workout card, goal check-in rings, friends list, merged updates stream, like and comment on posts. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> massively understated. Code wins. Real feed defects to carry instead: the comment sheet's "Done" button silently discards the typed comment at <span class="fname">:779</span>, and ~135 lines of dead card widgets with a mock image placeholder.</p>
+      </div>
+
+      <div class="card">
+        <h3>51 &middot; Service layer / backend status <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "service layer implementation", "state management", "<strong>backend integration</strong>" all listed as In progress / Planned. <span class="fname">PROJECT_SUMMARY.md</span></p>
+        <p><strong>B:</strong> eleven working services on live Firestore &mdash; events (803 lines), plans (496), goals (292), DMs (408), friends, gyms, channel posts, updates, search, avatars, auth. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> both are essentially done. The doc describes a pre-backend app that stopped existing in February. State management is the one item that really did stay unresolved &mdash; see record 40.</p>
+      </div>
+
+      <div class="card">
+        <h3>52 &middot; Routing <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "<span class="fname">router.dart</span> is defined with GoRouter but <strong>not used</strong>"; "<span class="fname">main.dart</span> bypasses router"; "<code>go_router</code> imported but not in pubspec.yaml". <span class="fname">ARCHITECTURE_ANALYSIS.md</span></p>
+        <p><strong>B:</strong> "fixed <span class="fname">main.dart</span> to use router properly&hellip; Router is now functional and integrated" <span class="fname">PROJECT_STATUS.md</span> &mdash; and the code confirms all three were fixed long ago (<code>go_router ^14.0.0</code> resolved 14.8.1, 5 shell routes + auth redirect).</p>
+        <p><strong>Resolution:</strong> both docs are dead; the code settles it. STATUS reads as the fix report for ARCH's findings and both shipped in the same commit era.</p>
+      </div>
+
+      <div class="card">
+        <h3>53 &middot; Auth status <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "we are <strong>building</strong> the login screen"; "<span class="fname">auth_service.dart</span> exists but is <strong>empty</strong>"; "<span class="fname">main.dart</span> currently calls <code>signInAnonymously()</code>"; "Profile page has edit UI but <strong>no Firestore persistence</strong>". <span class="fname">AUTH_IMPLEMENTATION_CONTEXT.md</span></p>
+        <p><strong>B:</strong> all four are obsolete: login and register are complete, <code>AuthService</code> is implemented, anonymous sign-in is gone, and profile edits persist. The very commit that added this doc is titled "added login/out, registering, account editing". <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> a mid-session handoff note that was overtaken <em>inside the same commit</em>. Historical. One design decision from it does survive and is still true: registration branches on account type.</p>
+      </div>
+
+      <div class="card">
+        <h3>54 &middot; Goals in the rules doc <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> the pasted rules block contains <strong>no <code>goals</code> match block</strong>. <span class="fname">FIRESTORE_RULES_SETUP.md</span></p>
+        <p><strong>B:</strong> the same file's summary asserts "Goals: users can read/write their own goals in <code>users/{userId}/goals/{goalId}</code>". <span class="fname">FIRESTORE_RULES_SETUP.md</span></p>
+        <p><strong>Resolution:</strong> the real <span class="fname">firestore.rules</span> does contain the goals block, so the summary line is the later edit and the pasted block is stale. Code wins.</p>
+      </div>
+
+      <div class="card">
+        <h3>55 &middot; Rules doc coverage <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> documents four rule blocks: <code>users</code>, <code>users/*/events</code>, <code>users/*/channelPosts</code> (+comments), <code>user_preferences</code>. It is the only markdown that was ever updated &mdash; five commits. <span class="fname">FIRESTORE_RULES_SETUP.md</span></p>
+        <p><strong>B:</strong> the real <span class="fname">firestore.rules</span> (206 lines) additionally has <code>goals</code>, <code>plans</code>, and <code>directThreads</code> + <code>messages</code>. And <code>user_preferences</code> &mdash; the one collection the doc covers fully &mdash; is <strong>referenced nowhere in <span class="fname">lib/</span></strong>. A dead ruleset.</p>
+        <p><strong>Resolution:</strong> even the living doc drifted. Delete it; <span class="fname">firestore.rules</span> is the documentation. Drop the dead <code>user_preferences</code> rules while you are in there.</p>
+      </div>
+
+      <div class="card">
+        <h3>56 &middot; README <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "# forge_senior_project_version / A new Flutter project." &mdash; 55 bytes. <span class="fname">README.md</span></p>
+        <p><strong>B:</strong> six months of work and ~16,300 lines. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> the untouched <code>flutter create</code> stub. Nobody outside the course was ever expected to clone this. Rewrite it when the directory is renamed to <span class="fname">app/</span> (D7).</p>
+      </div>
+
+      <div class="card">
+        <h3>57 &middot; Mockups <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> next steps are "Review and implement Feed page <strong>mockups</strong>" and "Implement remaining page mockups in order" <span class="fname">PROJECT_SUMMARY.md</span>; a "full draft of page UIs and a full <strong>style guide</strong>" is scheduled for Week 4 <span class="fname">Forge Proposal</span>. The course rubric also requires a GUI prototype (screenshot, drawing, pic).</p>
+        <p><strong>B:</strong> <strong>no image, mockup, wireframe, or style guide exists anywhere</strong> &mdash; zero embedded images across all 19 source documents, and nothing in the repo. The two large .docx files are large because of embedded fonts, not media. <span class="fname">intake A, intake B</span></p>
+        <p><strong>Resolution:</strong> the mockups are not in the source set. Either they live outside the repo or they were never made. This is a real gap, not a stale claim: <strong>there is no visual design reference of any kind</strong>, and the only concrete visual rule in the whole corpus is one font directive on an orphan page (record 27). Flagged as an open question on the <a href="index.html">source index</a>.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="process">
     <h2>6. Process</h2>
+
     <div class="tablewrap">
       <table>
-        <thead><tr><th>#</th><th>Topic</th><th>Position A (source)</th><th>Position B (source)</th><th>Resolution</th><th>Tag</th><th>Needs his input?</th></tr></thead>
+        <thead><tr><th>#</th><th>Topic</th><th>Resolution</th></tr></thead>
         <tbody>
-
-          <tr>
-            <td>58</td>
-            <td>Academic scaffolding vs a product plan</td>
-            <td>Scope governed by hours: "126 hours/person, that is 9 hours per week", "&gt;20 hours a week&hellip; you might have to reduce the scope". A week-numbered two-semester schedule with a literal "499B". I-Learn submission gates and a final presentation as a terminal deliverable. A <strong>requirements change freeze</strong> after week 10. Mandatory rubric sections &mdash; state-flow diagram, GUI prototype, Demo subsection, citations &mdash; none of which exist. <span class="fname">Forge Proposal</span>, <span class="fname">CSE499Requirements_updated</span></td>
-            <td>Forge is now a real product attempt, not a capstone. <span class="fname">Bigger Rec Manager Meeting</span>, D6, and the settled scope statement.</td>
-            <td><strong>Every academic artifact is dead.</strong> The hour budget, the week schedule, the change freeze, the missing rubric deliverables &mdash; none of it is debt and none of it appears in any deliverable. The schedule was explicitly non-binding even at the time ("not something you will be held to for a grade"). Road not taken: finishing the class deliverables.</td>
-            <td><span class="tag tag-locked">LOCKED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>59</td>
-            <td>Testing</td>
-            <td>"User-acceptance tests and unit tests" planned for the <strong>second semester</strong>; "I need to do research into testing suites and how to execute them". <span class="fname">Forge Proposal</span>. Plus the quality claims in row 48.</td>
-            <td><strong>There is no <span class="fname">test/</span> directory. Zero tests. Zero test files. 0% coverage.</strong> <code>flutter_test</code> is declared and unused; even the default <span class="fname">widget_test.dart</span> was deleted. No CI, no <span class="fname">.github/</span>. <span class="fname">code</span></td>
-            <td>It never happened. Zero tests is a T1 risk that gates every refactor in this ledger &mdash; rows 32, 33, 35, 38, 42 all change behaviour with no safety net. Start with the pure logic that has the worst failure mode: goal period rollover and recurrence expansion.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
-          <tr>
-            <td>60</td>
-            <td>Trainer research</td>
-            <td>"I shadowed the trainers at the gym and talked with them about this app and what they would like to see in it as a trainer, <strong>this feedback has been worked into the requirements and features I plan to implement</strong>." <span class="fname">Forge Proposal</span></td>
-            <td>The feedback exists <strong>nowhere in writing</strong>, and no trainer role, account type, or feature exists in any later doc or anywhere in the code. <span class="fname">intake A, intake B, code</span></td>
-            <td>Which requirements it produced is unrecoverable. Combined with row 1 (trainer platform cut), treat the trainer thread as closed. If the notes exist somewhere offline they are worth recovering before that decision hardens.</td>
-            <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="pill pill-good">No</span></td>
-          </tr>
-
+          <tr><td>58</td><td>Academic scaffolding vs a product plan</td><td>Every academic artifact is dead. None of it is debt</td></tr>
+          <tr><td>59</td><td>Testing</td><td>Never happened. Zero tests is a T1 risk</td></tr>
+          <tr><td>60</td><td>Trainer research</td><td>Unrecoverable. Treat the trainer thread as closed</td></tr>
         </tbody>
       </table>
+    </div>
+
+    <div class="grid">
+
+      <div class="card">
+        <h3>58 &middot; Academic scaffolding vs a product plan <span class="tag tag-locked">LOCKED</span></h3>
+        <p><strong>A:</strong> scope governed by hours: "126 hours/person, that is 9 hours per week", "&gt;20 hours a week&hellip; you might have to reduce the scope". A week-numbered two-semester schedule with a literal "499B". I-Learn submission gates and a final presentation as a terminal deliverable. A <strong>requirements change freeze</strong> after week 10. Mandatory rubric sections &mdash; state-flow diagram, GUI prototype, Demo subsection, citations &mdash; none of which exist. <span class="fname">Forge Proposal</span>, <span class="fname">CSE499Requirements_updated</span></p>
+        <p><strong>B:</strong> Forge is now a real product attempt, not a capstone. <span class="fname">Bigger Rec Manager Meeting</span>, D6, and the settled scope statement.</p>
+        <p><strong>Resolution:</strong> <strong>every academic artifact is dead.</strong> The hour budget, the week schedule, the change freeze, the missing rubric deliverables &mdash; none of it is debt and none of it appears in any deliverable. The schedule was explicitly non-binding even at the time ("not something you will be held to for a grade"). Road not taken: finishing the class deliverables.</p>
+      </div>
+
+      <div class="card">
+        <h3>59 &middot; Testing <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "user-acceptance tests and unit tests" planned for the <strong>second semester</strong>; "I need to do research into testing suites and how to execute them". <span class="fname">Forge Proposal</span>. Plus the quality claims in record 48.</p>
+        <p><strong>B:</strong> <strong>there is no <span class="fname">test/</span> directory. Zero tests. Zero test files. 0% coverage.</strong> <code>flutter_test</code> is declared and unused; even the default <span class="fname">widget_test.dart</span> was deleted. No CI, no <span class="fname">.github/</span>. <span class="fname">code</span></p>
+        <p><strong>Resolution:</strong> it never happened. Zero tests is a T1 risk that gates every refactor in this ledger &mdash; records 32, 33, 35, 38, 42 all change behaviour with no safety net. Start with the pure logic that has the worst failure mode: goal period rollover and recurrence expansion.</p>
+      </div>
+
+      <div class="card">
+        <h3>60 &middot; Trainer research <span class="tag tag-decided">DECIDED</span></h3>
+        <p><strong>A:</strong> "I shadowed the trainers at the gym and talked with them about this app and what they would like to see in it as a trainer, <strong>this feedback has been worked into the requirements and features I plan to implement</strong>." <span class="fname">Forge Proposal</span></p>
+        <p><strong>B:</strong> the feedback exists <strong>nowhere in writing</strong>, and no trainer role, account type, or feature exists in any later doc or anywhere in the code. <span class="fname">intake A, intake B, code</span></p>
+        <p><strong>Resolution:</strong> which requirements it produced is unrecoverable. Combined with record 1 (trainer platform cut), treat the trainer thread as closed. If the notes exist somewhere offline they are worth recovering before that decision hardens.</p>
+      </div>
+
     </div>
   </section>
 
   <section id="dropped">
     <h2>Things dropped without comment</h2>
-    <p>These are not contradictions exactly &mdash; they are scope that <em>evaporated</em>. Each appeared in an early document, was never argued against, never demoted to stretch, never deferred, and simply stopped being mentioned. Each already has a ledger row above; this table adds the one thing the notes never gave them: <strong>a stated trigger that would bring them back</strong>.</p>
+    <p>These are not contradictions exactly &mdash; they are scope that <em>evaporated</em>. Each appeared in an early document, was never argued against, never demoted to stretch, never deferred, and simply stopped being mentioned. Each already has a ledger record above; this table adds the one thing the notes never gave them: <strong>a stated trigger that would bring them back</strong>.</p>
     <div class="tablewrap">
       <table>
         <thead><tr><th>Item</th><th>Last seen in</th><th>Our call</th><th>Trigger to revive</th></tr></thead>
         <tbody>
           <tr>
-            <td>Gym map discovery (Pok&eacute;mon-Go style) <span class="small faint">row 6</span></td>
-            <td><span class="fname">AlpFit Overview</span> ("map view similar to pokemon go"), <span class="fname">AlpFit Mission</span> ("mapping system or a list at first")</td>
+            <td>Gym map discovery <span class="small faint">record 6</span></td>
+            <td><span class="fname">AlpFit Overview</span>, <span class="fname">AlpFit Mission</span></td>
             <td>Cut. Search only.</td>
-            <td>Beta testers can't find their gym by name, or a gym asks for a discovery surface. Requires geo data the product does not collect today.</td>
+            <td>Beta testers can't find their gym by name.</td>
           </tr>
           <tr>
-            <td>Movement insights <span class="small faint">row 4</span></td>
-            <td><span class="fname">AlpFit Overview</span> ("what has impacted it &mdash; a certain song, certain time, before or after another movement")</td>
+            <td>Movement insights <span class="small faint">record 4</span></td>
+            <td><span class="fname">AlpFit Overview</span></td>
             <td>Cut. Violates the stated anti-scope.</td>
-            <td>He decides Forge tracks performance, not just plans it &mdash; a different product.</td>
+            <td>He decides Forge tracks performance.</td>
           </tr>
           <tr>
-            <td>Max / PR tracking <span class="small faint">row 4</span></td>
-            <td><span class="fname">AlpFit Overview</span> ("track maxes on each movement")</td>
+            <td>Max / PR tracking <span class="small faint">record 4</span></td>
+            <td><span class="fname">AlpFit Overview</span></td>
             <td>Cut. Same anti-scope.</td>
-            <td>Same as above. Note it needs the movement catalog first &mdash; you cannot track a max against a free-text string.</td>
+            <td>Same as movement insights.</td>
           </tr>
           <tr>
-            <td>Movement / exercise database <span class="small faint">rows 4, 35</span></td>
-            <td><span class="fname">AlpFit Overview</span> ("aspect to be completed"), <span class="fname">Forge Proposal</span> ("free, I will create this or find a free API")</td>
-            <td>Cut. Exercise names stay free text, as the code already does.</td>
-            <td>Free-text names make the data unusable for something he wants &mdash; e.g. "who else at my gym is benching today". That question is the trigger.</td>
+            <td>Movement / exercise database <span class="small faint">records 4, 35</span></td>
+            <td><span class="fname">AlpFit Overview</span>, <span class="fname">Forge Proposal</span></td>
+            <td>Cut. Exercise names stay free text.</td>
+            <td>Free text blocks a question he wants answered.</td>
           </tr>
           <tr>
-            <td>Calendar source filtering <span class="small faint">row 15</span></td>
-            <td><span class="fname">Forge Initial Requirements</span> (explicit requirement), <span class="fname">Final Specs</span> (assumed clause only), <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td><strong>Keep and build.</strong> The only revived item here &mdash; the UI already ships and is fake.</td>
-            <td>Already fired. A hardcoded "Friend 1 / Ethan / Gym 1" popup is in the app right now. Wire it or delete it before any beta.</td>
+            <td>Calendar source filtering <span class="small faint">record 15</span></td>
+            <td><span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span>, <span class="fname">PROJECT_SUMMARY.md</span></td>
+            <td><strong>Keep and build.</strong> The only revival here.</td>
+            <td>Already fired &mdash; the fake popup ships today.</td>
           </tr>
           <tr>
-            <td>Workout co-editing <span class="small faint">row 17</span></td>
-            <td><span class="fname">Forge Initial Requirements</span> ("invite friends to edit workout")</td>
-            <td>Cut. Rules make events single-owner by construction.</td>
-            <td>Two users ask to build one workout together. Costs a shared-ownership model, so it is not a small change.</td>
+            <td>Workout co-editing <span class="small faint">record 17</span></td>
+            <td><span class="fname">Forge Initial Requirements</span></td>
+            <td>Cut. Events are single-owner by construction.</td>
+            <td>Two users ask to build one workout together.</td>
           </tr>
           <tr>
-            <td>Week and year calendar views <span class="small faint">row 14</span></td>
-            <td><span class="fname">Forge Initial Requirements</span> ("year, month, multi, day"), <span class="fname">AlpFit Mission</span> ("month, week, day"), <span class="fname">PROJECT_SUMMARY.md</span></td>
-            <td>Year cut. True 7-day week deferred; "Multi" is a fixed 4 days and is not a week.</td>
-            <td>Two beta testers ask for a week view. Year view: never &mdash; a year grid of gym sessions is unreadable.</td>
+            <td>Week and year calendar views <span class="small faint">record 14</span></td>
+            <td><span class="fname">Forge Initial Requirements</span>, <span class="fname">AlpFit Mission</span>, <span class="fname">PROJECT_SUMMARY.md</span></td>
+            <td>Year cut; true 7-day week deferred.</td>
+            <td>Two beta testers ask for a week view.</td>
           </tr>
           <tr>
-            <td>Notifications <span class="small faint">row 20</span></td>
-            <td><span class="fname">AlpFit Overview</span> (push-to-refresh, workout reminders, buddy-cancel alerts), <span class="fname">Goal Requirements</span> (lock-screen check-in, archival notice)</td>
+            <td>Notifications <span class="small faint">record 20</span></td>
+            <td><span class="fname">AlpFit Overview</span>, <span class="fname">Goal Requirements</span></td>
             <td>Cut for v1. <span class="fname">push_service.dart</span> is 0 bytes.</td>
-            <td>Post-beta, once retention is the problem worth solving &mdash; or the first time a tester says they missed an invite. FCM is free when adopted.</td>
+            <td>Retention becomes the problem worth solving.</td>
           </tr>
           <tr>
-            <td>Friend groups <span class="small faint">row 18</span></td>
-            <td><span class="fname">Forge Initial Requirements</span> (requirement), <span class="fname">Final Specs</span> (demoted to stretch)</td>
+            <td>Friend groups <span class="small faint">record 18</span></td>
+            <td><span class="fname">Forge Initial Requirements</span>, <span class="fname">Final Specs</span></td>
             <td>Cut. No entity, rule, or UI was ever built.</td>
-            <td>A gym asks for sub-communities, or friends ask to plan in a fixed crew rather than by invite list.</td>
+            <td>A gym asks for sub-communities.</td>
           </tr>
           <tr>
-            <td>Add-existing-event backlog <span class="small faint">row 23</span></td>
-            <td><span class="fname">AlpFit Mission</span> ("new event or add existing event"; "view created events to edit or add to calendar")</td>
-            <td>Superseded, not dropped &mdash; Plans and the Create hub cover it.</td>
-            <td>Plans prove insufficient for one-off reuse: someone wants to re-run last Tuesday's workout without creating a program.</td>
+            <td>Add-existing-event backlog <span class="small faint">record 23</span></td>
+            <td><span class="fname">AlpFit Mission</span></td>
+            <td>Superseded &mdash; Plans and the Create hub cover it.</td>
+            <td>Plans prove insufficient for one-off reuse.</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Gym map discovery</strong> &mdash; Pok&eacute;mon-Go style. <span class="fname">AlpFit Overview</span> ("map view similar to pokemon go"), <span class="fname">AlpFit Mission</span> ("mapping system or a list at first"). Full trigger: beta testers can't find their gym by name, or a gym asks for a discovery surface. Requires geo data the product does not collect today.</li>
+      <li><strong>Movement insights</strong> &mdash; <span class="fname">AlpFit Overview</span>: "what has impacted it &mdash; a certain song, certain time, before or after another movement". Full trigger: he decides Forge tracks performance, not just plans it &mdash; a different product.</li>
+      <li><strong>Max / PR tracking</strong> &mdash; <span class="fname">AlpFit Overview</span>: "track maxes on each movement". Full trigger: same as movement insights. Note it needs the movement catalog first &mdash; you cannot track a max against a free-text string.</li>
+      <li><strong>Movement / exercise database</strong> &mdash; <span class="fname">AlpFit Overview</span> ("aspect to be completed"), <span class="fname">Forge Proposal</span> ("free, I will create this or find a free API"). Cut: exercise names stay free text, as the code already does. Full trigger: free-text names make the data unusable for something he wants &mdash; e.g. "who else at my gym is benching today". That question is the trigger.</li>
+      <li><strong>Calendar source filtering</strong> &mdash; <span class="fname">Forge Initial Requirements</span> (explicit requirement), <span class="fname">Final Specs</span> (assumed clause only), <span class="fname">PROJECT_SUMMARY.md</span>. The only revived item here &mdash; the UI already ships and is fake. Full trigger: already fired. A hardcoded "Friend 1 / Ethan / Gym 1" popup is in the app right now. Wire it or delete it before any beta.</li>
+      <li><strong>Workout co-editing</strong> &mdash; <span class="fname">Forge Initial Requirements</span>: "invite friends to edit workout". Cut because the rules make events single-owner by construction. Full trigger: two users ask to build one workout together. Costs a shared-ownership model, so it is not a small change.</li>
+      <li><strong>Week and year calendar views</strong> &mdash; <span class="fname">Forge Initial Requirements</span> ("year, month, multi, day"), <span class="fname">AlpFit Mission</span> ("month, week, day"), <span class="fname">PROJECT_SUMMARY.md</span>. "Multi" is a fixed 4 days and is not a week. Full trigger: two beta testers ask for a week view. Year view: never &mdash; a year grid of gym sessions is unreadable.</li>
+      <li><strong>Notifications</strong> &mdash; <span class="fname">AlpFit Overview</span> (push-to-refresh, workout reminders, buddy-cancel alerts), <span class="fname">Goal Requirements</span> (lock-screen check-in, archival notice). Full trigger: post-beta, once retention is the problem worth solving &mdash; or the first time a tester says they missed an invite. FCM is free when adopted.</li>
+      <li><strong>Friend groups</strong> &mdash; <span class="fname">Forge Initial Requirements</span> (requirement), <span class="fname">Final Specs</span> (demoted to stretch). Full trigger: a gym asks for sub-communities, or friends ask to plan in a fixed crew rather than by invite list.</li>
+      <li><strong>Add-existing-event backlog</strong> &mdash; <span class="fname">AlpFit Mission</span>: "new event or add existing event"; "view created events to edit or add to calendar". Full trigger: Plans prove insufficient for one-off reuse &mdash; someone wants to re-run last Tuesday's workout without creating a program.</li>
+    </ul>
   </section>
 
   <section id="next">
     <h2>What To Do Next</h2>
-    <div class="onesentence">Read the <strong>eight rows marked <span class="pill pill-warn">Yes</span></strong> &mdash; everything else is already settled and needs nothing from you.</div>
+    <div class="onesentence">Read the <strong>eight records marked <span class="pill pill-warn">needs your call</span></strong> &mdash; everything else is already settled and needs nothing from you.</div>
     <ol class="steps">
-      <li><strong>Row 4 &mdash; Performance tracking &amp; programming scope.</strong> We kept your anti-scope statement and cut max tracking, movement insights, and the movement catalog. Overrule this if Forge is meant to track lifts, not just plan them &mdash; it changes the data model.</li>
-      <li><strong>Row 5 &mdash; Live workout session screen.</strong> Cut. It has a spec and no requirement lineage. Say the word if it is your newest thinking rather than an abandoned idea.</li>
-      <li><strong>Row 6 &mdash; Gym map discovery.</strong> Cut; search only. This was the most distinctive idea in your earliest note, so it is the one we are least comfortable dropping.</li>
-      <li><strong>Row 7 &mdash; Stakeholder / target audience.</strong> BYU-I Rec Center is the beta channel, but it was picked for convenience. Confirm it is a real design partner or just a distribution list.</li>
-      <li><strong>Row 17 &mdash; Workout co-editing.</strong> Cut. Rules make events single-owner, so reviving it is a data-layer change, not a feature toggle.</li>
-      <li><strong>Row 18 &mdash; Friend groups.</strong> Cut. Never built, and gym channels cover most of it.</li>
-      <li><strong>Row 20 &mdash; Notifications.</strong> No push in v1. This is the largest silent drop with a real product cost: every invite and DM is currently silent.</li>
-      <li><strong>Row 40 &mdash; State management / Riverpod.</strong> Keep <code>setState</code> + <code>StreamBuilder</code>; no migration. The most reversible-but-expensive call in the whole plan &mdash; cheap to change your mind now, painful later.</li>
+      <li><strong>Record 4 &mdash; Performance tracking &amp; programming scope.</strong> We kept your anti-scope statement and cut max tracking, movement insights, and the movement catalog. Overrule this if Forge is meant to track lifts, not just plan them &mdash; it changes the data model.</li>
+      <li><strong>Record 5 &mdash; Live workout session screen.</strong> Cut. It has a spec and no requirement lineage. Say the word if it is your newest thinking rather than an abandoned idea.</li>
+      <li><strong>Record 6 &mdash; Gym map discovery.</strong> Cut; search only. This was the most distinctive idea in your earliest note, so it is the one we are least comfortable dropping.</li>
+      <li><strong>Record 7 &mdash; Stakeholder / target audience.</strong> BYU-I Rec Center is the beta channel, but it was picked for convenience. Confirm it is a real design partner or just a distribution list.</li>
+      <li><strong>Record 17 &mdash; Workout co-editing.</strong> Cut. Rules make events single-owner, so reviving it is a data-layer change, not a feature toggle.</li>
+      <li><strong>Record 18 &mdash; Friend groups.</strong> Cut. Never built, and gym channels cover most of it.</li>
+      <li><strong>Record 20 &mdash; Notifications.</strong> No push in v1. This is the largest silent drop with a real product cost: every invite and DM is currently silent.</li>
+      <li><strong>Record 40 &mdash; State management / Riverpod.</strong> Keep <code>setState</code> + <code>StreamBuilder</code>; no migration. The most reversible-but-expensive call in the whole plan &mdash; cheap to change your mind now, painful later.</li>
     </ol>
     <p class="small muted">Then: <a href="index.html">the raw source index</a> for the original notes, <a href="../01-product/features.html">features</a> for what these resolutions produced, and <a href="../01-product/decisions.html">decisions</a> for D1&ndash;D10.</p>
   </section>

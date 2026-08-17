@@ -42,54 +42,57 @@
     <div class="callout warn">
       <strong>Everything below is a genuine taste call, not a finding.</strong> The rest of this log is either forced by the notes (<span class="tag tag-locked">LOCKED</span>) or forced by the code (<span class="tag tag-decided">DECIDED</span>). These seven could go either way, I picked a side, and the side I picked is the one that costs a solo developer the least this quarter. This is where your editing attention belongs — everything else can be skimmed.
     </div>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>#</th><th>The call I made</th><th>The other side of the coin</th><th>Cost to flip it later</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>D5</strong></td>
-            <td><strong>Keep <span class="fname">setState</span> + <span class="fname">StreamBuilder</span>. Do <em>not</em> do a Riverpod migration.</strong> Riverpod was recommended twice in the old architecture notes and adopted zero times, and a working ~16,300-line app does not need rewriting for a solo dev. Introduce Riverpod <em>only</em> where state genuinely crosses screens.</td>
-            <td>Riverpod would make the app testable in the way the empty feed MVVM folders imagined, and it would kill the two hand-rolled global singletons and the mutable module-level <span class="fname">_currentRoute</span>. If you were ever going to do it, doing it before 16,300 lines becomes 30,000 is cheaper.</td>
-            <td><strong>The most reversible-but-expensive call in the plan.</strong> Reversible any time; the price is weeks, and with zero tests there is no safety net for the refactor. If you flip this, write the tests first.</td>
-          </tr>
-          <tr>
-            <td><strong>D7</strong></td>
-            <td><strong>Rename <span class="fname">forge_senior_project_version/</span> to <span class="fname">app/</span>.</strong> The directory name is a daily reminder of a finished class, and it is baked into the Android app label and the iOS bundle name too. Cheap now, annoying later.</td>
-            <td>It breaks every absolute path in your notes, your shell history, and any IDE config — for zero functional gain. Some people find renaming mid-project genuinely disorienting.</td>
-            <td>Easy to do, easy to undo, but strictly cheaper the earlier it happens. Do it in the same commit as the bundle-id change (D33) so all the identity churn lands at once.</td>
-          </tr>
-          <tr>
-            <td><strong>D15</strong></td>
-            <td><strong>Adopt five success metrics (SM1–SM5) — invented by me.</strong> The notes contain <em>no</em> success metric of any kind; the only definition of done in ~20 documents is "demo-able." See <a href="vision.html#success">vision.html</a> for the numbers.</td>
-            <td>Metrics for a 30-person beta can be theatre, and a wrong target is worse than no target because it pulls the roadmap toward it. You may prefer to run the beta and <em>then</em> set numbers from what you see.</td>
-            <td>Easy. They are words on a page until something measures them — and today nothing does.</td>
-          </tr>
-          <tr>
-            <td><strong>D17</strong></td>
-            <td><strong>Promote the fixed 4-day "Multi" calendar view to a real 7-day week view.</strong> Two requirements docs asked for a week view; the Final Specs silently dropped it; the code shipped 4 days with no explanation.</td>
-            <td>4 days may have been a deliberate density choice — a real week on a phone is cramped, and you may have tried 7 and hated it. If so, that's a real answer, and the fix is to <em>document</em> 4 days rather than change it.</td>
-            <td>Easy. It's a constant and a header layout.</td>
-          </tr>
-          <tr>
-            <td><strong>D18</strong></td>
-            <td><strong>Split the audience's "new attendee" into two rows: the pre-visit <em>prospect</em> and the post-visit <em>newcomer</em>.</strong> The notes name three categories, one of which is the gym. The pre-visit case is the entire differentiator, so I gave it its own row.</td>
-            <td>It's a framing invention, not something you wrote. Three types is simpler, and the prospect may just be "a new attendee on day zero" rather than a distinct person to design for.</td>
-            <td>Easy — collapse two table rows in <a href="vision.html#who">vision.html</a>.</td>
-          </tr>
-          <tr>
-            <td><strong>D19</strong></td>
-            <td><strong>Build the calendar source filter for real, rather than deleting it.</strong> Source attribution is an explicit requirement in the Initial Requirements, the colours already exist, and the merged stream already knows each event's owner.</td>
-            <td>Deleting the fake popup takes ten minutes and removes a lie from the app immediately; building it properly takes a day. If the beta is one gym and five friends, nobody needs a filter yet.</td>
-            <td>Easy either way. But leaving it as-is is not an option — <a href="features.html#hollow">H1</a> is a shipping screen full of a fictional person named Ethan.</td>
-          </tr>
-          <tr>
-            <td><strong>D23</strong></td>
-            <td><strong>The first tests are Firestore rules tests and service unit tests — not widget or golden tests.</strong> The two things that can actually hurt a user are a rules hole and a silent write failure, and both are testable without a rendered frame.</td>
-            <td>Widget tests would have caught H5 (the comment button that discards input) and H8 (the empty <span class="fname">onPressed</span>), which are exactly the class of bug this codebase is full of. A reasonable person starts there instead.</td>
-            <td>Easy. Nothing about starting with rules tests prevents adding widget tests later.</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="grid">
+
+      <div class="card">
+        <h3>D5 · State management <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> keep <span class="fname">setState</span> + <span class="fname">StreamBuilder</span>. Do <em>not</em> do a Riverpod migration. It was recommended twice in the old architecture notes and adopted zero times, and a working ~16,300-line app does not need rewriting for a solo dev. Introduce Riverpod <em>only</em> where state genuinely crosses screens.</p>
+        <p><strong>The other side:</strong> Riverpod would make the app testable in the way the empty feed MVVM folders imagined, and it would kill the two hand-rolled global singletons and the mutable module-level <span class="fname">_currentRoute</span>. If you were ever going to do it, doing it before 16,300 lines becomes 30,000 is cheaper.</p>
+        <p><strong>Cost to flip:</strong> the most reversible-but-expensive call in the plan. Reversible any time; the price is weeks, and with zero tests there is no safety net for the refactor. If you flip this, write the tests first.</p>
+      </div>
+
+      <div class="card">
+        <h3>D7 · Rename the app directory <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> rename <span class="fname">forge_senior_project_version/</span> to <span class="fname">app/</span>. The directory name is a daily reminder of a finished class, and it is baked into the Android app label and the iOS bundle name too. Cheap now, annoying later.</p>
+        <p><strong>The other side:</strong> it breaks every absolute path in your notes, your shell history, and any IDE config — for zero functional gain. Some people find renaming mid-project genuinely disorienting.</p>
+        <p><strong>Cost to flip:</strong> easy to do, easy to undo, but strictly cheaper the earlier it happens. Do it in the same commit as the bundle-id change (D33) so all the identity churn lands at once.</p>
+      </div>
+
+      <div class="card">
+        <h3>D15 · Success metrics SM1–SM5 <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> adopt five success metrics (SM1–SM5) — invented by me. The notes contain <em>no</em> success metric of any kind; the only definition of done in ~20 documents is "demo-able." See <a href="vision.html#success">vision.html</a> for the numbers.</p>
+        <p><strong>The other side:</strong> metrics for a 30-person beta can be theatre, and a wrong target is worse than no target because it pulls the roadmap toward it. You may prefer to run the beta and <em>then</em> set numbers from what you see.</p>
+        <p><strong>Cost to flip:</strong> easy. They are words on a page until something measures them — and today nothing does.</p>
+      </div>
+
+      <div class="card">
+        <h3>D17 · 7-day week view <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> promote the fixed 4-day "Multi" calendar view to a real 7-day week view. Two requirements docs asked for a week view; the Final Specs silently dropped it; the code shipped 4 days with no explanation.</p>
+        <p><strong>The other side:</strong> 4 days may have been a deliberate density choice — a real week on a phone is cramped, and you may have tried 7 and hated it. If so, that's a real answer, and the fix is to <em>document</em> 4 days rather than change it.</p>
+        <p><strong>Cost to flip:</strong> easy. It's a constant and a header layout.</p>
+      </div>
+
+      <div class="card">
+        <h3>D18 · Split the audience <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> split the audience's "new attendee" into two rows — the pre-visit <em>prospect</em> and the post-visit <em>newcomer</em>. The notes name three categories, one of which is the gym. The pre-visit case is the entire differentiator, so I gave it its own row.</p>
+        <p><strong>The other side:</strong> it's a framing invention, not something you wrote. Three types is simpler, and the prospect may just be "a new attendee on day zero" rather than a distinct person to design for.</p>
+        <p><strong>Cost to flip:</strong> easy — collapse two table rows in <a href="vision.html#who">vision.html</a>.</p>
+      </div>
+
+      <div class="card">
+        <h3>D19 · Calendar source filter <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> build the calendar source filter for real, rather than deleting it. Source attribution is an explicit requirement in the Initial Requirements, the colours already exist, and the merged stream already knows each event's owner.</p>
+        <p><strong>The other side:</strong> deleting the fake popup takes ten minutes and removes a lie from the app immediately; building it properly takes a day. If the beta is one gym and five friends, nobody needs a filter yet.</p>
+        <p><strong>Cost to flip:</strong> easy either way. But leaving it as-is is not an option — <a href="features.html#hollow">H1</a> is a shipping screen full of a fictional person named Ethan.</p>
+      </div>
+
+      <div class="card">
+        <h3>D23 · Which tests come first <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The call:</strong> the first tests are Firestore rules tests and service unit tests — not widget or golden tests. The two things that can actually hurt a user are a rules hole and a silent write failure, and both are testable without a rendered frame.</p>
+        <p><strong>The other side:</strong> widget tests would have caught H5 (the comment button that discards input) and H8 (the empty <span class="fname">onPressed</span>), which are exactly the class of bug this codebase is full of. A reasonable person starts there instead.</p>
+        <p><strong>Cost to flip:</strong> easy. Nothing about starting with rules tests prevents adding widget tests later.</p>
+      </div>
+
     </div>
   </section>
 
@@ -99,15 +102,15 @@
       <table>
         <thead><tr><th>Tag</th><th>Means</th></tr></thead>
         <tbody>
-          <tr><td><span class="tag tag-locked">LOCKED</span></td><td>Came from the notes or from an external constraint. Not our choice.</td></tr>
-          <tr><td><span class="tag tag-decided">DECIDED</span></td><td>Our call, confident. One-line rationale. Change it if you want, but it isn't a coin-flip.</td></tr>
-          <tr><td><span class="tag tag-proposed">PROPOSED</span></td><td>A genuine taste call. All seven are listed <a href="#proposed">above</a>.</td></tr>
-          <tr><td><span class="tag tag-deferred">DEFERRED</span></td><td>Deliberately open, with a stated trigger. See <a href="#deferred">the deferred table</a>.</td></tr>
-          <tr><td><span class="tag tag-conflict">CONFLICT</span></td><td>The notes contradicted themselves. Both positions and the resolution are stated. Full ledger in <a href="../00-source/contradictions.html">00-source/contradictions.html</a>.</td></tr>
+          <tr><td><span class="tag tag-locked">LOCKED</span></td><td>Forced by the notes or an external constraint — not our choice.</td></tr>
+          <tr><td><span class="tag tag-decided">DECIDED</span></td><td>Our call, made with confidence — arguable, but not a coin-flip.</td></tr>
+          <tr><td><span class="tag tag-proposed">PROPOSED</span></td><td>A genuine taste call — all seven are <a href="#proposed">above</a>.</td></tr>
+          <tr><td><span class="tag tag-deferred">DEFERRED</span></td><td>Deliberately open, with a stated <a href="#deferred">trigger</a>.</td></tr>
+          <tr><td><span class="tag tag-conflict">CONFLICT</span></td><td>The notes contradicted themselves; the resolution is stated.</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="small muted"><strong>The <span class="fname">#</span> column is an ID, not a sort order.</strong> D1–D10 are the standing decisions and keep their original numbers wherever they belong by category; D11–D42 were added by this pass and run in document order. <strong>Reversibility</strong> is easy / moderate / hard — it tells you what is safe to change your mind about later.</p>
+    <p class="small muted"><strong>The <span class="fname">#</span> column is an ID, not a sort order.</strong> D1–D10 are the standing decisions and keep their original numbers wherever they belong by category; D11–D42 were added by this pass and run in document order. <strong>Reversibility</strong> is easy / moderate / hard — it tells you what is safe to change your mind about later. Every row carries a one-line rationale in the table and its full reasoning in the list beneath. For a <span class="tag tag-conflict">CONFLICT</span> row, both positions and the resolution are recorded — full ledger in <a href="../00-source/contradictions.html">00-source/contradictions.html</a>.</p>
   </section>
 
   <section id="scope">
@@ -120,96 +123,111 @@
             <td>D2</td>
             <td><strong>Goals are must-have, not a stretch goal.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span> <span class="tag tag-conflict">CONFLICT</span></td>
-            <td>The Final Specs call them a stretch; a full class design, a dedicated requirements doc, a shipped feed widget, and ~1,000 lines of the app's best code all say otherwise. Direction of travel wins.</td>
+            <td>Direction of travel beats the Final Specs' stretch label.</td>
             <td><span class="pill pill-bad">hard</span> — already built and shipped</td>
           </tr>
           <tr>
             <td>D4</td>
-            <td><strong>The gym account type stays. The separate "gym software" and "trainer software" products are cut, not deferred.</strong></td>
+            <td><strong>Gym account type stays. Gym and trainer software are cut, not deferred.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span> <span class="tag tag-conflict">CONFLICT</span></td>
-            <td>It is the differentiator and it is already built. Gym-side capability lives as a lightweight account type inside Forge, not as separate software.</td>
-            <td><span class="pill pill-bad">hard</span> — the account type is load-bearing in the data model</td>
+            <td>It is the differentiator and it is already built.</td>
+            <td><span class="pill pill-bad">hard</span> — load-bearing in the data model</td>
           </tr>
           <tr>
             <td>D6</td>
             <td><strong>Real external users are the target, via a BYU-I Rec Center beta.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>That makes account deletion, moderation, and a privacy policy real T1 work rather than paperwork. Every store blocker in <a href="features.html#platform">the platform table</a> becomes a real deadline, not a hypothetical.</td>
-            <td><span class="pill pill-warn">moderate</span> — abandoning it drops T1 scope but also drops the point</td>
+            <td>Makes deletion, moderation and a privacy policy real T1 work.</td>
+            <td><span class="pill pill-warn">moderate</span> — dropping it drops the point</td>
           </tr>
           <tr>
             <td>D8</td>
             <td><strong>Monetization is deferred.</strong></td>
             <td><span class="tag tag-deferred">DEFERRED</span></td>
-            <td>The only monetization signal in ~20 documents is one stretch line about a paid premium gym tier. <strong>Trigger: three separate gyms ask for something a free tier can't do.</strong></td>
+            <td><strong>Trigger:</strong> three gyms ask for something a free tier can't do.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D11</td>
-            <td><strong>No workout programming. No meal planning.</strong> Exercises exist to describe a planned workout, never to prescribe one.</td>
+            <td><strong>No workout programming. No meal planning.</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>The author's own anti-scope, stated in the proposal and never retracted. Competing on programming means competing with funded apps on their strongest ground, for a product whose thesis is social.</td>
+            <td>The author's own anti-scope, never retracted.</td>
             <td><span class="pill pill-bad">hard</span> — it is the positioning</td>
           </tr>
           <tr>
             <td>D12</td>
-            <td><strong>"Public" means: visible to your friends, and to fellow members of gyms you belong to. There are exactly two visibility levels.</strong></td>
+            <td><strong>"Public" = your friends plus fellow gym members. Two levels only.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span> <span class="tag tag-conflict">CONFLICT</span></td>
-            <td>The notes give basic events and workout events <em>different</em> definitions of "private", and the Final Specs hint at "different levels of visibility, <em>including</em> public or private" without ever enumerating a third. The Firestore rules already implement a single coherent reading — adopt it and close the question.</td>
-            <td><span class="pill pill-warn">moderate</span> — adding a level means a rules change and a migration</td>
+            <td>The Firestore rules already implement one coherent reading.</td>
+            <td><span class="pill pill-warn">moderate</span> — a third level means a migration</td>
           </tr>
           <tr>
             <td>D13</td>
             <td><strong>The live in-progress workout session screen is deferred.</strong></td>
             <td><span class="tag tag-deferred">DEFERRED</span></td>
-            <td>It has a 6-bullet spec in an orphan document and appears in <em>no</em> requirements list — the largest unattributed scope in the corpus. It also pulls toward D11's anti-scope. <strong>Trigger: a beta tester asks to log a workout while doing it.</strong></td>
+            <td><strong>Trigger:</strong> a tester asks to log a workout while doing it.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D14</td>
-            <td><strong>No personal friend-to-friend post surface in v1.</strong> "Updates from friends" means "your friend scheduled something."</td>
+            <td><strong>No personal friend-to-friend post surface in v1.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>The Final Specs already demoted it to stretch, and a second user-generated-content surface doubles the moderation burden at a moment when moderation does not exist at all (<span class="fname">moderation_service.dart</span> is 0 bytes).</td>
+            <td>A second UGC surface doubles moderation, which doesn't exist.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D15</td>
             <td><strong>Adopt success metrics SM1–SM5.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>Both intakes flag the same gap: no success metric exists anywhere. SM2 — the share of workout events with at least one accepted invitee — is the product thesis expressed as one number. <a href="vision.html#success">Numbers here.</a></td>
+            <td>Both intakes flag the same gap: no success metric exists.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D16</td>
-            <td><strong>The BYU-I Rec Center is a beta channel, not a validated design partner.</strong></td>
+            <td><strong>The BYU-I Rec Center is a beta channel, not a design partner.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>The one true stakeholder document is an <em>ask list</em> — what the student wanted from the gym — and contains zero gym-originated requirements. The formal proposal's stakeholder field literally reads "TBD". Treat gym-side requirements as unvalidated until a gym writes one down.</td>
+            <td>The one stakeholder doc is an ask list, not gym requirements.</td>
             <td><span class="pill pill-good">easy</span> — one real meeting changes it</td>
           </tr>
           <tr>
             <td>D17</td>
-            <td><strong>Promote the 4-day Multi view to a real 7-day week view. Year view stays cut.</strong></td>
+            <td><strong>Promote the 4-day Multi view to a 7-day week view. Year view stays cut.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>Week view was required by two docs and silently dropped by a third; the code shipped an unexplained 4 days. Year view was dropped too and nobody has missed it.</td>
+            <td>Required by two docs, silently dropped by a third.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D18</td>
-            <td><strong>Model four audiences: prospect, new attendee, consistent attendee, gym account.</strong></td>
+            <td><strong>Model four audiences: prospect, new attendee, consistent, gym.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>The notes name three categories (one is the gym). Splitting "new attendee" at the first-visit line gives the differentiator its own user to design for.</td>
+            <td>Splitting at the first-visit line gives the differentiator a user.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D19</td>
             <td><strong>Build the calendar source filter for real; do not delete it.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>It is an explicit requirement, the colours exist, and the merged stream already knows each event's owner. Leaving the fake version shipped is the only unacceptable outcome.</td>
+            <td>An explicit requirement, and the data for it already exists.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>D2</strong> — The Final Specs call goals a stretch; a full class design, a dedicated requirements doc, a shipped feed widget, and ~1,000 lines of the app's best code all say otherwise. Direction of travel wins.</li>
+      <li><strong>D4</strong> — The gym account type is the differentiator and it is already built. Gym-side capability lives as a lightweight account type inside Forge, not as separate software: the separate "gym software" and "trainer software" products are <strong>cut, not deferred</strong>. The account type is load-bearing in the data model.</li>
+      <li><strong>D6</strong> — Targeting real external users makes account deletion, moderation, and a privacy policy real T1 work rather than paperwork. Every store blocker in <a href="features.html#platform">the platform table</a> becomes a real deadline, not a hypothetical. Abandoning the beta drops T1 scope but also drops the point.</li>
+      <li><strong>D8</strong> — The only monetization signal in ~20 documents is one stretch line about a paid premium gym tier. <strong>Trigger: three separate gyms ask for something a free tier can't do.</strong></li>
+      <li><strong>D11</strong> — Exercises exist to describe a planned workout, never to prescribe one. This anti-scope is the author's own, stated in the proposal and never retracted. Competing on programming means competing with funded apps on their strongest ground, for a product whose thesis is social.</li>
+      <li><strong>D12</strong> — "Public" means visible to your friends, and to fellow members of gyms you belong to; there are exactly two visibility levels. The notes give basic events and workout events <em>different</em> definitions of "private", and the Final Specs hint at "different levels of visibility, <em>including</em> public or private" without ever enumerating a third. The Firestore rules already implement a single coherent reading — adopt it and close the question. Adding a level means a rules change and a migration.</li>
+      <li><strong>D13</strong> — It has a 6-bullet spec in an orphan document and appears in <em>no</em> requirements list — the largest unattributed scope in the corpus. It also pulls toward D11's anti-scope. <strong>Trigger: a beta tester asks to log a workout while doing it.</strong></li>
+      <li><strong>D14</strong> — "Updates from friends" means "your friend scheduled something." The Final Specs already demoted a personal post surface to stretch, and a second user-generated-content surface doubles the moderation burden at a moment when moderation does not exist at all (<span class="fname">moderation_service.dart</span> is 0 bytes).</li>
+      <li><strong>D15</strong> — Both intakes flag the same gap: no success metric exists anywhere. SM2 — the share of workout events with at least one accepted invitee — is the product thesis expressed as one number. <a href="vision.html#success">Numbers here.</a></li>
+      <li><strong>D16</strong> — The one true stakeholder document is an <em>ask list</em> — what the student wanted from the gym — and contains zero gym-originated requirements. The formal proposal's stakeholder field literally reads "TBD". Treat gym-side requirements as unvalidated until a gym writes one down.</li>
+      <li><strong>D17</strong> — Week view was required by two docs and silently dropped by a third; the code shipped an unexplained 4 days. Year view was dropped too and nobody has missed it, so it stays cut.</li>
+      <li><strong>D18</strong> — The four audiences are prospect, new attendee, consistent attendee, and gym account. The notes name three categories (one is the gym). Splitting "new attendee" at the first-visit line gives the differentiator its own user to design for.</li>
+      <li><strong>D19</strong> — It is an explicit requirement, the colours exist, and the merged stream already knows each event's owner. Leaving the fake version shipped is the only unacceptable outcome.</li>
+    </ul>
   </section>
 
   <section id="tech">
@@ -222,47 +240,55 @@
             <td>D1</td>
             <td><strong>Flutter + Firebase (Auth, Firestore, Storage).</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>~16,300 lines already run on it. Not revisiting. The "future API gateway rewrite" one document declares is <span class="tag tag-deferred">DEFERRED</span> — <strong>trigger: a second client that isn't Flutter, or Firestore read cost past $25/mo.</strong></td>
-            <td><span class="pill pill-bad">hard</span> — no repository seam exists; a migration touches all 15 services and most of the UI</td>
+            <td>~16,300 lines already run on it, so it is not being revisited.</td>
+            <td><span class="pill pill-bad">hard</span> — no repository seam exists</td>
           </tr>
           <tr>
             <td>D5</td>
-            <td><strong>Keep <span class="fname">setState</span> + <span class="fname">StreamBuilder</span>; no Riverpod migration.</strong> Introduce Riverpod only where state genuinely crosses screens.</td>
+            <td><strong>Keep <span class="fname">setState</span> + <span class="fname">StreamBuilder</span>; no Riverpod migration.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>Recommended twice, adopted zero times, and the app works. A solo developer with zero tests should not rewrite a working app for architectural tidiness. <a href="#proposed">Full both-sides above.</a></td>
+            <td>Recommended twice, adopted zero times, and the app works.</td>
             <td><span class="pill pill-warn">moderate</span> — reversible any time, priced in weeks</td>
           </tr>
           <tr>
             <td>D20</td>
-            <td><strong>Services stay as free functions in <span class="fname">lib/services/</span>. No repository interfaces, no DI container.</strong></td>
+            <td><strong>Free functions in <span class="fname">lib/services/</span>; no repository interfaces, no DI.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Follows directly from D5. The old architecture notes raised the services-location question and then declined to answer it, twice; <span class="fname">di_providers.dart</span> has been 0 bytes since day one. Abstraction nobody consumes is cost without benefit.</td>
+            <td>Follows from D5; abstraction nobody consumes is cost, not benefit.</td>
             <td><span class="pill pill-warn">moderate</span></td>
           </tr>
           <tr>
             <td>D21</td>
-            <td><strong>Fill <span class="fname">core/</span> — errors, validators, date utils, converters, colours — before adding features.</strong></td>
+            <td><strong>Fill <span class="fname">core/</span> — errors, validators, dates, converters, colours — first.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Ten empty files are the direct cause of the recurring bugs: no error types &rarr; <span class="fname">catch (_) {}</span> everywhere; no validators &rarr; no email or date checking; no colour constant &rarr; "forge blue" redeclared in six files. This is the cheapest structural fix in the plan.</td>
+            <td>Ten empty files are the direct cause of the recurring bugs.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D22</td>
-            <td><strong>Two repetition mechanisms both stay, with a documented boundary: Plans materialise real event docs for multi-week programmes; in-event <span class="fname">recurrence</span> handles simple repeats client-side.</strong></td>
+            <td><strong>Both repetition mechanisms stay, with a documented boundary.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Both ship and both work. Merging them is a rewrite with no user-visible payoff today. <strong>Merging is deferred — trigger: the first bug where a plan-generated event and a recurring event disagree about the same slot.</strong></td>
+            <td>Both ship and both work; merging has no payoff today.</td>
             <td><span class="pill pill-warn">moderate</span></td>
           </tr>
           <tr>
             <td>D23</td>
-            <td><strong>First tests are Firestore rules tests + service unit tests, not widget or golden tests.</strong></td>
+            <td><strong>First tests: Firestore rules + service units, not widget or golden.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>Zero tests exist and no <span class="fname">test/</span> directory does either. The two failure classes that actually reach users are rules holes and silent write failures, and both are testable headlessly. <a href="#proposed">Both sides above.</a></td>
+            <td>Rules holes and silent write failures are what reach users.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>D1</strong> — ~16,300 lines already run on it. Not revisiting. The "future API gateway rewrite" one document declares is <span class="tag tag-deferred">DEFERRED</span> — <strong>trigger: a second client that isn't Flutter, or Firestore read cost past $25/mo.</strong> No repository seam exists, so a migration touches all 15 services and most of the UI.</li>
+      <li><strong>D5</strong> — Introduce Riverpod only where state genuinely crosses screens. Recommended twice, adopted zero times, and the app works. A solo developer with zero tests should not rewrite a working app for architectural tidiness. <a href="#proposed">Full both-sides above.</a></li>
+      <li><strong>D20</strong> — Services stay as free functions in <span class="fname">lib/services/</span>: no repository interfaces, no DI container. This follows directly from D5. The old architecture notes raised the services-location question and then declined to answer it, twice; <span class="fname">di_providers.dart</span> has been 0 bytes since day one. Abstraction nobody consumes is cost without benefit.</li>
+      <li><strong>D21</strong> — Fill <span class="fname">core/</span> — errors, validators, date utils, converters, colours — before adding features. Ten empty files are the direct cause of the recurring bugs: no error types &rarr; <span class="fname">catch (_) {}</span> everywhere; no validators &rarr; no email or date checking; no colour constant &rarr; "forge blue" redeclared in six files. This is the cheapest structural fix in the plan.</li>
+      <li><strong>D22</strong> — The documented boundary: Plans materialise real event docs for multi-week programmes; in-event <span class="fname">recurrence</span> handles simple repeats client-side. Both ship and both work, and merging them is a rewrite with no user-visible payoff today. <strong>Merging is deferred — trigger: the first bug where a plan-generated event and a recurring event disagree about the same slot.</strong></li>
+      <li><strong>D23</strong> — Zero tests exist and no <span class="fname">test/</span> directory does either. The two failure classes that actually reach users are rules holes and silent write failures, and both are testable headlessly. <a href="#proposed">Both sides above.</a></li>
+    </ul>
   </section>
 
   <section id="data">
@@ -273,70 +299,81 @@
         <tbody>
           <tr>
             <td>D24</td>
-            <td><strong>The Firestore layout as built is the layout: <span class="fname">users/{uid}</span> at root with <span class="fname">events</span>/<span class="fname">goals</span>/<span class="fname">plans</span> subcollections, <span class="fname">directThreads/{id}</span> at root, and gyms as user docs with membership in <span class="fname">joinedGymIds</span>.</strong></td>
+            <td><strong>The Firestore layout as built is the layout.</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>It exists, it has indexes, and the rules encode it. Full field-by-field detail in <a href="../02-architecture/data-model.html">02-architecture/data-model.html</a>.</td>
+            <td>It exists, it has indexes, and the rules encode it.</td>
             <td><span class="pill pill-bad">hard</span></td>
           </tr>
           <tr>
             <td>D25</td>
-            <td><strong><span class="fname">/users</span> read stops being <span class="fname">if true</span>. Authenticated read at minimum; a narrower public projection if search needs one.</strong></td>
+            <td><strong><span class="fname">/users</span> read stops being <span class="fname">if true</span> — authenticated at minimum.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><strong>The single highest-severity item in the project.</strong> Today every user's email and contact info is readable unauthenticated by anyone with the project id, with no App Check. The inline comment justifies it for "friend lists, gym lists" — but the app only ever reads user docs while signed in, so the rule buys nothing and costs everything.</td>
-            <td><span class="pill pill-good">easy</span> — one line, plus verifying nothing anonymous depended on it</td>
+            <td><strong>The single highest-severity item in the project.</strong></td>
+            <td><span class="pill pill-good">easy</span> — one line</td>
           </tr>
           <tr>
             <td>D26</td>
             <td><strong>Event <span class="fname">startAt</span> / <span class="fname">endAt</span> become required non-null on write.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>They are nullable on write and non-null-cast on read — a guaranteed crash for any event saved without a start time, reachable with data the app itself writes.</td>
-            <td><span class="pill pill-bad">hard</span> — needs a backfill for any existing null rows</td>
+            <td>Nullable on write, non-null-cast on read — a guaranteed crash.</td>
+            <td><span class="pill pill-bad">hard</span> — needs a backfill for null rows</td>
           </tr>
           <tr>
             <td>D27</td>
-            <td><strong><span class="fname">setDetails: [{reps, weight}]</span> is the canonical exercise shape. The reader's top-level <span class="fname">weight</span> key is a bug, not a schema.</strong></td>
+            <td><strong><span class="fname">setDetails: [{reps, weight}]</span> is the canonical exercise shape.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>The creator writes <span class="fname">setDetails</span>; the mapper reads a <span class="fname">weight</span> field nobody writes, so the calendar renders blank weights for every workout ever created. Fix the reader, not the writer.</td>
+            <td>The reader's top-level <span class="fname">weight</span> key is a bug, not a schema.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D28</td>
-            <td><strong>Server timestamps replace client clocks on DMs, goals, and plans; rules validate against <span class="fname">request.time</span>.</strong></td>
+            <td><strong>Server timestamps replace client clocks on DMs, goals and plans.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="fname">Timestamp.now()</span> from the client with no rule check means message ordering is spoofable and any clock-skewed device writes wrong history.</td>
+            <td>Client <span class="fname">Timestamp.now()</span> makes message ordering spoofable.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D29</td>
-            <td><strong>Editing a goal must preserve <span class="fname">periodHistory</span> and current progress.</strong></td>
+            <td><strong>Editing a goal must preserve <span class="fname">periodHistory</span> and progress.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Today, renaming a goal destroys every past period and resets progress to zero — labelled in-code as "Edit behavior (v1)". No requirement ever said that was correct, and it silently deletes the only long-lived user data in the app.</td>
+            <td>Today, renaming a goal destroys every past period.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D30</td>
-            <td><strong>Owner-only writes stay. Inviting friends to <em>edit</em> a workout is therefore a data-model change, not a UI change.</strong></td>
+            <td><strong>Owner-only writes stay; workout co-editing is a data-model change.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span> <span class="tag tag-conflict">CONFLICT</span></td>
-            <td>The Initial Requirements ask for workout co-editing; the Final Specs drop it; the rules make it architectural — events live under <span class="fname">users/{owner}/events</span> with <span class="fname">allow write: if request.auth.uid == userId</span>. Anyone planning this as "add an invite button" will be wrong by an order of magnitude. It needs a location change or an invitee write scope, plus a conflict story.</td>
+            <td>The rules make it architectural, not a UI change.</td>
             <td><span class="pill pill-bad">hard</span></td>
           </tr>
           <tr>
             <td>D31</td>
             <td><strong>Introduce a typed <span class="fname">Event</span> model class.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="fname">lib/models/</span> contains exactly one file (<span class="fname">goal.dart</span>) and Goals is also the least buggy feature — that is not a coincidence. Event is the most-written entity in the app and it travels as a raw <span class="fname">Map&lt;String, dynamic&gt;</span>, which is how D26 and D27 happened.</td>
+            <td>Event travels as a raw <span class="fname">Map&lt;String, dynamic&gt;</span> today.</td>
             <td><span class="pill pill-warn">moderate</span></td>
           </tr>
           <tr>
             <td>D32</td>
             <td><strong>Delete the <span class="fname">user_preferences</span> ruleset.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Full CRUD rules for a collection referenced nowhere in <span class="fname">lib/</span>. It is also the one collection the old rules doc bothered to document. Dead weight in a security-critical file.</td>
+            <td>Full CRUD rules for a collection referenced nowhere in <span class="fname">lib/</span>.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>D24</strong> — The layout as built: <span class="fname">users/{uid}</span> at root with <span class="fname">events</span>/<span class="fname">goals</span>/<span class="fname">plans</span> subcollections, <span class="fname">directThreads/{id}</span> at root, and gyms as user docs with membership in <span class="fname">joinedGymIds</span>. It exists, it has indexes, and the rules encode it. Full field-by-field detail in <a href="../02-architecture/data-model.html">02-architecture/data-model.html</a>.</li>
+      <li><strong>D25</strong> — Authenticated read at minimum; a narrower public projection if search needs one. Today every user's email and contact info is readable unauthenticated by anyone with the project id, with no App Check. The inline comment justifies it for "friend lists, gym lists" — but the app only ever reads user docs while signed in, so the rule buys nothing and costs everything. Easy to fix: one line, plus verifying nothing anonymous depended on it.</li>
+      <li><strong>D26</strong> — They are nullable on write and non-null-cast on read — a guaranteed crash for any event saved without a start time, reachable with data the app itself writes. Any existing null rows need a backfill.</li>
+      <li><strong>D27</strong> — The creator writes <span class="fname">setDetails</span>; the mapper reads a <span class="fname">weight</span> field nobody writes, so the calendar renders blank weights for every workout ever created. Fix the reader, not the writer.</li>
+      <li><strong>D28</strong> — Rules validate against <span class="fname">request.time</span>. <span class="fname">Timestamp.now()</span> from the client with no rule check means message ordering is spoofable and any clock-skewed device writes wrong history.</li>
+      <li><strong>D29</strong> — Today, renaming a goal destroys every past period and resets progress to zero — labelled in-code as "Edit behavior (v1)". No requirement ever said that was correct, and it silently deletes the only long-lived user data in the app.</li>
+      <li><strong>D30</strong> — Inviting friends to <em>edit</em> a workout is therefore a data-model change, not a UI change. The Initial Requirements ask for workout co-editing; the Final Specs drop it; the rules make it architectural — events live under <span class="fname">users/{owner}/events</span> with <span class="fname">allow write: if request.auth.uid == userId</span>. Anyone planning this as "add an invite button" will be wrong by an order of magnitude. It needs a location change or an invitee write scope, plus a conflict story.</li>
+      <li><strong>D31</strong> — <span class="fname">lib/models/</span> contains exactly one file (<span class="fname">goal.dart</span>) and Goals is also the least buggy feature — that is not a coincidence. Event is the most-written entity in the app and it travels as a raw <span class="fname">Map&lt;String, dynamic&gt;</span>, which is how D26 and D27 happened.</li>
+      <li><strong>D32</strong> — Full CRUD rules for a collection referenced nowhere in <span class="fname">lib/</span>. It is also the one collection the old rules doc bothered to document. Dead weight in a security-critical file.</li>
+    </ul>
   </section>
 
   <section id="platform">
@@ -349,54 +386,63 @@
             <td>D3</td>
             <td><strong>iOS + Android only.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span> <span class="tag tag-conflict">CONFLICT</span></td>
-            <td>Web, macOS, Windows and Linux targets exist because Flutter allows them, not because a user asked. Linux throws <span class="fname">UnsupportedError</span> today. <span class="tag tag-deferred">DEFERRED</span> — <strong>trigger: a gym admin asks to moderate from a desktop browser.</strong></td>
+            <td>Web and desktop exist because Flutter allows them.</td>
             <td><span class="pill pill-good">easy</span> — the scaffolds stay on disk</td>
           </tr>
           <tr>
             <td>D9</td>
             <td><strong>Docs render via Cloudflare Pages.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Consistency with your other projects, even though Firebase Hosting is already configured. Firebase Hosting stays only if it is already load-bearing for the app itself.</td>
+            <td>Consistency with your other projects.</td>
             <td><span class="pill pill-good">easy</span> — static HTML, no build step</td>
           </tr>
           <tr>
             <td>D33</td>
-            <td><strong>Bundle identifiers move off <span class="fname">com.example.*</span> before anything leaves the machine.</strong></td>
+            <td><strong>Bundle ids move off <span class="fname">com.example.*</span> before anything ships.</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>Not a preference — Google Play and the App Store both reject <span class="fname">com.example.*</span> outright. The Android app label and iOS display name are placeholders too.</td>
-            <td><span class="pill pill-bad">hard</span> — a bundle id is permanent once published, so pick carefully once</td>
+            <td>Google Play and the App Store both reject <span class="fname">com.example.*</span>.</td>
+            <td><span class="pill pill-bad">hard</span> — permanent once published</td>
           </tr>
           <tr>
             <td>D34</td>
             <td><strong>Release builds get a real upload key.</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>Release currently uses <span class="fname">signingConfigs.getByName("debug")</span>. A debug-signed AAB cannot be uploaded to Play at all.</td>
-            <td><span class="pill pill-bad">hard</span> — losing the upload key later is a genuine problem; back it up when you make it</td>
+            <td>A debug-signed AAB cannot be uploaded to Play at all.</td>
+            <td><span class="pill pill-bad">hard</span> — back the key up when you make it</td>
           </tr>
           <tr>
             <td>D35</td>
             <td><strong>Portrait-only until a landscape layout actually exists.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>iOS currently allows both landscape orientations on phone and all four on iPad, and no screen has a landscape layout. Allowing an orientation you haven't designed is a bug you ship.</td>
+            <td>No screen has a landscape layout, yet iOS allows four.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D36</td>
-            <td><strong>The committed Firebase client config stays committed. No key rotation.</strong></td>
+            <td><strong>The committed Firebase client config stays; no key rotation.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>Firebase client API keys identify the project; they do not authorise anything. Committing them is normal and acceptable. <strong>The real exposure is <span class="fname">firestore.rules</span> (D25), not the config file</strong> — and fixing the rules is what actually closes the hole. No cargo-culted "rotate your keys."</td>
+            <td>Client API keys identify the project; they authorise nothing.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D37</td>
             <td><strong>Google Play is the first external channel; Apple follows.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>$25 one-time versus $99/year, and it defers the Apple-specific blockers (guideline 1.2 report/block, 5.1.1(v) account deletion) by one milestone — though D6 means they all get built anyway. Matches the tiering in <a href="../03-services/index.html">the service map</a>.</td>
+            <td>$25 one-time versus $99/year.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>D3</strong> — Web, macOS, Windows and Linux targets exist because Flutter allows them, not because a user asked. Linux throws <span class="fname">UnsupportedError</span> today. <span class="tag tag-deferred">DEFERRED</span> — <strong>trigger: a gym admin asks to moderate from a desktop browser.</strong> The scaffolds stay on disk either way.</li>
+      <li><strong>D9</strong> — Consistency with your other projects, even though Firebase Hosting is already configured. Firebase Hosting stays only if it is already load-bearing for the app itself.</li>
+      <li><strong>D33</strong> — Not a preference — Google Play and the App Store both reject <span class="fname">com.example.*</span> outright, so identifiers must change before anything leaves the machine. The Android app label and iOS display name are placeholders too. A bundle id is permanent once published, so pick carefully once.</li>
+      <li><strong>D34</strong> — Release currently uses <span class="fname">signingConfigs.getByName("debug")</span>. A debug-signed AAB cannot be uploaded to Play at all. Losing the upload key later is a genuine problem; back it up when you make it.</li>
+      <li><strong>D35</strong> — iOS currently allows both landscape orientations on phone and all four on iPad, and no screen has a landscape layout. Allowing an orientation you haven't designed is a bug you ship.</li>
+      <li><strong>D36</strong> — Firebase client API keys identify the project; they do not authorise anything. Committing them is normal and acceptable. <strong>The real exposure is <span class="fname">firestore.rules</span> (D25), not the config file</strong> — and fixing the rules is what actually closes the hole. No cargo-culted "rotate your keys."</li>
+      <li><strong>D37</strong> — $25 one-time versus $99/year, and it defers the Apple-specific blockers (guideline 1.2 report/block, 5.1.1(v) account deletion) by one milestone — though D6 means they all get built anyway. Matches the tiering in <a href="../03-services/index.html">the service map</a>.</li>
+    </ul>
   </section>
 
   <section id="process">
@@ -409,54 +455,63 @@
             <td>D7</td>
             <td><strong>Rename <span class="fname">forge_senior_project_version/</span> to <span class="fname">app/</span>.</strong></td>
             <td><span class="tag tag-proposed">PROPOSED</span></td>
-            <td>The directory name is a daily reminder of a finished class. Cheap now, annoying later. <a href="#proposed">Both sides above.</a></td>
+            <td>The name is a daily reminder of a finished class.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D10</td>
             <td><strong>Linear is where the work lives, in the ForgeAlt team.</strong></td>
             <td><span class="tag tag-locked">LOCKED</span></td>
-            <td>Projects, documents, milestones and issues live there. These docs are the reference; Linear is the queue.</td>
+            <td>Projects, documents, milestones and issues all live there.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D38</td>
-            <td><strong>Delete the four status markdown files in the prototype. Do not update them.</strong></td>
+            <td><strong>Delete the four status markdown files in the prototype.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="fname">PROJECT_STATUS.md</span> calls the app "Production-Ready Core" while listing fully-implemented services as empty — it is the single most misleading file in the repo, and all four have been untouched since the first commit while six months of work happened. A stale doc is worse than no doc because it gets believed. <span class="fname">README.md</span> is still the <span class="fname">flutter create</span> stub and should be written, not deleted.</td>
+            <td>A stale doc is worse than no doc because it gets believed.</td>
             <td><span class="pill pill-good">easy</span> — git remembers them</td>
           </tr>
           <tr>
             <td>D39</td>
-            <td><strong>Every academic artifact is dead.</strong> Course numbers, 126-hour budgets, week-numbered semester schedules, rubric sections, I-Learn gates, and "demo-able" as a definition of done appear in no deliverable.</td>
+            <td><strong>Every academic artifact is dead.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>This was a capstone and is now a product attempt. Scope sized to a grade is not scope sized to a user. Anyone mining the proposal for requirements will otherwise pick up unedited instructor prompts as if they were product intent — a large part of that document is the course template.</td>
+            <td>Scope sized to a grade is not scope sized to a user.</td>
             <td><span class="pill pill-bad">hard</span> — it's a stance, not a setting</td>
           </tr>
           <tr>
             <td>D40</td>
-            <td><strong>Turn on <span class="fname">strict-casts</span> before quoting the analyzer as evidence of anything.</strong></td>
+            <td><strong>Turn on <span class="fname">strict-casts</span> before quoting the analyzer.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td><span class="fname">analysis_options.yaml</span> is one <span class="fname">include:</span> line. "Flutter analyze: No issues found" measures the lint config, not the code — and it is exactly why the unchecked casts that crash the calendar compile clean. A grep for TODO across <span class="fname">lib/</span> returns two hits, both in dead code.</td>
-            <td><span class="pill pill-good">easy</span> — expect a wave of findings the first time</td>
+            <td>"No issues found" measures the lint config, not the code.</td>
+            <td><span class="pill pill-good">easy</span> — expect a wave of findings</td>
           </tr>
           <tr>
             <td>D41</td>
             <td><strong>Strip PII from anything derived from the proposal document.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>The proposal carries a phone number, a school email and a personal email as a course submission artifact. None of it belongs in a product plan or a public docs site.</td>
+            <td>It carries a phone number and two email addresses.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
           <tr>
             <td>D42</td>
-            <td><strong><span class="fname">docs/</span> is the reference; Linear is the queue. Neither duplicates the other.</strong></td>
+            <td><strong><span class="fname">docs/</span> is the reference; Linear is the queue.</strong></td>
             <td><span class="tag tag-decided">DECIDED</span></td>
-            <td>The failure mode this project already lived through is status written into markdown, never updated, and then believed (D38). Status belongs in the tool that changes when work changes; reasoning belongs here.</td>
+            <td>Status belongs where it changes when the work changes.</td>
             <td><span class="pill pill-good">easy</span></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>D7</strong> — The directory name is a daily reminder of a finished class. Cheap now, annoying later. <a href="#proposed">Both sides above.</a></li>
+      <li><strong>D10</strong> — Projects, documents, milestones and issues live in Linear, in the ForgeAlt team. These docs are the reference; Linear is the queue.</li>
+      <li><strong>D38</strong> — Do not update them. <span class="fname">PROJECT_STATUS.md</span> calls the app "Production-Ready Core" while listing fully-implemented services as empty — it is the single most misleading file in the repo, and all four have been untouched since the first commit while six months of work happened. A stale doc is worse than no doc because it gets believed. <span class="fname">README.md</span> is still the <span class="fname">flutter create</span> stub and should be written, not deleted.</li>
+      <li><strong>D39</strong> — Course numbers, 126-hour budgets, week-numbered semester schedules, rubric sections, I-Learn gates, and "demo-able" as a definition of done appear in no deliverable. This was a capstone and is now a product attempt. Scope sized to a grade is not scope sized to a user. Anyone mining the proposal for requirements will otherwise pick up unedited instructor prompts as if they were product intent — a large part of that document is the course template.</li>
+      <li><strong>D40</strong> — <span class="fname">analysis_options.yaml</span> is one <span class="fname">include:</span> line. "Flutter analyze: No issues found" measures the lint config, not the code — and it is exactly why the unchecked casts that crash the calendar compile clean. A grep for TODO across <span class="fname">lib/</span> returns two hits, both in dead code. Expect a wave of findings the first time.</li>
+      <li><strong>D41</strong> — The proposal carries a phone number, a school email and a personal email as a course submission artifact. None of it belongs in a product plan or a public docs site.</li>
+      <li><strong>D42</strong> — Neither duplicates the other. The failure mode this project already lived through is status written into markdown, never updated, and then believed (D38). Status belongs in the tool that changes when work changes; reasoning belongs here.</li>
+    </ul>
   </section>
 
   <section id="deferred">
@@ -464,29 +519,49 @@
     <p>Nothing here was silently dropped. Every deferred row has a <strong>trigger</strong> — the specific thing that would make it worth revisiting. The <strong>cut</strong> rows have no trigger on purpose: they are decisions, not delays.</p>
     <div class="tablewrap">
       <table>
-        <thead><tr><th>Deferred thing</th><th>Why not now</th><th>Trigger to revisit</th></tr></thead>
+        <thead><tr><th>Thing</th><th>Status</th><th>Why not now</th><th>Trigger to revisit</th></tr></thead>
         <tbody>
-          <tr><td><strong>Trainer platform</strong> <span class="small faint">(AlpFit product line 3)</span></td><td>No trainer role, account type, feature, or line of code exists anywhere. The account-type enum is member/gym only. The trainer interview notes the proposal cites were never written down, so even the requirements are unrecoverable.</td><td><span class="pill pill-bad">CUT — not deferred.</span> There is no trigger. Reopening it is starting a different product (a payments marketplace), not resuming this one. See D4.</td></tr>
-          <tr><td><strong>Gym software as a separate product</strong> <span class="small faint">(AlpFit product line 2)</span></td><td>Narrowed to the gym <em>account type</em> inside Forge, which is already built and is the differentiator. A standalone B2B product means selling to institutions with procurement cycles.</td><td><span class="pill pill-bad">CUT — not deferred.</span> The account type carries the capability. See D4.</td></tr>
-          <tr><td><strong>Monetization</strong> <span class="small faint">D8</span></td><td>One stretch sentence about a premium gym tier is the only monetization signal in ~20 documents. No pricing, no tiers, no provider, no statement of what "better communities" buys.</td><td>Three separate gyms ask for something a free tier can't do.</td></tr>
-          <tr><td><strong>Web and desktop targets</strong> <span class="small faint">D3</span></td><td>The scaffolds exist because Flutter generates them. Linux throws <span class="fname">UnsupportedError</span>; desktop is untested and unreachable in practice. Every extra target multiplies the surface a solo dev must verify.</td><td>A gym admin asks to moderate from a desktop browser.</td></tr>
-          <tr><td><strong>API gateway rewrite</strong> <span class="small faint">D1</span></td><td>One document declares a future move to a lightweight frontend with a gateway abstracting storage from the client. It is a declared future reversal of a working architecture, with no migration or versioning story.</td><td>A second client that isn't Flutter, or Firestore read cost past $25/mo.</td></tr>
-          <tr><td><strong>Cloud Functions / Firebase Blaze</strong></td><td>Requires the pay-as-you-go plan, i.e. a card on file, which has been deliberately avoided. Account deletion can be done client-side; goal counting is currently client-trusted anyway.</td><td>Server-side logic becomes unavoidable: FCM fan-out for push, cascade account deletion at volume, or tamper-proof counting.</td></tr>
-          <tr><td><strong>Dedicated search service</strong> <span class="small faint">(Algolia / Typesense)</span></td><td>Search today is <span class="fname">limit(100)</span> plus an in-memory <span class="fname">contains()</span> — it breaks silently past 100 users. The <em>next</em> step is a Firestore prefix query on <span class="fname">displayNameLower</span>, which is already written at signup and never used. That is free.</td><td>Firestore prefix search on <span class="fname">displayNameLower</span> stops being good enough — realistically past a few thousand users.</td></tr>
-          <tr><td><strong>User groups</strong></td><td>A third social tier beside friends and gyms, required by one document, demoted to stretch by the next, and existing in no entity, collection, rule, index, or line of UI.</td><td>Beta users ask to share an event with a named subset of friends more than once. Until then, invitee lists cover it.</td></tr>
-          <tr><td><strong>Live in-progress workout screen</strong> <span class="small faint">D13</span></td><td>An orphan spec in no requirements list, and it pulls toward the D11 anti-scope.</td><td>A beta tester asks to log a workout while doing it.</td></tr>
-          <tr><td><strong>Merging the two repetition mechanisms</strong> <span class="small faint">D22</span></td><td>Plans materialise real docs; in-event recurrence expands client-side. Both work. Merging is a rewrite with no user-visible payoff.</td><td>The first bug where a plan-generated event and a recurring event disagree about the same slot.</td></tr>
-          <tr><td><strong>The 5&times;6 feed widget grid</strong></td><td>The published position math does not close under either <span class="fname">row:col</span> or <span class="fname">col:row</span> reading, and the shipped feed doesn't use the grid at all. Guessing a convention would silently make it permanent. <a href="features.html#grid">Detail here.</a></td><td><strong>Before building any new feed widget.</strong> One sentence from you settles it.</td></tr>
-          <tr><td><strong>Multi-day tracking of a per-day goal</strong> <span class="small faint">the "water" case</span></td><td>The notes leave it explicitly unresolved — "for that specific goal I'm not sure what to do."</td><td>A beta user asks for a daily habit with a weekly progress view.</td></tr>
-          <tr><td><strong>Gym subpages</strong></td><td>Channels exist as a flat name array. Whether "subpages" means channels or something else was never reconciled. The missing gym <em>community landing page</em> matters far more and is a must-have.</td><td>A gym runs out of room in a flat channel list — realistically past ~10 channels.</td></tr>
-          <tr><td><strong>Gym discovery via a map</strong></td><td>A Pokémon-Go-style map view appears twice in the earliest docs and was then silently dropped — not deferred, not demoted, just gone. Search is the only discovery path today.</td><td>Forge has gyms in more than one city and search-by-name stops being how people find them.</td></tr>
-          <tr><td><strong>Movement catalog, max tracking, movement insights</strong></td><td>Three ideas from the earliest brain-dump that never appear again in any later document. All three drift toward the D11 anti-scope.</td><td>Beta users type the same exercise name inconsistently often enough that the free-text field becomes the complaint. Even then: a shared name list, not a programming engine.</td></tr>
-          <tr><td><strong>Riverpod / Bloc / a DI framework</strong> <span class="small faint">D5, D20</span></td><td>Recommended twice in the old notes, adopted zero times, and the app works without it.</td><td>A second developer joins, or a screen becomes genuinely untestable without it.</td></tr>
-          <tr><td><strong>CI beyond "does it build and do the tests pass"</strong></td><td>Solo developer, manual builds, and no tests to run yet.</td><td>A second developer, or the first time a broken build reaches a tester.</td></tr>
-          <tr><td><strong>Analytics</strong></td><td>At n=30 you can ask the users directly, and SM1/SM4 are countable by hand. Free when adopted.</td><td>There are enough users that behavioural questions can't be answered by asking them.</td></tr>
+          <tr><td><strong>Trainer platform</strong> <span class="small faint">(AlpFit product line 3)</span></td><td><span class="pill pill-bad">CUT</span></td><td>No trainer role, account type, feature or code exists.</td><td><strong>None — it is cut.</strong> See D4.</td></tr>
+          <tr><td><strong>Gym software as a separate product</strong> <span class="small faint">(AlpFit product line 2)</span></td><td><span class="pill pill-bad">CUT</span></td><td>Narrowed to the gym <em>account type</em> inside Forge.</td><td><strong>None — it is cut.</strong> See D4.</td></tr>
+          <tr><td><strong>Monetization</strong> <span class="small faint">D8</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>One stretch sentence is the only monetization signal.</td><td>Three separate gyms ask for something a free tier can't do.</td></tr>
+          <tr><td><strong>Web and desktop targets</strong> <span class="small faint">D3</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>The scaffolds exist because Flutter generates them.</td><td>A gym admin asks to moderate from a desktop browser.</td></tr>
+          <tr><td><strong>API gateway rewrite</strong> <span class="small faint">D1</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A declared future reversal of a working architecture.</td><td>A second client that isn't Flutter, or reads past $25/mo.</td></tr>
+          <tr><td><strong>Cloud Functions / Firebase Blaze</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Needs the pay-as-you-go plan, i.e. a card on file.</td><td>Server-side logic becomes unavoidable.</td></tr>
+          <tr><td><strong>Dedicated search service</strong> <span class="small faint">(Algolia / Typesense)</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A free Firestore prefix query is the next step, not this.</td><td>Prefix search on <span class="fname">displayNameLower</span> stops being enough.</td></tr>
+          <tr><td><strong>User groups</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>A third social tier that exists in no line of code.</td><td>Testers ask to share with a named subset of friends.</td></tr>
+          <tr><td><strong>Live in-progress workout screen</strong> <span class="small faint">D13</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>An orphan spec in no requirements list.</td><td>A beta tester asks to log a workout while doing it.</td></tr>
+          <tr><td><strong>Merging the two repetition mechanisms</strong> <span class="small faint">D22</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Both work; merging has no user-visible payoff.</td><td>A plan-generated and a recurring event disagree on a slot.</td></tr>
+          <tr><td><strong>The 5&times;6 feed widget grid</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>The published position math does not close either way.</td><td><strong>Before building any new feed widget.</strong></td></tr>
+          <tr><td><strong>Multi-day tracking of a per-day goal</strong> <span class="small faint">the "water" case</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>The notes leave it explicitly unresolved.</td><td>A user asks for a daily habit with a weekly progress view.</td></tr>
+          <tr><td><strong>Gym subpages</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Whether "subpages" means channels was never reconciled.</td><td>A gym runs out of room in a flat channel list.</td></tr>
+          <tr><td><strong>Gym discovery via a map</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Appears twice in the earliest docs, then silently gone.</td><td>Forge has gyms in more than one city.</td></tr>
+          <tr><td><strong>Movement catalog, max tracking, movement insights</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Three brain-dump ideas that never reappear.</td><td>Inconsistent exercise names become the complaint.</td></tr>
+          <tr><td><strong>Riverpod / Bloc / a DI framework</strong> <span class="small faint">D5, D20</span></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Recommended twice, adopted zero times, app works.</td><td>A second developer, or a genuinely untestable screen.</td></tr>
+          <tr><td><strong>CI beyond "does it build and do the tests pass"</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>Solo developer, manual builds, no tests to run yet.</td><td>A second developer, or a broken build reaches a tester.</td></tr>
+          <tr><td><strong>Analytics</strong></td><td><span class="tag tag-deferred">DEFERRED</span></td><td>At n=30 you can ask the users directly.</td><td>Behavioural questions can't be answered by asking.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Trainer platform</strong> — <span class="pill pill-bad">CUT — not deferred.</span> No trainer role, account type, feature, or line of code exists anywhere. The account-type enum is member/gym only. The trainer interview notes the proposal cites were never written down, so even the requirements are unrecoverable. There is no trigger: reopening it is starting a different product (a payments marketplace), not resuming this one. See D4.</li>
+      <li><strong>Gym software as a separate product</strong> — <span class="pill pill-bad">CUT — not deferred.</span> Narrowed to the gym <em>account type</em> inside Forge, which is already built and is the differentiator. A standalone B2B product means selling to institutions with procurement cycles. The account type carries the capability, so there is no trigger. See D4.</li>
+      <li><strong>Monetization</strong> — One stretch sentence about a premium gym tier is the only monetization signal in ~20 documents. No pricing, no tiers, no provider, no statement of what "better communities" buys.</li>
+      <li><strong>Web and desktop targets</strong> — The scaffolds exist because Flutter generates them. Linux throws <span class="fname">UnsupportedError</span>; desktop is untested and unreachable in practice. Every extra target multiplies the surface a solo dev must verify.</li>
+      <li><strong>API gateway rewrite</strong> — One document declares a future move to a lightweight frontend with a gateway abstracting storage from the client. It is a declared future reversal of a working architecture, with no migration or versioning story. Trigger in full: a second client that isn't Flutter, or Firestore read cost past $25/mo.</li>
+      <li><strong>Cloud Functions / Firebase Blaze</strong> — Requires the pay-as-you-go plan, i.e. a card on file, which has been deliberately avoided. Account deletion can be done client-side; goal counting is currently client-trusted anyway. Trigger in full: server-side logic becomes unavoidable — FCM fan-out for push, cascade account deletion at volume, or tamper-proof counting.</li>
+      <li><strong>Dedicated search service</strong> — Search today is <span class="fname">limit(100)</span> plus an in-memory <span class="fname">contains()</span> — it breaks silently past 100 users. The <em>next</em> step is a Firestore prefix query on <span class="fname">displayNameLower</span>, which is already written at signup and never used. That is free. Algolia or Typesense only enters when prefix search stops being good enough — realistically past a few thousand users.</li>
+      <li><strong>User groups</strong> — A third social tier beside friends and gyms, required by one document, demoted to stretch by the next, and existing in no entity, collection, rule, index, or line of UI. Trigger in full: beta users ask to share an event with a named subset of friends more than once. Until then, invitee lists cover it.</li>
+      <li><strong>Live in-progress workout screen</strong> — An orphan spec in no requirements list, and it pulls toward the D11 anti-scope.</li>
+      <li><strong>Merging the two repetition mechanisms</strong> — Plans materialise real docs; in-event recurrence expands client-side. Both work. Merging is a rewrite with no user-visible payoff. Trigger in full: the first bug where a plan-generated event and a recurring event disagree about the same slot.</li>
+      <li><strong>The 5&times;6 feed widget grid</strong> — The published position math does not close under either <span class="fname">row:col</span> or <span class="fname">col:row</span> reading, and the shipped feed doesn't use the grid at all. Guessing a convention would silently make it permanent. One sentence from you settles it, and it is needed before building any new feed widget. <a href="features.html#grid">Detail here.</a></li>
+      <li><strong>Multi-day tracking of a per-day goal</strong> — The notes leave it explicitly unresolved — "for that specific goal I'm not sure what to do." Trigger in full: a beta user asks for a daily habit with a weekly progress view.</li>
+      <li><strong>Gym subpages</strong> — Channels exist as a flat name array. Whether "subpages" means channels or something else was never reconciled. The missing gym <em>community landing page</em> matters far more and is a must-have. Trigger in full: a gym runs out of room in a flat channel list — realistically past ~10 channels.</li>
+      <li><strong>Gym discovery via a map</strong> — A Pokémon-Go-style map view appears twice in the earliest docs and was then silently dropped — not deferred, not demoted, just gone. Search is the only discovery path today. Trigger in full: Forge has gyms in more than one city and search-by-name stops being how people find them.</li>
+      <li><strong>Movement catalog, max tracking, movement insights</strong> — Three ideas from the earliest brain-dump that never appear again in any later document. All three drift toward the D11 anti-scope. Trigger in full: beta users type the same exercise name inconsistently often enough that the free-text field becomes the complaint. Even then: a shared name list, not a programming engine.</li>
+      <li><strong>Riverpod / Bloc / a DI framework</strong> — Recommended twice in the old notes, adopted zero times, and the app works without it. Trigger in full: a second developer joins, or a screen becomes genuinely untestable without it.</li>
+      <li><strong>CI beyond "does it build and do the tests pass"</strong> — Solo developer, manual builds, and no tests to run yet. Trigger in full: a second developer, or the first time a broken build reaches a tester.</li>
+      <li><strong>Analytics</strong> — At n=30 you can ask the users directly, and SM1/SM4 are countable by hand. Free when adopted. Trigger in full: there are enough users that behavioural questions can't be answered by asking them.</li>
+    </ul>
   </section>
 
   <section id="next">

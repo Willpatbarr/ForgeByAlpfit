@@ -132,23 +132,28 @@
             <td><strong>Today</strong> <span class="faint small">(~10 users, him and friends)</span></td>
             <td><strong>$0 / mo</strong></td>
             <td>$0</td>
-            <td>Firebase inside the free allowance · GitHub Free · Linear Free. Nothing has a card attached except possibly Blaze, which is currently billing $0.</td>
+            <td>Firebase free allowance · GitHub Free · Linear Free</td>
           </tr>
           <tr>
             <td><strong>At beta</strong> <span class="faint small">(~100 users, the Rec Center beta, M5)</span></td>
             <td><strong>~$8–12 / mo</strong></td>
             <td><strong>$25</strong> <span class="faint small">(Play, once)</span></td>
-            <td>Apple $99/yr ≈ $8.25/mo · Firebase ~$0–3/mo · everything else $0. Linear may hit its 250-issue cap here (+$10/mo if it does). The $25 Play fee is the only true one-off in the plan.</td>
+            <td>Apple $8.25/mo · Firebase ~$0–3/mo · rest $0</td>
           </tr>
           <tr>
             <td><strong>At 1,000 users</strong></td>
             <td><strong>~$35–60 / mo</strong> <span class="faint small">(estimate)</span></td>
             <td>—</td>
-            <td>Apple $8.25/mo · <strong>Firestore ~$25–40/mo</strong> and rising, driven by the calendar's <code>2×(friends+gyms)+1</code> listeners and N+1 fetches · Linear Basic ~$10/mo · App Check, FCM, Crashlytics, Play, Cloudflare, GitHub all still $0.</td>
+            <td>Apple $8.25 · <strong>Firestore ~$25–40</strong> · Linear ~$10</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Today</strong> — Apple $99/yr is not yet being paid. Nothing has a card attached except possibly Blaze, which is currently billing $0.</li>
+      <li><strong>At beta</strong> — Apple is $99/yr ≈ $8.25/mo; everything else beyond Firebase is $0. Linear may hit its 250-issue cap here (+$10/mo if it does). The $25 Play fee is the only true one-off in the plan.</li>
+      <li><strong>At 1,000 users</strong> — Firestore is rising, driven by the calendar's <code>2×(friends+gyms)+1</code> listeners and N+1 fetches. Linear Basic is ~$10/mo. App Check, FCM, Crashlytics, Play, Cloudflare, and GitHub are all still $0.</li>
+    </ul>
     <div class="callout warn"><strong>Read the 1,000-user row as a design signal, not a budget.</strong> Firestore reaching ~$25/mo is the exact trigger <a href="../01-product/decisions.html">D1</a> names for revisiting the architecture. Fixing the read amplification is what keeps that decision from being forced — see <a href="firebase.html#cost-scale">the Firebase cost section</a> for the arithmetic. Everything else in the stack is flat at every scale.</div>
   </section>
 
@@ -185,89 +190,100 @@
         <tbody>
           <tr>
             <td><strong>Sentry</strong> <span class="faint small">error tracking</span></td>
-            <td><a href="crashlytics.html">Crashlytics</a> is already inside a service we've adopted, is free and unlimited with no event cap, and has <strong>zero marginal setup</strong>. Sentry's one decisive edge here was Flutter web support — and <a href="../01-product/decisions.html">D3</a> cut web as a target, which removed the entire argument.</td>
-            <td>He wants <strong>one error tool across Flutter <em>and</em> his Swift projects</strong>. A single dashboard for everything he builds is a real reason; "Sentry is nicer" is not.</td>
+            <td><a href="crashlytics.html">Crashlytics</a> is free, unlimited and already adopted</td>
+            <td>He wants <strong>one error tool across Flutter and Swift</strong></td>
           </tr>
           <tr>
             <td><strong>Dedicated analytics</strong> <span class="faint small">Amplitude / PostHog / Mixpanel</span></td>
-            <td>Product analytics answers questions about cohorts you don't have. With ~10 users he can ask them directly, and with 100 beta testers he can ask them in person at the Rec Center.</td>
-            <td><strong>A retention question he genuinely can't answer</strong> — e.g. "do people who add three friends in week one stay?" — where asking users individually is no longer possible.</td>
+            <td>Answers questions about cohorts he doesn't have</td>
+            <td><strong>A retention question he genuinely can't answer</strong></td>
           </tr>
           <tr>
             <td><strong>Algolia / Typesense</strong> <span class="faint small">search</span></td>
-            <td>Real search infrastructure for an app whose entire search is <code>FirestoreRefs.users.limit(100).get()</code> followed by an in-memory <code>contains()</code>.</td>
-            <td><strong>The <code>limit(100)</code> in-memory search actually breaks — i.e. past 100 users.</strong> That is a hard, known number and it will arrive during the beta. Note the cheaper intermediate fix first: <code>displayNameLower</code> is already written at signup and never queried, so a Firestore prefix query buys real headroom before any vendor is needed.</td>
+            <td>Real search infrastructure for a 100-doc in-memory filter</td>
+            <td><strong>The <code>limit(100)</code> search breaks — past 100 users</strong></td>
           </tr>
           <tr>
             <td><strong>Cloud Functions</strong> <span class="faint small">server-side logic</span></td>
-            <td>Requires Blaze and adds a server-side component to a deliberately serverless app. Everything so far fits in rules + client.</td>
-            <td><strong>The first thing that genuinely can't be done in rules + client</strong> — most likely the account-deletion cascade, moderation actions, or (see <a href="cloud-messaging.html#the-catch">the FCM runbook</a>) triggered push, which cannot be done from the client without shipping an admin credential. <span class="tag tag-proposed">This trigger is arguably already firing.</span></td>
+            <td>Requires Blaze; everything so far fits in rules + client</td>
+            <td><strong>The first thing rules + client genuinely can't do</strong> <span class="tag tag-proposed">arguably already firing</span></td>
           </tr>
           <tr>
             <td><strong>RevenueCat</strong> <span class="faint small">subscriptions / IAP</span></td>
-            <td>There is nothing to sell. The only monetization signal in ~20 source documents is one line about a paid premium gym tier.</td>
-            <td><strong>Monetization stops being deferred</strong> — <a href="../01-product/decisions.html">D8</a>'s own trigger is three separate gyms asking for something a free tier can't do.</td>
+            <td>There is nothing to sell</td>
+            <td><strong>Monetization stops being deferred</strong></td>
           </tr>
           <tr>
             <td><strong>Terraform / IaC</strong></td>
-            <td>Infrastructure-as-code for one Firebase project, one static site, and two store listings. The "infrastructure" is four console screens, and <code class="fname">firestore.rules</code> + <code class="fname">firestore.indexes.json</code> are already versioned in git — which is the 90% of IaC that actually pays off here.</td>
-            <td><strong>A second environment exists</strong> — a real staging Firebase project that must stay in sync with production. Until there are two of something, there is nothing to reproduce.</td>
+            <td>The "infrastructure" is four console screens</td>
+            <td><strong>A second environment exists</strong></td>
           </tr>
           <tr>
             <td><strong>Feature flags</strong> <span class="faint small">LaunchDarkly / Firebase Remote Config</span></td>
-            <td>Flags exist to decouple deploy from release for teams shipping continuously. He ships when he ships, to testers he knows by name.</td>
-            <td><strong>He needs to turn something off for users without shipping a new build</strong> — realistically the first time a store review cycle stands between him and a broken feature. Remote Config is free and already inside Firebase when that day comes, so this is a cheap adoption, just not a useful one yet.</td>
+            <td>He ships when he ships, to testers he knows by name</td>
+            <td><strong>He must turn something off without shipping a build</strong></td>
           </tr>
           <tr>
             <td><strong>A status page</strong> <span class="faint small">Statuspage / Instatus</span></td>
-            <td>A public status page communicates outages to users who are watching for them. Forge's users are ~10 people who can text him.</td>
-            <td><strong>Users start asking "is it down?" through a channel he doesn't control</strong>, or a gym partner asks for uptime commitments.</td>
+            <td>Forge's users are ~10 people who can text him</td>
+            <td><strong>"Is it down?" arrives through a channel he doesn't control</strong></td>
           </tr>
           <tr>
             <td><strong>A dedicated CDN</strong></td>
-            <td>Firebase Storage already serves avatars from Google's edge, and <a href="cloudflare-pages.html">Cloudflare Pages</a> already puts the docs on Cloudflare's. There is no third asset tier to accelerate.</td>
-            <td><strong>Measured image-load latency becomes a complaint</strong> — and even then the first fix is thumbnails, not a CDN: <code class="fname">profile_avatar_service.dart</code> currently reads avatars up to <strong>15 MB</strong> with no upload cap at all.</td>
+            <td>There is no third asset tier to accelerate</td>
+            <td><strong>Measured image-load latency becomes a complaint</strong></td>
           </tr>
           <tr>
             <td><strong>Auth0 / Clerk</strong> <span class="faint small">identity</span></td>
-            <td><a href="firebase.html">Firebase Auth</a> is already wired, already working, and free to 50,000 monthly active users. Adding a second identity provider would mean migrating every existing account for zero user-visible gain.</td>
-            <td><strong>Firebase Auth can't do something required</strong> — enterprise SSO for a gym chain, or a compliance requirement Firebase doesn't meet. Note that social sign-in, email verification, and password reset are all things Firebase Auth <em>can</em> do and Forge simply hasn't turned on; those are not reasons to switch.</td>
+            <td><a href="firebase.html">Firebase Auth</a> is wired, working, and free to 50K MAU</td>
+            <td><strong>Firebase Auth can't do something required</strong></td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Sentry</strong> — Crashlytics is already inside a service we've adopted, is free and unlimited with no event cap, and has <strong>zero marginal setup</strong>. Sentry's one decisive edge here was Flutter web support, and <a href="../01-product/decisions.html">D3</a> cut web as a target, which removed the entire argument. <em>Trigger:</em> a single dashboard for everything he builds is a real reason; "Sentry is nicer" is not.</li>
+      <li><strong>Dedicated analytics</strong> — product analytics answers questions about cohorts you don't have. With ~10 users he can ask them directly, and with 100 beta testers he can ask them in person at the Rec Center. <em>Trigger:</em> e.g. "do people who add three friends in week one stay?" — where asking users individually is no longer possible.</li>
+      <li><strong>Algolia / Typesense</strong> — real search infrastructure for an app whose entire search is <code>FirestoreRefs.users.limit(100).get()</code> followed by an in-memory <code>contains()</code>. <em>Trigger:</em> past 100 users is a hard, known number and it will arrive during the beta. Note the cheaper intermediate fix first: <code>displayNameLower</code> is already written at signup and never queried, so a Firestore prefix query buys real headroom before any vendor is needed.</li>
+      <li><strong>Cloud Functions</strong> — requires Blaze and adds a server-side component to a deliberately serverless app. <em>Trigger:</em> most likely the account-deletion cascade, moderation actions, or (see <a href="cloud-messaging.html#the-catch">the FCM runbook</a>) triggered push, which cannot be done from the client without shipping an admin credential.</li>
+      <li><strong>RevenueCat</strong> — the only monetization signal in ~20 source documents is one line about a paid premium gym tier. <em>Trigger:</em> <a href="../01-product/decisions.html">D8</a>'s own trigger is three separate gyms asking for something a free tier can't do.</li>
+      <li><strong>Terraform / IaC</strong> — infrastructure-as-code for one Firebase project, one static site, and two store listings. <code class="fname">firestore.rules</code> + <code class="fname">firestore.indexes.json</code> are already versioned in git, which is the 90% of IaC that actually pays off here. <em>Trigger:</em> a real staging Firebase project that must stay in sync with production. Until there are two of something, there is nothing to reproduce.</li>
+      <li><strong>Feature flags</strong> — flags exist to decouple deploy from release for teams shipping continuously. <em>Trigger:</em> realistically the first time a store review cycle stands between him and a broken feature. Remote Config is free and already inside Firebase when that day comes, so this is a cheap adoption, just not a useful one yet.</li>
+      <li><strong>A status page</strong> — a public status page communicates outages to users who are watching for them. <em>Trigger:</em> users start asking "is it down?" through a channel he doesn't control, or a gym partner asks for uptime commitments.</li>
+      <li><strong>A dedicated CDN</strong> — Firebase Storage already serves avatars from Google's edge, and <a href="cloudflare-pages.html">Cloudflare Pages</a> already puts the docs on Cloudflare's. <em>Trigger:</em> even then the first fix is thumbnails, not a CDN — <code class="fname">profile_avatar_service.dart</code> currently reads avatars up to <strong>15 MB</strong> with no upload cap at all.</li>
+      <li><strong>Auth0 / Clerk</strong> — <a href="firebase.html">Firebase Auth</a> is already wired, already working, and free to 50,000 monthly active users. Adding a second identity provider would mean migrating every existing account for zero user-visible gain. <em>Trigger:</em> enterprise SSO for a gym chain, or a compliance requirement Firebase doesn't meet. Note that social sign-in, email verification, and password reset are all things Firebase Auth <em>can</em> do and Forge simply hasn't turned on; those are not reasons to switch.</li>
+    </ul>
     <p class="small muted">Adjacent calls made elsewhere and not repeated here: Supabase/Postgres migration (<a href="../01-product/decisions.html">D1</a>), Riverpod (<a href="../01-product/decisions.html">D5</a>), and the desktop/web platform targets (<a href="../01-product/decisions.html">D3</a>).</p>
   </section>
 
   <section id="proposed">
     <h2>Open calls — needs William's eye</h2>
     <p>Four genuine coin-flips across the runbooks. Everything else on this page is settled.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Call</th><th>The question</th><th>Where</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tag tag-proposed">PROPOSED</span> <strong>Bundle ID / package name</strong></td>
-            <td><code class="fname">com.alpfit.forge</code> on both platforms, replacing <code class="fname">com.example.*</code>. <strong>Permanent after the first store upload</strong>, and it pins Firebase, App Check, and APNs. This is the highest-consequence unmade decision on the page.</td>
-            <td><a href="apple-developer.html#setup-steps">apple</a> · <a href="google-play.html#setup-steps">play</a></td>
-          </tr>
-          <tr>
-            <td><span class="tag tag-proposed">PROPOSED</span> <strong>Push needs a Cloud Function</strong></td>
-            <td>FCM delivery is free, but <em>triggering</em> a push on a new DM cannot be done from the client without shipping an admin credential. Accept one small Cloud Function (Blaze, ~$0 within the free allowance), or accept that beta invites stay silent.</td>
-            <td><a href="cloud-messaging.html#the-catch">cloud-messaging</a></td>
-          </tr>
-          <tr>
-            <td><span class="tag tag-proposed">PROPOSED</span> <strong>Domain for the docs / legal pages</strong></td>
-            <td>Free <code class="fname">*.pages.dev</code> subdomain, or a bought domain (~$10–15/yr)? The URL goes into two store listings and a privacy policy users agree to, so it's awkward to change afterwards. Not yet determined — no domain is named anywhere in the intake.</td>
-            <td><a href="cloudflare-pages.html#setup-steps">cloudflare-pages</a></td>
-          </tr>
-          <tr>
-            <td><span class="tag tag-proposed">PROPOSED</span> <strong>Stay on Cloudflare Pages</strong></td>
-            <td>Cloudflare has confirmed Pages and Workers are converging. There is no deprecation notice and existing projects keep working — recommendation is to stay on Pages and revisit only if a real deprecation date appears.</td>
-            <td><a href="cloudflare-pages.html#free-tier">cloudflare-pages</a></td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="grid">
+      <div class="card">
+        <h3>Bundle ID / package name <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The question:</strong> <code class="fname">com.alpfit.forge</code> on both platforms, replacing <code class="fname">com.example.*</code>.</p>
+        <p><strong>Why it matters:</strong> <strong>permanent after the first store upload</strong>, and it pins Firebase, App Check, and APNs. This is the highest-consequence unmade decision on the page.</p>
+        <p><strong>Where:</strong> <a href="apple-developer.html#setup-steps">apple</a> · <a href="google-play.html#setup-steps">play</a></p>
+      </div>
+      <div class="card">
+        <h3>Push needs a Cloud Function <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The question:</strong> accept one small Cloud Function (Blaze, ~$0 within the free allowance), or accept that beta invites stay silent.</p>
+        <p><strong>Why it matters:</strong> FCM delivery is free, but <em>triggering</em> a push on a new DM cannot be done from the client without shipping an admin credential.</p>
+        <p><strong>Where:</strong> <a href="cloud-messaging.html#the-catch">cloud-messaging</a></p>
+      </div>
+      <div class="card">
+        <h3>Domain for the docs / legal pages <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The question:</strong> free <code class="fname">*.pages.dev</code> subdomain, or a bought domain (~$10–15/yr)?</p>
+        <p><strong>Why it matters:</strong> the URL goes into two store listings and a privacy policy users agree to, so it's awkward to change afterwards. Not yet determined — no domain is named anywhere in the intake.</p>
+        <p><strong>Where:</strong> <a href="cloudflare-pages.html#setup-steps">cloudflare-pages</a></p>
+      </div>
+      <div class="card">
+        <h3>Stay on Cloudflare Pages <span class="tag tag-proposed">PROPOSED</span></h3>
+        <p><strong>The question:</strong> Cloudflare has confirmed Pages and Workers are converging.</p>
+        <p><strong>Why it matters:</strong> there is no deprecation notice and existing projects keep working. Recommendation is to stay on Pages and revisit only if a real deprecation date appears.</p>
+        <p><strong>Where:</strong> <a href="cloudflare-pages.html#free-tier">cloudflare-pages</a></p>
+      </div>
     </div>
   </section>
 

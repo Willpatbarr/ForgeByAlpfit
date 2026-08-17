@@ -39,34 +39,21 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>Play Console is how Forge gets onto Android phones — first through the internal testing track (100 testers, builds live in minutes, minimal review), then eventually production. For the Rec Center beta it is the cheaper and faster half of the two stores: <strong>$25 once instead of $99/year, and internal-track builds appear in minutes instead of waiting on a review queue</strong>.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>Sideloading APKs directly to testers</td><td>Free and it does technically work — but it means asking gym members to enable "install unknown apps", it gives no update mechanism, and it makes a fitness app look like malware to the exact strangers you're trying to win over.</td></tr>
-          <tr><td>Firebase App Distribution</td><td>Genuinely good for pre-store builds and free — but it does not lead anywhere. Play Console is needed eventually regardless, and Play Integrity for <a href="app-check.html">App Check</a> is linked through it, so paying the $25 once collapses two steps into one.</td></tr>
-          <tr><td>Amazon Appstore / F-Droid</td><td>Wrong audience entirely for a US campus gym.</td></tr>
-          <tr><td>Android-only, skip Apple</td><td>A real budget option (see <a href="apple-developer.html">Apple</a>), but it excludes roughly half the target population from a study about social behaviour.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>Sideloading APKs directly to testers</strong> — free and it does technically work, but it means asking gym members to enable "install unknown apps", it gives no update mechanism, and it makes a fitness app look like malware to the exact strangers you're trying to win over.</li>
+      <li><strong>Firebase App Distribution</strong> — genuinely good for pre-store builds and free, but it does not lead anywhere. Play Console is needed eventually regardless, and Play Integrity for <a href="app-check.html">App Check</a> is linked through it, so paying the $25 once collapses two steps into one.</li>
+      <li><strong>Amazon Appstore / F-Droid</strong> — wrong audience entirely for a US campus gym.</li>
+      <li><strong>Android-only, skip Apple</strong> — a real budget option (see <a href="apple-developer.html">Apple</a>), but it excludes roughly half the target population from a study about social behaviour.</li>
+    </ul>
     <p><strong>Why Play wins:</strong> $25 one-time is the cheapest real distribution channel in the plan, and it is a prerequisite for Play Integrity anyway.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why this tier</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t1">T1 Before first real user</span></td>
-            <td>Register at <strong>M3, Ship to a device that isn't his</strong> — and register <em>early</em> within M3, because of the 14-day clock below.</td>
-            <td>$25 is small enough that the cost isn't the gate; the <strong>time-based requirements are</strong>. Registering early costs nothing extra and starts clocks that cannot be compressed later.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t1">T1 Before first real user</span></p>
+    <p><strong>Trigger:</strong> register at <strong>M3, Ship to a device that isn't his</strong> — and register <em>early</em> within M3, because of the 14-day clock below.</p>
+    <p><strong>Why this tier:</strong> $25 is small enough that the cost isn't the gate; the <strong>time-based requirements are</strong>. Registering early costs nothing extra and starts clocks that cannot be compressed later.</p>
     <div class="callout danger">
       <strong>The 12 × 14 rule — the deadline that will surprise him.</strong> Personal developer accounts created after <strong>13 November 2023</strong> must run a <strong>closed test with at least 12 testers opted in continuously for at least 14 consecutive days</strong> before they can even apply for production access. Production review then typically takes up to 7 days. <a href="https://support.google.com/googleplay/android-developer/answer/14151465">Google's requirements page</a>.
       <ul>
@@ -89,16 +76,24 @@
       <table>
         <thead><tr><th>Item</th><th>Reality</th></tr></thead>
         <tbody>
-          <tr><td><strong>Registration fee</strong></td><td><strong>US$25, one time, for the lifetime of the account.</strong> Not annual — this is the single cheapest committed cost in the plan. <a href="https://support.google.com/googleplay/android-developer/answer/6112435">Google's fee page</a>.</td></tr>
-          <tr><td>Free tier</td><td>Everything after the $25 is free: unlimited apps, unlimited updates, all testing tracks, Play App Signing, Data safety, and Play Integrity.</td></tr>
-          <tr><td>Internal testing track</td><td><strong>Up to 100 testers per app.</strong> Builds available "within minutes"; internal tests "may not be subject to the usual Play policy or security reviews". First store-listing publish can take up to 48 hours. <a href="https://support.google.com/googleplay/android-developer/answer/9845334">Internal testing</a>.</td></tr>
-          <tr><td>Closed / open testing</td><td>Free; closed testing is where the 12×14 requirement lives.</td></tr>
-          <tr><td>When exceeded / what goes wrong</td><td><span class="pill pill-warn">Not a bill — a block.</span> Play doesn't meter you; it <em>rejects</em> you. Policy violation, missing Data safety form, unpinned target API, or debug signing all mean the upload or the release is refused. There is no surprise-bill mechanism here at all.</td></tr>
-          <tr><td>Commission</td><td>15–30% on sales. Irrelevant — <a href="../01-product/decisions.html">D8</a> defers monetization; Forge is free with no IAP.</td></tr>
-          <tr><td>Play Integrity <span class="faint small">(used by <a href="app-check.html">App Check</a>)</span></td><td>Default quota 10,000 token requests/day, shared between classic and standard requests. No published price.</td></tr>
+          <tr><td><strong>Registration fee</strong></td><td><strong>US$25, one time, for the lifetime of the account</strong></td></tr>
+          <tr><td>Free tier</td><td>Everything after the $25 is free</td></tr>
+          <tr><td>Internal testing track</td><td><strong>Up to 100 testers per app</strong>, builds live "within minutes"</td></tr>
+          <tr><td>Closed / open testing</td><td>Free; closed testing is where the 12×14 requirement lives</td></tr>
+          <tr><td>When exceeded / what goes wrong</td><td><span class="pill pill-warn">Not a bill — a block</span></td></tr>
+          <tr><td>Commission</td><td>15–30% on sales — irrelevant, <a href="../01-product/decisions.html">D8</a> defers monetization</td></tr>
+          <tr><td>Play Integrity <span class="faint small">(used by <a href="app-check.html">App Check</a>)</span></td><td>10,000 token requests/day; no published price</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Registration fee</strong> — not annual. This is the single cheapest committed cost in the plan. <a href="https://support.google.com/googleplay/android-developer/answer/6112435">Google's fee page</a>.</li>
+      <li><strong>Free tier</strong> — unlimited apps, unlimited updates, all testing tracks, Play App Signing, Data safety, and Play Integrity.</li>
+      <li><strong>Internal testing track</strong> — internal tests "may not be subject to the usual Play policy or security reviews", though the first store-listing publish can take up to 48 hours. <a href="https://support.google.com/googleplay/android-developer/answer/9845334">Internal testing</a>.</li>
+      <li><strong>When exceeded</strong> — Play doesn't meter you; it <em>rejects</em> you. Policy violation, missing Data safety form, unpinned target API, or debug signing all mean the upload or the release is refused. There is no surprise-bill mechanism here at all.</li>
+      <li><strong>Commission</strong> — Forge is free with no IAP, so this never applies today.</li>
+      <li><strong>Play Integrity</strong> — the default 10,000/day quota is shared between classic and standard requests.</li>
+    </ul>
   </section>
 
   <section id="setup-steps">
@@ -129,15 +124,22 @@
         <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production / CI</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
           <tr><td>Package name <code class="fname">com.alpfit.forge</code></td><td><span class="pill pill-good">No</span> — public, printed on the store listing</td><td>Committed in <code class="fname">build.gradle.kts</code></td><td>Ships in the app</td><td>n/a</td></tr>
-          <tr><td><code class="fname">google-services.json</code></td><td><span class="pill pill-good">No</span> — <a href="firebase.html#secrets-config">client config, correctly committed</a>. Do not let anyone talk you into gitignoring it.</td><td>Committed</td><td>Bundled</td><td>n/a</td></tr>
-          <tr><td>SHA-256 signing fingerprint</td><td><span class="pill pill-good">No</span> — a public hash, safe in the Firebase console</td><td>—</td><td>Firebase console</td><td>n/a</td></tr>
-          <tr><td><strong>Upload keystore</strong> (<code class="fname">.jks</code>)</td><td><span class="pill pill-bad">YES — the single most irreplaceable file in the project.</span> Lose it and updates stop.</td><td><strong>Outside the repo</strong>, plus an encrypted offline backup in a second location</td><td>Base64 in a GitHub Actions secret, only at T2</td><td><code>ANDROID_KEYSTORE_BASE64=</code></td></tr>
-          <tr><td><code class="fname">android/key.properties</code> (keystore + key passwords)</td><td><span class="pill pill-bad">YES</span></td><td><strong>Gitignored.</strong> This file is the classic accidental commit.</td><td>CI secrets</td><td><code>ANDROID_STORE_PASSWORD=</code><br><code>ANDROID_KEY_PASSWORD=</code><br><code>ANDROID_KEY_ALIAS=</code></td></tr>
-          <tr><td>Play Developer API service-account JSON <span class="faint small">(only if release upload is ever automated — T2)</span></td><td><span class="pill pill-bad">YES</span> — can publish releases as you</td><td>Outside the repo</td><td>GitHub Actions secret</td><td><code>PLAY_SERVICE_ACCOUNT_JSON=</code></td></tr>
+          <tr><td><code class="fname">google-services.json</code></td><td><span class="pill pill-good">No</span> — <a href="firebase.html#secrets-config">client config, correctly committed</a></td><td>Committed</td><td>Bundled</td><td>n/a</td></tr>
+          <tr><td>SHA-256 signing fingerprint</td><td><span class="pill pill-good">No</span> — a public hash</td><td>—</td><td>Firebase console</td><td>n/a</td></tr>
+          <tr><td><strong>Upload keystore</strong> (<code class="fname">.jks</code>)</td><td><span class="pill pill-bad">YES</span> — the most irreplaceable file here</td><td><strong>Outside the repo</strong> + offline backup</td><td>Base64 in a GitHub Actions secret, only at T2</td><td><code>ANDROID_KEYSTORE_BASE64=</code></td></tr>
+          <tr><td><code class="fname">android/key.properties</code> (keystore + key passwords)</td><td><span class="pill pill-bad">YES</span></td><td><strong>Gitignored</strong></td><td>CI secrets</td><td><code>ANDROID_STORE_PASSWORD=</code><br><code>ANDROID_KEY_PASSWORD=</code><br><code>ANDROID_KEY_ALIAS=</code></td></tr>
+          <tr><td>Play Developer API service-account JSON <span class="faint small">(T2 only)</span></td><td><span class="pill pill-bad">YES</span> — publishes releases as you</td><td>Outside the repo</td><td>GitHub Actions secret</td><td><code>PLAY_SERVICE_ACCOUNT_JSON=</code></td></tr>
           <tr><td>Google account password / 2FA</td><td><span class="pill pill-bad">YES</span> — owns the console and the $25</td><td>Password manager + offline recovery codes</td><td>n/a</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong><code class="fname">google-services.json</code></strong> — do not let anyone talk you into gitignoring it.</li>
+      <li><strong>SHA-256 signing fingerprint</strong> — safe in the Firebase console.</li>
+      <li><strong>Upload keystore</strong> — lose it and updates stop. Keep an encrypted offline backup in a second location.</li>
+      <li><strong><code class="fname">android/key.properties</code></strong> — this file is the classic accidental commit.</li>
+      <li><strong>Play Developer API service-account JSON</strong> — only needed if release upload is ever automated, which is T2.</li>
+    </ul>
     <p><strong>Never commit a real secret.</strong> Add <code>*.jks</code>, <code>*.keystore</code>, and <code class="fname">android/key.properties</code> to <code class="fname">.gitignore</code> <em>before</em> generating the keystore — the stock Flutter <code class="fname">.gitignore</code> in this repo does not cover them, and a committed keystore in a repo that may be public is a genuine compromise. Commit <code class="fname">.env.example</code> with the empty names above.</p>
     <div class="callout warn"><strong>The backup rule, stated once and bluntly:</strong> the <code class="fname">.jks</code> is not like other secrets. Leaking it is bad; <strong>losing it is worse</strong> — a lost signing key with no Play App Signing reset means the app can never be updated again and users must reinstall a new listing from scratch. Two copies, two places, today.</div>
   </section>
@@ -145,18 +147,13 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-warn">Lock-in: MEDIUM</span> — lower than <a href="apple-developer.html#escape-hatch">Apple's</a>, because Android has real alternative channels.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>The store listing, install and rating statistics, tester lists, crash/ANR data (Android vitals), and the Google-managed app signing key. <strong>No user account data</strong> — that is all in <a href="firebase.html">Firebase</a>.</td></tr>
-          <tr><td>How do I export?</td><td>Statistics and reviews export as CSV or via the Play Developer API. Listing text and assets are your own. Under Play App Signing the <em>app signing key</em> is held by Google and is not exportable — that's the sticky bit.</td></tr>
-          <tr><td>What does leaving cost?</td><td><strong>Genuinely low.</strong> An AAB/APK can be distributed via Amazon Appstore, F-Droid, Samsung Galaxy Store, or direct download. You'd lose the install base and reviews, and users would need to reinstall from the new source — but Android does not forbid the exit the way iOS does.</td></tr>
-          <tr><td>What's actually sticky</td><td>The package name (a new one is a new app with zero history) and Play App Signing key custody. Both are recoverable-with-pain rather than fatal.</td></tr>
-          <tr><td>The $25</td><td>Non-refundable and one-time. It is a sunk cost small enough not to influence any decision.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — the store listing, install and rating statistics, tester lists, crash/ANR data (Android vitals), and the Google-managed app signing key. <strong>No user account data</strong>; that is all in <a href="firebase.html">Firebase</a>.</li>
+      <li><strong>How to export</strong> — statistics and reviews export as CSV or via the Play Developer API. Listing text and assets are your own. Under Play App Signing the <em>app signing key</em> is held by Google and is not exportable — that's the sticky bit.</li>
+      <li><strong>What leaving costs</strong> — <strong>genuinely low.</strong> An AAB/APK can be distributed via Amazon Appstore, F-Droid, Samsung Galaxy Store, or direct download. You'd lose the install base and reviews, and users would need to reinstall from the new source, but Android does not forbid the exit the way iOS does.</li>
+      <li><strong>What's actually sticky</strong> — the package name (a new one is a new app with zero history) and Play App Signing key custody. Both are recoverable-with-pain rather than fatal.</li>
+      <li><strong>The $25</strong> — non-refundable and one-time. It is a sunk cost small enough not to influence any decision.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -165,12 +162,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$25 once</strong>, then $0/mo</td><td>Nothing. Internal testing (100 testers) covers this with builds live in minutes and no policy review gate. The cheapest, fastest distribution in the entire plan.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta)</span></td><td><strong>$0/mo</strong> — the $25 is already spent</td><td>Cost doesn't move. What breaks is the <strong>100-tester internal cap</strong>, which lands exactly here: a beta that grows past 100 must move to closed or open testing, and closed testing is where the <a href="#adoption-trigger">12×14 rule</a> lives. <strong>Plan that transition before you need it</strong>, because it is a 14-day minimum, not a button. Play policy review also becomes real at that point — the UGC and account-deletion requirements stop being theoretical.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$0/mo</strong> — Play's cost is flat and always was</td><td>Still no cost (no monetization, so no commission). Two non-cost pressures instead: <strong>Android vitals thresholds</strong> — Play demotes apps with bad crash and ANR rates in search rankings, which makes <a href="crashlytics.html">Crashlytics</a> and the known unchecked-cast crashes a <em>distribution</em> problem, not just a quality one; and <strong>moderation response time</strong>, since Play's UGC policy expects reports to actually be acted on.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$25 once</strong>, then $0/mo</td><td>Nothing — internal testing covers this entirely</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta)</span></td><td><strong>$0/mo</strong> — the $25 is already spent</td><td>The <strong>100-tester internal cap</strong> lands exactly here</td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0/mo</strong> — Play's cost is flat and always was</td><td>Android vitals thresholds and moderation response time</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — internal testing's 100 testers means builds live in minutes with no policy review gate. The cheapest, fastest distribution in the entire plan.</li>
+      <li><strong>~100 users</strong> — a beta that grows past 100 must move to closed or open testing, and closed testing is where the <a href="#adoption-trigger">12×14 rule</a> lives. <strong>Plan that transition before you need it</strong>, because it is a 14-day minimum, not a button. Play policy review also becomes real at that point: the UGC and account-deletion requirements stop being theoretical.</li>
+      <li><strong>~1,000 users</strong> — still no cost (no monetization, so no commission). Two non-cost pressures instead: <strong>Android vitals thresholds</strong>, since Play demotes apps with bad crash and ANR rates in search rankings, which makes <a href="crashlytics.html">Crashlytics</a> and the known unchecked-cast crashes a <em>distribution</em> problem rather than just a quality one; and <strong>moderation response time</strong>, since Play's UGC policy expects reports to actually be acted on.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -179,14 +181,20 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0 — confirmed.</strong> Google's docs state an added user "doesn't need to pay the $25 registration fee". Only the account owner ever pays. <a href="https://support.google.com/googleplay/android-developer/answer/9844686">Play user permissions</a>.</td></tr>
-          <tr><td>Does the free tier allow another member?</td><td>Yes, with no documented cap on users.</td></tr>
-          <tr><td>Permission model</td><td>Two scopes: <strong>account-level</strong> permissions apply across all apps (creating draft apps is account-only), and <strong>app-level</strong> permissions apply to one app. Genuinely granular — you can grant "view app information" and "manage testing tracks" without granting release-to-production. Better than <a href="apple-developer.html#teammate-delta">Apple's fixed role list</a> for this purpose.</td></tr>
-          <tr><td>What actually changes</td><td>The keystore becomes a <em>shared</em> secret, which is the moment it most often leaks. Do not email it. Either keep releases with one person, or put the base64 keystore in a GitHub Actions secret and have CI sign — which is the T2 release-automation work, arriving early because a second person forced it.</td></tr>
-          <tr><td>Note vs Apple</td><td>Play needs no per-device provisioning and no certificate in a Keychain, so onboarding a second Android developer is dramatically easier than the iOS equivalent.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0 — confirmed.</strong> Only the account owner ever pays</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, with no documented cap on users</td></tr>
+          <tr><td>Permission model</td><td>Two scopes: <strong>account-level</strong> and <strong>app-level</strong></td></tr>
+          <tr><td>What actually changes</td><td>The keystore becomes a <em>shared</em> secret</td></tr>
+          <tr><td>Note vs Apple</td><td>No per-device provisioning, no certificate in a Keychain</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Extra seat cost</strong> — Google's docs state an added user "doesn't need to pay the $25 registration fee". <a href="https://support.google.com/googleplay/android-developer/answer/9844686">Play user permissions</a>.</li>
+      <li><strong>Permission model</strong> — account-level permissions apply across all apps (creating draft apps is account-only) and app-level permissions apply to one app. Genuinely granular: you can grant "view app information" and "manage testing tracks" without granting release-to-production. Better than <a href="apple-developer.html#teammate-delta">Apple's fixed role list</a> for this purpose.</li>
+      <li><strong>What actually changes</strong> — a shared keystore is the moment it most often leaks. Do not email it. Either keep releases with one person, or put the base64 keystore in a GitHub Actions secret and have CI sign, which is the T2 release-automation work arriving early because a second person forced it.</li>
+      <li><strong>Note vs Apple</strong> — onboarding a second Android developer is dramatically easier than the iOS equivalent.</li>
+    </ul>
   </section>
 
   <section id="next">

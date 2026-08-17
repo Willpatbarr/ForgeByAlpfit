@@ -53,7 +53,7 @@
         <tbody>
           <tr><td><strong>Priority</strong></td>
             <td><span class="prio prio-must">must-have</span> <span class="prio prio-important">should-have</span> <span class="prio prio-optional">someday</span></td>
-            <td>must-have = the product is broken or unshippable without it. should-have = the product is worse without it but still works. someday = a real idea with no current pull.</td></tr>
+            <td>Broken without it / worse without it / no current pull.</td></tr>
           <tr><td><strong>Build state</strong></td>
             <td><span class="pill pill-good">works</span> <span class="pill pill-warn">partial / fake</span> <span class="pill pill-bad">not built</span></td>
             <td>"partial / fake" is the dangerous one — it means a user can see it and touch it and get a wrong answer.</td></tr>
@@ -63,6 +63,9 @@
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Priority</strong> — <span class="prio prio-must">must-have</span> means the product is broken or unshippable without it; <span class="prio prio-important">should-have</span> means the product is worse without it but still works; <span class="prio prio-optional">someday</span> is a real idea with no current pull.</li>
+    </ul>
     <div class="callout danger">
       <strong>Never cite "flutter analyze is clean" as evidence about this codebase.</strong> A full grep for <span class="fname">TODO / FIXME / HACK / unimplemented</span> across <span class="fname">lib/</span> returns <strong>exactly two hits, both in dead code</strong>. <span class="fname">analysis_options.yaml</span> is a single <span class="fname">include:</span> line with <span class="fname">strict-casts</span> off. The incompleteness in this project is <em>invisible to tooling</em> — it lives in empty files, <span class="fname">const []</span> lists, buttons whose bodies are comments, and a filter UI full of fake names. The analyzer is configured to find nothing, and it succeeds.
     </div>
@@ -73,75 +76,71 @@
     <div class="callout danger">
       <strong>These nine are the highest-value work in the entire plan.</strong> Each one renders, animates, and responds to taps. A demo viewer would touch every one of them and conclude the feature is finished. None of them are. They are more urgent than any new feature, because they are the failures a beta tester will hit in the first ten minutes and quietly decide the app is broken.
     </div>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>#</th><th>Surface</th><th>What a user sees</th><th>What actually happens</th><th>Evidence</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>H1</td>
-            <td><strong>Calendar source filter</strong></td>
-            <td>A filter popup listing "You", "Friend 1", "Ethan", "Gym 1" with colour chips and toggles that respond.</td>
-            <td><strong>Entirely fake.</strong> The names are hardcoded literals — "Ethan" is not a user, it is a string. <span class="fname">_filterStates</span> is written by the toggles and <em>never read by any query</em>. Toggling changes nothing.</td>
-            <td><span class="fname">calendar_page.dart:44-56</span></td>
-          </tr>
-          <tr>
-            <td>H2</td>
-            <td><strong>Create-hub item detail sheet</strong></td>
-            <td>Tap an item in the Create hub, a sheet slides up.</td>
-            <td>The sheet says <em>"Details for this item will open here when connected to your data."</em> It is a literal placeholder string shipped in the app.</td>
-            <td><span class="fname">event_creator_page.dart:289</span></td>
-          </tr>
-          <tr>
-            <td>H3</td>
-            <td><strong>Create hub: 4 of 12 sections</strong></td>
-            <td>"From Your Gyms" and "From Your Friends" under both Goals and Plans — headers, layout, empty state.</td>
-            <td><strong>Empty by construction.</strong> All four are <span class="fname">const &lt;_HubItemData&gt;[]</span>. They can never populate, no matter how many gyms or friends you have. Separately, "Popular Workouts/Goals/Plans" are just <em>your own items</em> — no popularity signal exists anywhere in the app.</td>
-            <td><span class="fname">create_page_hub.dart:560,564,595,598</span></td>
-          </tr>
-          <tr>
-            <td>H4</td>
-            <td><strong>DM event-invite RSVP</strong></td>
-            <td>An event invite arrives as a chat bubble with Attend / Decline. Tapping animates convincingly.</td>
-            <td><strong>100% cosmetic.</strong> <span class="fname">onSideTapped</span> calls <span class="fname">setState</span> and nothing else. No write, no notification to the inviter, gone on navigation. The file's own header comment admits it: <em>"Local-only RSVP chip state … (not persisted)"</em>. This is also the thing that makes <a href="vision.html#success">SM2</a> unmeasurable.</td>
-            <td><span class="fname">direct_message_page.dart:7,33,147</span></td>
-          </tr>
-          <tr>
-            <td>H5</td>
-            <td><strong>Feed comment "Done" button</strong></td>
-            <td>Type a comment, tap Done, the sheet closes.</td>
-            <td>The typed text is <strong>discarded</strong>. Only <span class="fname">onSubmitted</span> (the keyboard return key) actually posts. The most natural gesture is the one that loses your comment.</td>
-            <td><span class="fname">feed_page.dart:779</span></td>
-          </tr>
-          <tr>
-            <td>H6</td>
-            <td><strong>Deleting your own channel post</strong></td>
-            <td>A delete affordance on posts and comments in a gym channel.</td>
-            <td><strong>Permission bug.</strong> <span class="fname">isCurrentUserGymOwner</span> is literally <span class="fname">uid == gymUid</span>, so a post's own author cannot delete their own post or comment unless they <em>are</em> the gym. Meanwhile the Firestore rule's unconstrained <span class="fname">allow update</span> lets any joined member rewrite any post's content.</td>
-            <td><span class="fname">channel_posts_service.dart:357</span>, <span class="fname">firestore.rules</span></td>
-          </tr>
-          <tr>
-            <td>H7</td>
-            <td><strong>Profile save</strong></td>
-            <td>Edit your name or contact info, tap save, get a success confirmation.</td>
-            <td><strong>Failures are swallowed.</strong> <span class="fname">catch (_) {}</span> around an optimistic write — the UI reports success for a write that never landed. Same pattern at four sites in one file, plus <span class="fname">friends_service</span>, <span class="fname">gyms_service</span>, and <span class="fname">plan_creator_sheet</span>.</td>
-            <td><span class="fname">profile_page.dart:91,374,721,1002</span></td>
-          </tr>
-          <tr>
-            <td>H8</td>
-            <td><strong>"View in Workouts Screen"</strong></td>
-            <td>A button on the calendar event sheet.</td>
-            <td>The <span class="fname">onPressed</span> body is a single comment. Tapping does nothing at all. (Nearby, <span class="fname">_getEventsForDate</span> is dead code that <span class="fname">return []</span>.)</td>
-            <td><span class="fname">calendar_page.dart:1314</span></td>
-          </tr>
-          <tr>
-            <td>H9</td>
-            <td><strong>The <span class="fname">core/</span> layer and the feed MVVM layer</strong></td>
-            <td>A clean feature-based architecture with errors, validators, converters, date utils, and a feed repository/DTO/viewmodel/state stack.</td>
-            <td><strong>21 of 58 Dart files are 0 bytes.</strong> That includes all of <span class="fname">core/errors</span>, all of <span class="fname">core/util</span>, all of <span class="fname">core/constants</span> except one, <span class="fname">core/firebase/converters.dart</span>, <span class="fname">di_providers.dart</span>, and every one of the seven feed MVVM files. There are no error types, no validators, no date utils, and no converters — which is precisely why H7 exists.</td>
-            <td>filesystem; see the empty-file list in the code intake</td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="grid">
+
+      <div class="card">
+        <h3>H1 &middot; Calendar source filter</h3>
+        <p><strong>What you see:</strong> a filter popup listing "You", "Friend 1", "Ethan", "Gym 1" with colour chips and toggles that respond.</p>
+        <p><strong>What actually happens:</strong> <strong>entirely fake.</strong> The names are hardcoded literals — "Ethan" is not a user, it is a string. <span class="fname">_filterStates</span> is written by the toggles and <em>never read by any query</em>. Toggling changes nothing.</p>
+        <p><strong>Where:</strong> <span class="fname">calendar_page.dart:44-56</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H2 &middot; Create-hub item detail sheet</h3>
+        <p><strong>What you see:</strong> tap an item in the Create hub, a sheet slides up.</p>
+        <p><strong>What actually happens:</strong> the sheet says <em>"Details for this item will open here when connected to your data."</em> It is a literal placeholder string shipped in the app.</p>
+        <p><strong>Where:</strong> <span class="fname">event_creator_page.dart:289</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H3 &middot; Create hub: 4 of 12 sections</h3>
+        <p><strong>What you see:</strong> "From Your Gyms" and "From Your Friends" under both Goals and Plans — headers, layout, empty state.</p>
+        <p><strong>What actually happens:</strong> <strong>empty by construction.</strong> All four are <span class="fname">const &lt;_HubItemData&gt;[]</span>. They can never populate, no matter how many gyms or friends you have. Separately, "Popular Workouts/Goals/Plans" are just <em>your own items</em> — no popularity signal exists anywhere in the app.</p>
+        <p><strong>Where:</strong> <span class="fname">create_page_hub.dart:560,564,595,598</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H4 &middot; DM event-invite RSVP</h3>
+        <p><strong>What you see:</strong> an event invite arrives as a chat bubble with Attend / Decline. Tapping animates convincingly.</p>
+        <p><strong>What actually happens:</strong> <strong>100% cosmetic.</strong> <span class="fname">onSideTapped</span> calls <span class="fname">setState</span> and nothing else. No write, no notification to the inviter, gone on navigation. The file's own header comment admits it: <em>"Local-only RSVP chip state … (not persisted)"</em>. This is also the thing that makes <a href="vision.html#success">SM2</a> unmeasurable.</p>
+        <p><strong>Where:</strong> <span class="fname">direct_message_page.dart:7,33,147</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H5 &middot; Feed comment "Done" button</h3>
+        <p><strong>What you see:</strong> type a comment, tap Done, the sheet closes.</p>
+        <p><strong>What actually happens:</strong> the typed text is <strong>discarded</strong>. Only <span class="fname">onSubmitted</span> (the keyboard return key) actually posts. The most natural gesture is the one that loses your comment.</p>
+        <p><strong>Where:</strong> <span class="fname">feed_page.dart:779</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H6 &middot; Deleting your own channel post</h3>
+        <p><strong>What you see:</strong> a delete affordance on posts and comments in a gym channel.</p>
+        <p><strong>What actually happens:</strong> <strong>permission bug.</strong> <span class="fname">isCurrentUserGymOwner</span> is literally <span class="fname">uid == gymUid</span>, so a post's own author cannot delete their own post or comment unless they <em>are</em> the gym. Meanwhile the Firestore rule's unconstrained <span class="fname">allow update</span> lets any joined member rewrite any post's content.</p>
+        <p><strong>Where:</strong> <span class="fname">channel_posts_service.dart:357</span>, <span class="fname">firestore.rules</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H7 &middot; Profile save</h3>
+        <p><strong>What you see:</strong> edit your name or contact info, tap save, get a success confirmation.</p>
+        <p><strong>What actually happens:</strong> <strong>failures are swallowed.</strong> <span class="fname">catch (_) {}</span> around an optimistic write — the UI reports success for a write that never landed. Same pattern at four sites in one file, plus <span class="fname">friends_service</span>, <span class="fname">gyms_service</span>, and <span class="fname">plan_creator_sheet</span>.</p>
+        <p><strong>Where:</strong> <span class="fname">profile_page.dart:91,374,721,1002</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H8 &middot; "View in Workouts Screen"</h3>
+        <p><strong>What you see:</strong> a button on the calendar event sheet.</p>
+        <p><strong>What actually happens:</strong> the <span class="fname">onPressed</span> body is a single comment. Tapping does nothing at all. (Nearby, <span class="fname">_getEventsForDate</span> is dead code that <span class="fname">return []</span>.)</p>
+        <p><strong>Where:</strong> <span class="fname">calendar_page.dart:1314</span></p>
+      </div>
+
+      <div class="card">
+        <h3>H9 &middot; The <span class="fname">core/</span> layer and the feed MVVM layer</h3>
+        <p><strong>What you see:</strong> a clean feature-based architecture with errors, validators, converters, date utils, and a feed repository/DTO/viewmodel/state stack.</p>
+        <p><strong>What actually happens:</strong> <strong>21 of 58 Dart files are 0 bytes.</strong> That includes all of <span class="fname">core/errors</span>, all of <span class="fname">core/util</span>, all of <span class="fname">core/constants</span> except one, <span class="fname">core/firebase/converters.dart</span>, <span class="fname">di_providers.dart</span>, and every one of the seven feed MVVM files. There are no error types, no validators, no date utils, and no converters — which is precisely why H7 exists.</p>
+        <p><strong>Where:</strong> filesystem; see the empty-file list in the code intake</p>
+      </div>
+
     </div>
     <p class="small muted">Two more that belong to the same family but are cleanup rather than repair: <span class="fname">channel_page.dart:205-257</span> ships <em>Firebase CLI instructions</em> to end users ("run <span class="fname">firebase login --reauth</span>") when an index is missing, and roughly 500 lines of dead widget builders remain across <span class="fname">feed_page</span>, <span class="fname">social_page</span>, and <span class="fname">calendar_page</span> — one of which still runs a per-gym Firestore query on every page load for a tab that no longer exists.</p>
   </section>
@@ -155,47 +154,57 @@
         <tbody>
           <tr>
             <td><strong>Goals</strong> <span class="small faint">~1,000 lines; the app's most polished feature</span></td>
-            <td>The only spec is an AI-generated class design doc that appears in no requirements list, and the governing Final Specs calls goals a <em>stretch</em>. Meanwhile <span class="fname">updateGoalForCurrentUser</span> wipes <span class="fname">periodHistory</span> on edit — is that a bug or "Edit behavior (v1)"? Nothing says.</td>
-            <td>Write acceptance criteria for check-in, rollover, archive, and edit. Settle the history-wipe explicitly (D29 says: preserve it). See <a href="decisions.html#data">D29</a>.</td>
+            <td>No spec in any requirements list; edit wipes history.</td>
+            <td>Write acceptance criteria. See <a href="decisions.html#data">D29</a>.</td>
           </tr>
           <tr>
             <td><strong>Plans</strong> <span class="small faint">1,154 lines across service + sheet</span></td>
-            <td>Zero prose in any document — the collection was discovered in the Firestore rules. Generation cap is 250 on create and 180 on update, and nobody can say which is right. No delete-plan action exists, and a failed load silently shows an empty edit form (a <span class="fname">finally</span> with no <span class="fname">catch</span>).</td>
-            <td>Write a one-page spec: what a plan is, what "update upcoming instances" means, and one generation cap. Add delete.</td>
+            <td>Zero prose in any document; caps disagree, no delete.</td>
+            <td>Write a one-page spec with one cap; add delete.</td>
           </tr>
           <tr>
             <td><strong>Create hub</strong> <span class="small faint">909 lines, 4 tabs, 12 sections</span></td>
-            <td>Never described anywhere. Four sections are permanently empty (H3), "Popular" means "yours", <span class="fname">widget.isGym</span> is dead, and the date window is computed once in <span class="fname">initState</span> and never refreshed.</td>
-            <td>Decide what the hub is <em>for</em> before fixing it. If the answer is "browse and reuse your own stuff", delete the gym/friend/popular sections rather than filling them.</td>
+            <td>Never described anywhere; 4 sections permanently empty (H3).</td>
+            <td>Decide what the hub is <em>for</em> before fixing it.</td>
           </tr>
           <tr>
             <td><strong>Recurrence engine</strong> <span class="small faint">weekly / monthly / every-other-day / custom-weekly</span></td>
-            <td>Undocumented, and it <em>competes</em> with Plans: recurrence expands one stored doc into N rendered occurrences client-side, while Plans materialize real event docs. Two repetition mechanisms with no stated boundary. No timezone handling in either.</td>
-            <td>Document both, state which is used when (D22), and defer merging them until they visibly disagree.</td>
+            <td>Undocumented, and it <em>competes</em> with Plans.</td>
+            <td>Document both; state which is used when (D22).</td>
           </tr>
           <tr>
             <td><strong>Friend-request-as-DM</strong></td>
-            <td>The entire friendship handshake runs through <span class="fname">directThreads</span> with a <span class="fname">messageKind: 'friend_request'</span>, and the Firestore rules encode the protocol. No doc mentions it. There is no pending state in the UI, so users fire duplicate requests until the service throws.</td>
-            <td>Document the state machine (request &rarr; accept/decline &rarr; friends), then add the pending state.</td>
+            <td>An undocumented protocol encoded in the Firestore rules.</td>
+            <td>Document the state machine, then add the pending state.</td>
           </tr>
           <tr>
             <td><strong>Event-invite deep links</strong></td>
-            <td>Invites arrive as DMs carrying <span class="fname">eventId</span> + <span class="fname">eventOwnerUid</span> and deep-link into the calendar via router query params. Undocumented, and the RSVP at the other end is fake (H4).</td>
-            <td>Spec the invite lifecycle end to end. This is the thesis feature — it deserves the only sequence diagram in the project.</td>
+            <td>Undocumented, and the RSVP at the other end is fake (H4).</td>
+            <td>Spec the invite lifecycle end to end.</td>
           </tr>
           <tr>
             <td><strong>Unread badging</strong></td>
-            <td>Live unread counts on the bottom nav and gym rows, driven by an <span class="fname">unreadCounts</span> map that either participant can rewrite (the rules allow it). No spec for when a thread is "read."</td>
-            <td>Define read semantics; constrain the rule so a participant can only decrement their own count.</td>
+            <td>Either participant can rewrite the <span class="fname">unreadCounts</span> map.</td>
+            <td>Define read semantics; constrain the rule.</td>
           </tr>
           <tr>
             <td><strong>Avatar pipeline</strong></td>
-            <td>Storage upload + a three-layer cache + an <span class="fname">http.get</span> fallback for Flutter web CORS. Genuinely clever and completely undocumented. <span class="fname">avatarUrl</span> is written to the user doc and <em>never read</em> — every avatar re-resolves from Storage by uid. No upload size or MIME cap.</td>
-            <td>Document it, then either use <span class="fname">avatarUrl</span> or stop writing it. Add a size cap — there is currently none.</td>
+            <td>Clever, undocumented; <span class="fname">avatarUrl</span> written and never read.</td>
+            <td>Document it; add a size cap.</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Goals</strong> — the only spec is an AI-generated class design doc that appears in no requirements list, and the governing Final Specs calls goals a <em>stretch</em>. <span class="fname">updateGoalForCurrentUser</span> wipes <span class="fname">periodHistory</span> on edit — bug, or "Edit behavior (v1)"? Nothing says. Write acceptance criteria for check-in, rollover, archive and edit, and settle the history-wipe explicitly (D29 says: preserve it).</li>
+      <li><strong>Plans</strong> — the collection was discovered in the Firestore rules. The generation cap is 250 on create and 180 on update, and nobody can say which is right. No delete-plan action exists, and a failed load silently shows an empty edit form (a <span class="fname">finally</span> with no <span class="fname">catch</span>). The spec needs to say what a plan is and what "update upcoming instances" means.</li>
+      <li><strong>Create hub</strong> — "Popular" means "yours", <span class="fname">widget.isGym</span> is dead, and the date window is computed once in <span class="fname">initState</span> and never refreshed. If the answer is "browse and reuse your own stuff", delete the gym/friend/popular sections rather than filling them.</li>
+      <li><strong>Recurrence engine</strong> — recurrence expands one stored doc into N rendered occurrences client-side, while Plans materialize real event docs: two repetition mechanisms with no stated boundary, and no timezone handling in either. Defer merging them until they visibly disagree.</li>
+      <li><strong>Friend-request-as-DM</strong> — the entire friendship handshake runs through <span class="fname">directThreads</span> with a <span class="fname">messageKind: 'friend_request'</span>. No doc mentions it, and there is no pending state in the UI, so users fire duplicate requests until the service throws. The state machine is request &rarr; accept/decline &rarr; friends.</li>
+      <li><strong>Event-invite deep links</strong> — invites arrive as DMs carrying <span class="fname">eventId</span> + <span class="fname">eventOwnerUid</span> and deep-link into the calendar via router query params. This is the thesis feature — it deserves the only sequence diagram in the project.</li>
+      <li><strong>Unread badging</strong> — live unread counts on the bottom nav and gym rows, driven by an <span class="fname">unreadCounts</span> map that the rules let either participant rewrite. There is no spec for when a thread is "read." Constrain the rule so a participant can only decrement their own count.</li>
+      <li><strong>Avatar pipeline</strong> — Storage upload + a three-layer cache + an <span class="fname">http.get</span> fallback for Flutter web CORS. Every avatar re-resolves from Storage by uid, so either use <span class="fname">avatarUrl</span> or stop writing it. There is no upload size or MIME cap today.</li>
+    </ul>
   </section>
 
   <section id="unbuilt">
@@ -205,23 +214,32 @@
       <table>
         <thead><tr><th>Feature</th><th>Where it was specified</th><th>Reality</th><th>Cost shape</th></tr></thead>
         <tbody>
-          <tr><td><strong>Year calendar view</strong></td><td>Initial Requirements ("year, month, week, day")</td><td>Silently dropped by the Final Specs. Not built.</td><td>Low — but see D17; year view stays cut.</td></tr>
-          <tr><td><strong>Week calendar view</strong></td><td>Mission doc and Initial Requirements</td><td>Also silently dropped. The "Multi" view is a hardcoded <strong>4 days</strong>, not a week.</td><td>Low — a constant and a header change. <span class="tag tag-proposed">PROPOSED</span> D17.</td></tr>
-          <tr><td><strong>Tap a time slot to create an event</strong></td><td>Initial Requirements, explicitly</td><td>Tapping empty grid space does nothing. The calendar is read-only as an entry point.</td><td>Low — the day grid already knows the hour under the finger.</td></tr>
+          <tr><td><strong>Year calendar view</strong></td><td>Initial Requirements ("year, month, week, day")</td><td>Silently dropped by the Final Specs.</td><td>Low — but see D17; year view stays cut.</td></tr>
+          <tr><td><strong>Week calendar view</strong></td><td>Mission doc and Initial Requirements</td><td>Also silently dropped; "Multi" is a hardcoded <strong>4 days</strong>.</td><td>Low — a constant and a header change. <span class="tag tag-proposed">PROPOSED</span> D17.</td></tr>
+          <tr><td><strong>Tap a time slot to create an event</strong></td><td>Initial Requirements, explicitly</td><td>Tapping empty grid space does nothing.</td><td>Low — the day grid already knows the hour under the finger.</td></tr>
           <tr>
             <td><strong>Invite friends to <em>edit</em> a workout</strong></td>
             <td>Initial Requirements ("invite friends to edit the workout")</td>
-            <td>Not built. <strong>And it cannot be built as a UI task.</strong> The Firestore rule for events is <span class="fname">allow write: if request.auth.uid == userId</span> and events live under <span class="fname">users/{ownerUid}/events/</span> — owner-only editing is <em>architectural</em>. Co-authorship means changing where events live or widening the write rule to invitees, plus a conflict story.</td>
-            <td><strong>High — data-model change, not a screen.</strong> See <a href="decisions.html#data">D30</a>.</td>
+            <td>Not built, and <strong>not buildable as a UI task</strong> — owner-only editing is architectural.</td>
+            <td><strong>High — data-model change, not a screen.</strong> <a href="decisions.html#data">D30</a>.</td>
           </tr>
-          <tr><td><strong>User groups</strong></td><td>Initial Requirements as a core Social requirement; demoted to Stretch in the Final Specs</td><td>No group entity, no collection, no rule, no index, no UI. It exists in exactly one sentence in one document.</td><td>Medium — a third social tier beside friends and gyms. Deferred.</td></tr>
-          <tr><td><strong>Gym subpages</strong></td><td>Final Specs and Initial Requirements ("community page <em>and subpages</em>")</td><td>Channels exist as a flat array of names on the gym's user doc. There is no subpage concept, and the gym "community" main pane is an empty state with no feed at all.</td><td>Medium. The missing <em>community landing page</em> matters more than subpages.</td></tr>
-          <tr><td><strong>Gym moderation</strong></td><td>Final Specs and Initial Requirements, as a must-have</td><td><span class="fname">moderation_service.dart</span> is <strong>0 bytes</strong>. No report, no takedown, no hide, no ban, no appeal. The only control is delete, and delete is broken (H6). App Store guideline 1.2 requires report/block for UGC apps — this alone blocks iOS submission.</td><td>Medium — and non-negotiable before external users (D6).</td></tr>
-          <tr><td><strong>Gym member approval</strong></td><td>Final Specs ("remove from or accept users into"; joining "may be instant or require approval")</td><td>Only the removal half exists. <span class="fname">addGym</span> joins instantly, always. There is no approval flow and no config flag.</td><td>Low-medium.</td></tr>
-          <tr><td><strong>Event source filtering</strong></td><td>Initial Requirements, explicit; survives in the Final Specs only as an assumed clause</td><td>The UI exists and is fake (H1). Source attribution colours exist; nothing consumes them.</td><td>Low — the streams are already tagged by owner. <span class="tag tag-proposed">PROPOSED</span> D19: build it rather than delete it.</td></tr>
+          <tr><td><strong>User groups</strong></td><td>Initial Requirements (core Social); Final Specs (Stretch)</td><td>No entity, collection, rule, index, or UI.</td><td>Medium — a third social tier beside friends and gyms. Deferred.</td></tr>
+          <tr><td><strong>Gym subpages</strong></td><td>Final Specs and Initial Requirements ("community page <em>and subpages</em>")</td><td>Channels are a flat array of names; no subpage concept.</td><td>Medium — the community landing page matters more.</td></tr>
+          <tr><td><strong>Gym moderation</strong></td><td>Final Specs and Initial Requirements, as a must-have</td><td><span class="fname">moderation_service.dart</span> is <strong>0 bytes</strong>.</td><td>Medium — and non-negotiable before external users (D6).</td></tr>
+          <tr><td><strong>Gym member approval</strong></td><td>Final Specs: joining "may be instant or require approval"</td><td>Only the removal half exists.</td><td>Low-medium.</td></tr>
+          <tr><td><strong>Event source filtering</strong></td><td>Initial Requirements, explicit; assumed in the Final Specs</td><td>The UI exists and is fake (H1).</td><td>Low. <span class="tag tag-proposed">PROPOSED</span> D19.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Tap a time slot to create an event</strong> — the calendar is read-only as an entry point.</li>
+      <li><strong>Invite friends to <em>edit</em> a workout</strong> — the Firestore rule for events is <span class="fname">allow write: if request.auth.uid == userId</span> and events live under <span class="fname">users/{ownerUid}/events/</span>, so owner-only editing is <em>architectural</em>. Co-authorship means changing where events live or widening the write rule to invitees, plus a conflict story. <strong>This is a data-model change, not a UI task.</strong></li>
+      <li><strong>User groups</strong> — it exists in exactly one sentence in one document.</li>
+      <li><strong>Gym subpages</strong> — channels are names on the gym's user doc, and the gym "community" main pane is an empty state with no feed at all. The missing <em>community landing page</em> matters more than subpages.</li>
+      <li><strong>Gym moderation</strong> — no report, no takedown, no hide, no ban, no appeal. The only control is delete, and delete is broken (H6). App Store guideline 1.2 requires report/block for UGC apps — this alone blocks iOS submission.</li>
+      <li><strong>Gym member approval</strong> — <span class="fname">addGym</span> joins instantly, always; there is no approval flow and no config flag. The Final Specs also ask that a gym be able to "remove from or accept users into" the community.</li>
+      <li><strong>Event source filtering</strong> — source attribution colours exist and nothing consumes them. The streams are already tagged by owner, so D19 proposes building it rather than deleting it.</li>
+    </ul>
   </section>
 
   <section id="grid">
@@ -244,20 +262,31 @@
           <tr><td>Email/password login</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">login_page.dart</span></td><td>Minimal but real.</td></tr>
           <tr><td>Logout</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart</span></td><td>On Profile, as the notes predicted.</td></tr>
           <tr><td>Account type chosen at sign-up (member vs gym)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Final Specs; <span class="fname">register_page.dart</span></td><td>The gym account type is the differentiator (D4).</td></tr>
-          <tr><td>Auth guard: unauthenticated &rarr; login</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">router.dart</span>, <span class="fname">auth_state.dart</span></td><td>GoRouter <span class="fname">refreshListenable</span>. <span class="fname">startListening()</span> has an empty body — it works by accident of singleton init.</td></tr>
+          <tr><td>Auth guard: unauthenticated &rarr; login</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">router.dart</span>, <span class="fname">auth_state.dart</span></td><td>GoRouter <span class="fname">refreshListenable</span>.</td></tr>
           <tr><td>Land on Feed after auth</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Final Specs; <span class="fname">router.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>Consistent account-type detection</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">social_page.dart:117-155</span> vs <span class="fname">event_creator_page.dart</span></td><td>Social uses a 3-way heuristic; Event Creator checks <span class="fname">accountType</span> only. Because <span class="fname">memberUserIds</span>/<span class="fname">channelNames</span> are never initialised at signup, the two screens can disagree about whether you are a gym.</td></tr>
-          <tr><td>Email-format validation</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">login_page.dart:107</span></td><td>Empty-string check only, on both login and register. <span class="fname">core/util/validators.dart</span> is 0 bytes.</td></tr>
-          <tr><td>Password reset / forgot password</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>A locked-out user is permanently locked out. One Firebase Auth call.</td></tr>
-          <tr><td>In-app account deletion</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span> — <span class="fname">allow delete: if false</span></td><td>Explicitly <em>denied</em> today. Apple guideline 5.1.1(v) makes this a hard store blocker, and D6 makes it real work rather than paperwork.</td></tr>
-          <tr><td>Terms / privacy consent at sign-up</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>No privacy policy exists anywhere in the repo or UI. Both stores require a URL.</td></tr>
-          <tr><td>Email verification</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>Matters once user docs stop being world-readable and identity means something.</td></tr>
-          <tr><td>Gym-specific onboarding flow</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs: "not fully defined at this time"</td><td>Gyms use the member flow. <span class="fname">memberUserIds</span> and <span class="fname">channelNames</span> are never initialised, which is the root of the detection inconsistency above.</td></tr>
-          <tr><td>Change account type after sign-up</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">auth_service.dart:50</span></td><td>Set once, permanent. A user who picks "gym" by mistake needs a new account.</td></tr>
-          <tr><td>Social sign-in (Google / Apple)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>Note: Apple requires Sign in with Apple <em>if</em> other third-party sign-in is offered. Adding Google alone therefore adds two, not one.</td></tr>
+          <tr><td>Consistent account-type detection</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">social_page.dart:117-155</span> vs <span class="fname">event_creator_page.dart</span></td><td>Two screens can disagree about whether you are a gym.</td></tr>
+          <tr><td>Email-format validation</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">login_page.dart:107</span></td><td>Empty-string check only, on login and register.</td></tr>
+          <tr><td>Password reset / forgot password</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>A locked-out user stays locked out.</td></tr>
+          <tr><td>In-app account deletion</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span> — <span class="fname">allow delete: if false</span></td><td>Explicitly <em>denied</em> today — a hard store blocker.</td></tr>
+          <tr><td>Terms / privacy consent at sign-up</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>No privacy policy anywhere in the repo or UI.</td></tr>
+          <tr><td>Email verification</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>Matters once user docs stop being world-readable.</td></tr>
+          <tr><td>Gym-specific onboarding flow</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs: "not fully defined at this time"</td><td>Gyms use the member flow.</td></tr>
+          <tr><td>Change account type after sign-up</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">auth_service.dart:50</span></td><td>Set once, permanent.</td></tr>
+          <tr><td>Social sign-in (Google / Apple)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>Adding Google alone costs two providers, not one.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Auth guard: unauthenticated &rarr; login</strong> — <span class="fname">startListening()</span> has an empty body; the guard works by accident of singleton init.</li>
+      <li><strong>Consistent account-type detection</strong> — Social uses a 3-way heuristic (<span class="fname">social_page.dart:117-155</span>); Event Creator checks <span class="fname">accountType</span> only. <span class="fname">memberUserIds</span>/<span class="fname">channelNames</span> are never initialised at signup, which is what lets the two screens disagree.</li>
+      <li><strong>Email-format validation</strong> — <span class="fname">core/util/validators.dart</span> is 0 bytes.</li>
+      <li><strong>Password reset / forgot password</strong> — one Firebase Auth call would fix it.</li>
+      <li><strong>In-app account deletion</strong> — Apple guideline 5.1.1(v) makes this a hard store blocker, and D6 makes it real work rather than paperwork.</li>
+      <li><strong>Terms / privacy consent at sign-up</strong> — both stores require a policy URL.</li>
+      <li><strong>Gym-specific onboarding flow</strong> — <span class="fname">memberUserIds</span> and <span class="fname">channelNames</span> are never initialised, which is the root of the detection inconsistency above.</li>
+      <li><strong>Change account type after sign-up</strong> — a user who picks "gym" by mistake needs a new account.</li>
+      <li><strong>Social sign-in (Google / Apple)</strong> — Apple requires Sign in with Apple <em>if</em> any other third-party sign-in is offered, so adding Google alone adds two.</li>
+    </ul>
   </section>
 
   <section id="feed">
@@ -267,21 +296,34 @@
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Updates from gyms you've joined</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Initial Reqs + Final Specs; <span class="fname">updates_service.dart</span></td><td>Gym channel posts, merged live.</td></tr>
-          <tr><td>Updates from friends</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">updates_service.dart</span></td><td><strong>"Updates from friends" means "your friend scheduled something."</strong> Friends have no posting surface at all — there is no personal post entity anywhere in the app.</td></tr>
-          <tr><td>Next Workout card / today's events</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">feed_page.dart</span></td><td><span class="fname">getNextWorkoutEventForUser</span> builds a whole 60-day range stream just to take <span class="fname">.first</span> — correct, expensive.</td></tr>
-          <tr><td>Goal check-in rings on the feed</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Requirements #13; <span class="fname">feed_page.dart</span></td><td>Check in without leaving the feed. The best interaction in the app.</td></tr>
+          <tr><td>Updates from friends</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">updates_service.dart</span></td><td><strong>Means "your friend scheduled something."</strong></td></tr>
+          <tr><td>Next Workout card / today's events</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">feed_page.dart</span></td><td><span class="fname">getNextWorkoutEventForUser</span> — correct, expensive.</td></tr>
+          <tr><td>Goal check-in rings on the feed</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Requirements #13; <span class="fname">feed_page.dart</span></td><td>Check in without leaving the feed.</td></tr>
           <tr><td>Friends widget</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Feed Widgets doc; <span class="fname">feed_page.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>Like a post from the feed</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">channel_posts_service.dart</span></td><td>Transactional like toggle. But the underlying rule lets any member rewrite any field — see <a href="#gyms">Gyms</a>.</td></tr>
-          <tr><td>Comment on a post from the feed</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">feed_page.dart:779</span></td><td><strong>H5</strong> — the "Done" button discards your comment. Only the keyboard return key posts.</td></tr>
-          <tr><td>Widget grid system (base + data-driven builder)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Feed Widgets doc; <span class="fname">feed_page.dart:92</span></td><td>The abstraction was specified in detail; <span class="fname">buildBasicFeedWidget</span> is dead code and the layout is hardcoded. Grid math unresolved — see <a href="#grid">the open question</a>.</td></tr>
-          <tr><td>Feed MVVM layer (repository / DTO / viewmodel / state)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>7 files, 0 bytes</td><td>The only feature with a clean-architecture skeleton, and every file in it is blank. D20 says keep <span class="fname">setState</span> — so either fill these or delete them, but don't leave an empty promise in the tree.</td></tr>
-          <tr><td>User-editable widget layout</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs — Stretch</td><td>The grid doc exists precisely to enable this. Blocked on the grid convention.</td></tr>
-          <tr><td>Pinned goals on the dashboard</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc only</td><td>"Pinned" appears exactly once in the entire corpus. All active goals show today.</td></tr>
-          <tr><td>Friends' shared goals / accountability partner</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc; Final Specs Stretch</td><td>The Create hub has "Goals from your friends" sections — permanently empty (H3). Goals are owner-read-only in the rules, so sharing is a rules change too.</td></tr>
-          <tr><td>Dead feed cards with a mock image placeholder</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">feed_page.dart:794-927</span></td><td>~135 lines never instantiated. Delete. Also <span class="fname">_navigateToCalendar</span> ignores both its parameters, and an <span class="fname">AnimatedSwitcher</span> has a constant key so it never switches.</td></tr>
+          <tr><td>Like a post from the feed</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">channel_posts_service.dart</span></td><td>Transactional like toggle.</td></tr>
+          <tr><td>Comment on a post from the feed</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">feed_page.dart:779</span></td><td><strong>H5</strong> — the "Done" button discards your comment.</td></tr>
+          <tr><td>Widget grid system (base + data-driven builder)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Feed Widgets doc; <span class="fname">feed_page.dart:92</span></td><td>Specified in detail; the layout is hardcoded.</td></tr>
+          <tr><td>Feed MVVM layer (repository / DTO / viewmodel / state)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>7 files, 0 bytes</td><td>A clean-architecture skeleton; every file is blank.</td></tr>
+          <tr><td>User-editable widget layout</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs — Stretch</td><td>Blocked on the grid convention.</td></tr>
+          <tr><td>Pinned goals on the dashboard</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc only</td><td>All active goals show today.</td></tr>
+          <tr><td>Friends' shared goals / accountability partner</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc; Final Specs Stretch</td><td>Sharing is a rules change, not a screen.</td></tr>
+          <tr><td>Dead feed cards with a mock image placeholder</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">feed_page.dart:794-927</span></td><td>~135 lines never instantiated — delete.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Updates from friends</strong> — friends have no posting surface at all; there is no personal post entity anywhere in the app.</li>
+      <li><strong>Next Workout card / today's events</strong> — <span class="fname">getNextWorkoutEventForUser</span> builds a whole 60-day range stream just to take <span class="fname">.first</span>.</li>
+      <li><strong>Goal check-in rings on the feed</strong> — the best interaction in the app.</li>
+      <li><strong>Like a post from the feed</strong> — the underlying rule lets any member rewrite any field; see <a href="#gyms">Gyms</a>.</li>
+      <li><strong>Comment on a post from the feed</strong> — only <span class="fname">onSubmitted</span> (the keyboard return key) actually posts.</li>
+      <li><strong>Widget grid system</strong> — <span class="fname">buildBasicFeedWidget</span> is dead code. Grid math unresolved — see <a href="#grid">the open question</a>.</li>
+      <li><strong>Feed MVVM layer</strong> — seven files, all 0 bytes. D20 says keep <span class="fname">setState</span>, so either fill them or delete them; don't leave an empty promise in the tree.</li>
+      <li><strong>User-editable widget layout</strong> — the grid doc exists precisely to enable this.</li>
+      <li><strong>Pinned goals on the dashboard</strong> — "pinned" appears exactly once in the entire corpus.</li>
+      <li><strong>Friends' shared goals / accountability partner</strong> — the Create hub's "Goals from your friends" sections are permanently empty (H3), and goals are owner-read-only in the rules.</li>
+      <li><strong>Dead feed cards with a mock image placeholder</strong> — <span class="fname">_navigateToCalendar</span> ignores both its parameters, and an <span class="fname">AnimatedSwitcher</span> has a constant key so it never switches.</li>
+    </ul>
   </section>
 
   <section id="calendar">
@@ -292,11 +334,11 @@
         <tbody>
           <tr><td>Day view</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">calendar_page.dart</span></td><td>Overlap column layout, now-line timer. Genuinely good.</td></tr>
           <tr><td>Multi-day view</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">calendar_page.dart:594</span></td><td>Hardcoded <strong>4 days</strong> — not a week.</td></tr>
-          <tr><td>Month view</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">calendar_page.dart</span></td><td>Cells <span class="fname">.take(3)</span> with <strong>no "+N more"</strong> — a busy day silently hides events.</td></tr>
-          <tr><td>Live event streams (self + friends + gyms)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">events_service._mergeEventStreams</span></td><td>Hand-rolled merger. Opens <strong>2&times;(friends+gyms)+1</strong> live listeners — see <a href="#platform">Platform</a>.</td></tr>
-          <tr><td>Event source filtering</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">calendar_page.dart:44-56</span></td><td><strong>H1 — the popup is entirely fake.</strong> Hardcoded "Friend 1"/"Ethan"/"Gym 1"; state never read.</td></tr>
-          <tr><td>Event source attribution (gyms / friends / self)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs</td><td>Colours exist; the filter that would make them meaningful does not.</td></tr>
-          <tr><td>Tap an event &rarr; preview details</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">calendar_page.dart</span></td><td>Works from the calendar. The equivalent sheet in the Create hub is a stub (H2).</td></tr>
+          <tr><td>Month view</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">calendar_page.dart</span></td><td>Cells <span class="fname">.take(3)</span>, <strong>no "+N more"</strong>.</td></tr>
+          <tr><td>Live event streams (self + friends + gyms)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">events_service._mergeEventStreams</span></td><td>Hand-rolled merger; <strong>2&times;(friends+gyms)+1</strong> listeners.</td></tr>
+          <tr><td>Event source filtering</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">calendar_page.dart:44-56</span></td><td><strong>H1 — the popup is entirely fake.</strong></td></tr>
+          <tr><td>Event source attribution (gyms / friends / self)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs</td><td>Colours exist; the filter that uses them does not.</td></tr>
+          <tr><td>Tap an event &rarr; preview details</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">calendar_page.dart</span></td><td>Works from the calendar.</td></tr>
           <tr><td>Tap an event &rarr; edit</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">event_creator_page.dart</span></td><td>Embedded edit sheet.</td></tr>
           <tr><td>"View in Workouts Screen"</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">calendar_page.dart:1314</span></td><td><strong>H8</strong> — empty <span class="fname">onPressed</span>.</td></tr>
           <tr><td>Tap a time slot to start creating an event</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs, explicit</td><td>Tapping empty grid space does nothing.</td></tr>
@@ -304,25 +346,42 @@
           <tr><td>Year view</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs only</td><td>Dropped by the Final Specs. Stays cut.</td></tr>
           <tr><td>Deep-link into the calendar from a DM invite</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">router.dart</span> query params</td><td>Undocumented but real — see <a href="#unspecified">Built but never specified</a>.</td></tr>
           <tr><td>Pinch / ctrl-wheel zoom on the day grid</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">calendar_page.dart</span></td><td>Nobody asked for it. It's nice.</td></tr>
-          <tr><td>Day grid covers the full 24 hours</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">calendar_page._generateHours</span></td><td>Grid starts at <strong>4 AM</strong>. Events before 4 AM render at a negative offset — off-grid and invisible.</td></tr>
+          <tr><td>Day grid covers the full 24 hours</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">calendar_page._generateHours</span></td><td>Grid starts at <strong>4 AM</strong>.</td></tr>
           <tr><td>Create a basic event</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">event_creator_page.dart</span></td><td>&nbsp;</td></tr>
           <tr><td>Create a workout event</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">event_creator_page.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>Start / end date and time</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">events_service._mapDocToEvent</span></td><td><strong>Crash path.</strong> <span class="fname">startAt</span>/<span class="fname">endAt</span> are nullable on write and non-null-cast on read. Any event saved without a start time crashes the calendar. See <a href="decisions.html#data">D26</a>.</td></tr>
-          <tr><td>End-after-start validation</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:2014</span></td><td>Only the title is validated. Nothing stops an event that ends before it begins.</td></tr>
+          <tr><td>Start / end date and time</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">events_service._mapDocToEvent</span></td><td><strong>Crash path.</strong> See <a href="decisions.html#data">D26</a>.</td></tr>
+          <tr><td>End-after-start validation</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:2014</span></td><td>Only the title is validated.</td></tr>
           <tr><td>Notes on events</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Initial Reqs + Final Specs</td><td>&nbsp;</td></tr>
           <tr><td>Invite friends to an event</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">event_creator_page.dart</span></td><td>Sends an invite DM. <strong>Create-only</strong> — see next row.</td></tr>
-          <tr><td>Adding invitees when <em>editing</em> notifies them</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:164,2102</span></td><td>Invite DMs and gym bulk-invite fire on create only. Add someone later and they are never told.</td></tr>
-          <tr><td>Public / private visibility</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">firestore.rules</span></td><td>The rules define "public" as visible to the owner's friends <em>or</em> to fellow members of the owner's gyms. D12 adopts that as the definition.</td></tr>
-          <tr><td>A third visibility level</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs: "different levels of visibility, <em>including</em> public or private"</td><td>Implies more than two and never enumerates them. D12 closes this at two.</td></tr>
-          <tr><td>Editing a past event</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:1881</span></td><td>Date pickers hardcode <span class="fname">firstDate: now</span>. A mistyped date in the past can never be corrected.</td></tr>
-          <tr><td>Gym creates an event all members see</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">event_creator_page.dart</span></td><td>Bulk fan-out exists but is create-only, and gym detection differs by screen.</td></tr>
-          <tr><td>Recurrence (weekly / monthly / every-other-day / custom-weekly)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">events_service.dart</span></td><td>Expanded client-side, one doc &rarr; N occurrences. Undocumented. Competes with Plans.</td></tr>
+          <tr><td>Adding invitees when <em>editing</em> notifies them</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:164,2102</span></td><td>Invite DMs fire on create only.</td></tr>
+          <tr><td>Public / private visibility</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">firestore.rules</span></td><td>D12 adopts the rules' definition of "public".</td></tr>
+          <tr><td>A third visibility level</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs: "different levels of visibility, <em>including</em> public or private"</td><td>D12 closes this at two levels.</td></tr>
+          <tr><td>Editing a past event</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:1881</span></td><td>Date pickers hardcode <span class="fname">firstDate: now</span>.</td></tr>
+          <tr><td>Gym creates an event all members see</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs; <span class="fname">event_creator_page.dart</span></td><td>Bulk fan-out exists, but create-only.</td></tr>
+          <tr><td>Recurrence (weekly / monthly / every-other-day / custom-weekly)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">events_service.dart</span></td><td>One doc &rarr; N occurrences, client-side.</td></tr>
           <tr><td>Event detail sheet in the Create hub</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:289</span></td><td><strong>H2</strong> — a literal "when connected to your data" placeholder.</td></tr>
-          <tr><td>Reusable event templates / "add existing event"</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc only</td><td>A whole created-but-unscheduled backlog model, dropped with no replacement. Plans partly covers the same need.</td></tr>
-          <tr><td>Timezone handling</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent from all docs and code</td><td>Central to a calendar, a recurrence engine, and goal reset periods. Currently everything is device-local.</td></tr>
+          <tr><td>Reusable event templates / "add existing event"</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc only</td><td>Dropped with no replacement.</td></tr>
+          <tr><td>Timezone handling</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent from all docs and code</td><td>Everything is device-local.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Month view</strong> — a busy day silently hides events.</li>
+      <li><strong>Live event streams (self + friends + gyms)</strong> — the listener count grows with friend and gym count; see <a href="#platform">Platform</a>.</li>
+      <li><strong>Event source filtering</strong> — the names are hardcoded "Friend 1"/"Ethan"/"Gym 1" and <span class="fname">_filterStates</span> is never read by any query.</li>
+      <li><strong>Tap an event &rarr; preview details</strong> — the equivalent sheet in the Create hub is a stub (H2).</li>
+      <li><strong>Day grid covers the full 24 hours</strong> — events before 4 AM render at a negative offset: off-grid and invisible.</li>
+      <li><strong>Start / end date and time</strong> — <span class="fname">startAt</span>/<span class="fname">endAt</span> are nullable on write and non-null-cast on read, so any event saved without a start time crashes the calendar.</li>
+      <li><strong>End-after-start validation</strong> — nothing stops an event that ends before it begins.</li>
+      <li><strong>Adding invitees when <em>editing</em> notifies them</strong> — gym bulk-invite is create-only too; add someone later and they are never told.</li>
+      <li><strong>Public / private visibility</strong> — the rules define "public" as visible to the owner's friends <em>or</em> to fellow members of the owner's gyms.</li>
+      <li><strong>A third visibility level</strong> — the Final Specs imply more than two levels and never enumerate them.</li>
+      <li><strong>Editing a past event</strong> — a mistyped date in the past can never be corrected.</li>
+      <li><strong>Gym creates an event all members see</strong> — gym detection differs by screen.</li>
+      <li><strong>Recurrence</strong> — undocumented, and it competes with Plans.</li>
+      <li><strong>Reusable event templates / "add existing event"</strong> — a whole created-but-unscheduled backlog model; Plans partly covers the same need.</li>
+      <li><strong>Timezone handling</strong> — central to a calendar, a recurrence engine, and goal reset periods.</li>
+    </ul>
   </section>
 
   <section id="workouts">
@@ -334,21 +393,31 @@
         <tbody>
           <tr><td>Add exercises to a workout event</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">event_creator_page.dart</span></td><td>&nbsp;</td></tr>
           <tr><td>Number of sets per exercise</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Final Specs</td><td>&nbsp;</td></tr>
-          <tr><td>Reps and weight per set</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">event_creator_page.dart:1650</span></td><td>Every set in an exercise gets identical reps/weight — admitted in a comment: <em>"in a full implementation, you'd want individual set inputs."</em></td></tr>
-          <tr><td>Exercise data survives a round-trip</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:1689</span> vs <span class="fname">events_service._mapDocToEvent</span></td><td><strong>Silent data loss.</strong> The creator writes <span class="fname">setDetails:[{reps,weight}]</span>; the reader flattens to <span class="fname">{name,sets,weight}</span> reading a top-level <span class="fname">weight</span> key that is <em>never written</em>. The calendar therefore always renders blank weights. See <a href="decisions.html#data">D27</a>.</td></tr>
+          <tr><td>Reps and weight per set</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">event_creator_page.dart:1650</span></td><td>Every set gets identical reps/weight.</td></tr>
+          <tr><td>Exercise data survives a round-trip</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">event_creator_page.dart:1689</span> vs <span class="fname">events_service._mapDocToEvent</span></td><td><strong>Silent data loss.</strong> See <a href="decisions.html#data">D27</a>.</td></tr>
           <tr><td>Bind a workout to a gym location</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Initial Reqs + Final Specs; <span class="fname">event_creator_page.dart</span></td><td><span class="fname">locationGymId</span> / <span class="fname">locationGymName</span>.</td></tr>
           <tr><td>Invite friends to <em>participate</em> in a workout</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Initial Reqs</td><td>Same invite path as basic events.</td></tr>
-          <tr><td>Invite friends to <em>edit</em> a workout</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs</td><td><strong>Architectural, not cosmetic.</strong> Events live under <span class="fname">users/{owner}/events</span> with owner-only write in the rules. Co-authorship = a data-model change plus a conflict story. See <a href="decisions.html#data">D30</a>.</td></tr>
-          <tr><td>Workout privacy semantics ("private = invitees only")</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs</td><td>The notes give basic events and workouts <em>different</em> definitions of "private"; the rules implement a third. D12 picks one.</td></tr>
-          <tr><td>Exercise / movement catalog</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview: "Database of movements"; Proposal: "I will create this or find a free API"</td><td>Exercise names are free text today. That is the entire specification for the data workout events depend on.</td></tr>
+          <tr><td>Invite friends to <em>edit</em> a workout</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs</td><td><strong>Architectural, not cosmetic.</strong> <a href="decisions.html#data">D30</a>.</td></tr>
+          <tr><td>Workout privacy semantics ("private = invitees only")</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Initial Reqs</td><td>Three conflicting definitions; D12 picks one.</td></tr>
+          <tr><td>Exercise / movement catalog</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview: "Database of movements"; Proposal: "I will create this or find a free API"</td><td>Exercise names are free text today.</td></tr>
           <tr><td>Workout reminders / attendance confirm</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Blocked on push — see <a href="#notifications">Notifications</a>.</td></tr>
-          <tr><td>Buddy-cancellation alert</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Directly serves the thesis: the whole point is that someone is expecting you.</td></tr>
-          <tr><td>Track maxes per movement</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc only</td><td>Never resurfaces after the earliest brain-dump. Drifts toward programming (D11).</td></tr>
+          <tr><td>Buddy-cancellation alert</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Directly serves the thesis.</td></tr>
+          <tr><td>Track maxes per movement</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc only</td><td>Drifts toward programming (D11).</td></tr>
           <tr><td>Movement insights ("you lift better after X")</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc only</td><td>Same. Charming idea, wrong product.</td></tr>
-          <tr><td>Live in-progress workout session screen</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Workout Page Requirements Spec — an orphan doc</td><td><span class="tag tag-conflict">CONFLICT</span> The largest unattributed scope in the corpus: a timer, current set/exercise, on-the-fly plan edits, and the only typography directive anywhere ("Poppins, no bold"). It appears in <em>no</em> requirements list. Deferred as D13 — trigger: a beta tester asks to log a workout while doing it.</td></tr>
+          <tr><td>Live in-progress workout session screen</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Workout Page Requirements Spec — an orphan doc</td><td><span class="tag tag-conflict">CONFLICT</span> Deferred as D13.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Reps and weight per set</strong> — admitted in a code comment: <em>"in a full implementation, you'd want individual set inputs."</em></li>
+      <li><strong>Exercise data survives a round-trip</strong> — the creator writes <span class="fname">setDetails:[{reps,weight}]</span>; the reader flattens to <span class="fname">{name,sets,weight}</span> reading a top-level <span class="fname">weight</span> key that is <em>never written</em>, so the calendar always renders blank weights.</li>
+      <li><strong>Invite friends to <em>edit</em> a workout</strong> — events live under <span class="fname">users/{owner}/events</span> with owner-only write in the rules, so co-authorship is a data-model change plus a conflict story.</li>
+      <li><strong>Workout privacy semantics</strong> — the notes give basic events and workouts <em>different</em> definitions of "private", and the rules implement a third.</li>
+      <li><strong>Exercise / movement catalog</strong> — free text is the entire specification for the data workout events depend on.</li>
+      <li><strong>Buddy-cancellation alert</strong> — the whole point is that someone is expecting you.</li>
+      <li><strong>Track maxes per movement</strong> — never resurfaces after the earliest brain-dump.</li>
+      <li><strong>Live in-progress workout session screen</strong> — the largest unattributed scope in the corpus: a timer, current set/exercise, on-the-fly plan edits, and the only typography directive anywhere ("Poppins, no bold"). It appears in <em>no</em> requirements list. D13 trigger: a beta tester asks to log a workout while doing it.</li>
+    </ul>
   </section>
 
   <section id="goals">
@@ -360,27 +429,40 @@
       <table>
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>Create / edit / delete a goal</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goal_creator_sheet.dart</span></td><td>Full validation. Only nit: the failure snackbar says "Failed to create goal" on the update path.</td></tr>
-          <tr><td>Period-based check-in / uncheck-in</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goals_service.dart</span></td><td>Transactional. The design axis is explicit: <em>period-based progress, NOT scheduled timestamps</em>.</td></tr>
-          <tr><td>Automatic period rollover into history</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goals_service.dart</span></td><td>Prior period is written to <span class="fname">periodHistory</span>, a new period starts automatically.</td></tr>
+          <tr><td>Create / edit / delete a goal</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goal_creator_sheet.dart</span></td><td>Full validation.</td></tr>
+          <tr><td>Period-based check-in / uncheck-in</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goals_service.dart</span></td><td>Transactional; period-based, not timestamped.</td></tr>
+          <tr><td>Automatic period rollover into history</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goals_service.dart</span></td><td>Prior period &rarr; <span class="fname">periodHistory</span>.</td></tr>
           <tr><td>Archive at end date</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">goal.dart</span>, <span class="fname">goals_service.dart</span></td><td><span class="fname">GoalStatus {active, archived}</span> — no paused/failed state.</td></tr>
           <tr><td>Validation (non-empty name, &gt;0 checkups, &le;1 year)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Class Design; <span class="fname">goal.dart</span></td><td>The spec was followed field for field. Rare in this repo.</td></tr>
           <tr><td>Goals widget with progress ring</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Reqs #13; <span class="fname">feed_page.dart</span></td><td>Completed / required for the <em>current</em> reset period.</td></tr>
-          <tr><td><span class="fname">GoalService</span> separated from the data model</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Class Design: "the Goal class should be a DATA MODEL only"</td><td>Honoured. <span class="fname">models/goal.dart</span> is also the <em>only</em> file in <span class="fname">lib/models/</span> — everything else is raw maps.</td></tr>
-          <tr><td>Editing a goal preserves its history</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">goals_service.updateGoalForCurrentUser</span></td><td><strong>Renaming a goal destroys every past period and resets progress to 0.</strong> Documented in-code as "Edit behavior (v1)". No requirement says this is right. D29: preserve history.</td></tr>
-          <tr><td>Full check-up history view</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Goal Reqs #12: "some way the user can see the entire checkup history"</td><td>The data is stored; there is no screen that shows it. And the edit path deletes it (row above).</td></tr>
-          <tr><td>Monthly reset = a calendar month</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">goals_service._periodEnd</span></td><td>Implemented as a flat <strong>30-day</strong> add. Drifts against the calendar over a year.</td></tr>
-          <tr><td>Completion percentage on archive</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Goal Reqs #9</td><td><span class="fname">getOverallCompletionRate()</span> exists on the model; no archive screen surfaces it.</td></tr>
+          <tr><td><span class="fname">GoalService</span> separated from the data model</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>Goal Class Design: "the Goal class should be a DATA MODEL only"</td><td>Honoured.</td></tr>
+          <tr><td>Editing a goal preserves its history</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">goals_service.updateGoalForCurrentUser</span></td><td><strong>Renaming a goal destroys all history.</strong> D29.</td></tr>
+          <tr><td>Full check-up history view</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Goal Reqs #12: "some way the user can see the entire checkup history"</td><td>Stored, but no screen shows it.</td></tr>
+          <tr><td>Monthly reset = a calendar month</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">goals_service._periodEnd</span></td><td>A flat <strong>30-day</strong> add.</td></tr>
+          <tr><td>Completion percentage on archive</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td>Goal Reqs #9</td><td><span class="fname">getOverallCompletionRate()</span> exists.</td></tr>
           <tr><td>Reuse a previous goal's settings for a new goal</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #10: "it should be easy for a user to reuse the same settings"</td><td>&nbsp;</td></tr>
-          <tr><td>Multi-day tracking of a per-day goal (the "water" case)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #4</td><td><span class="tag tag-deferred">DEFERRED</span> The notes leave this <em>explicitly unresolved</em> — "for that specific goal I'm not sure what to do." Trigger: a beta user asks for a daily habit with a weekly view.</td></tr>
-          <tr><td>Shareable goals with friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc; Final Specs Stretch</td><td>Goals are owner-only read <em>and</em> write in the rules — sharing is a rules change, not a screen.</td></tr>
+          <tr><td>Multi-day tracking of a per-day goal (the "water" case)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #4</td><td><span class="tag tag-deferred">DEFERRED</span> Explicitly unresolved in the notes.</td></tr>
+          <tr><td>Shareable goals with friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc; Final Specs Stretch</td><td>A rules change, not a screen.</td></tr>
           <tr><td>Goal updates in the feed</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs Stretch</td><td>&nbsp;</td></tr>
           <tr><td>Lock-screen goal check-in</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs Stretch</td><td>Blocked on push.</td></tr>
-          <tr><td>Additional goal types (child classes)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #15</td><td>The model was designed for extension; nothing extends it yet.</td></tr>
-          <tr><td>Goal as a third event type on Create</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc: "workout, goal, and basic event"</td><td><span class="tag tag-conflict">CONFLICT</span> Two later docs say two event types. Goals ship as their own entity instead, which is the better answer. Closed.</td></tr>
+          <tr><td>Additional goal types (child classes)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #15</td><td>Designed for extension; nothing extends it.</td></tr>
+          <tr><td>Goal as a third event type on Create</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc: "workout, goal, and basic event"</td><td><span class="tag tag-conflict">CONFLICT</span> Closed — goals are their own entity.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Create / edit / delete a goal</strong> — the failure snackbar says "Failed to create goal" on the update path.</li>
+      <li><strong>Period-based check-in / uncheck-in</strong> — the design axis is explicit: <em>period-based progress, NOT scheduled timestamps</em>.</li>
+      <li><strong>Automatic period rollover into history</strong> — a new period starts automatically.</li>
+      <li><strong><span class="fname">GoalService</span> separated from the data model</strong> — <span class="fname">models/goal.dart</span> is the <em>only</em> file in <span class="fname">lib/models/</span>; everything else is raw maps.</li>
+      <li><strong>Editing a goal preserves its history</strong> — renaming destroys every past period and resets progress to 0. Documented in-code as "Edit behavior (v1)", and no requirement says that is right. D29: preserve history.</li>
+      <li><strong>Full check-up history view</strong> — the edit path deletes the history (row above).</li>
+      <li><strong>Monthly reset = a calendar month</strong> — a flat 30-day add drifts against the calendar over a year.</li>
+      <li><strong>Completion percentage on archive</strong> — no archive screen surfaces it.</li>
+      <li><strong>Multi-day tracking of a per-day goal (the "water" case)</strong> — the notes say "for that specific goal I'm not sure what to do." Trigger: a beta user asks for a daily habit with a weekly view.</li>
+      <li><strong>Shareable goals with friends</strong> — goals are owner-only read <em>and</em> write in the rules.</li>
+      <li><strong>Goal as a third event type on Create</strong> — two later docs say two event types; goals shipping as their own entity is the better answer.</li>
+    </ul>
   </section>
 
   <section id="plans">
@@ -392,15 +474,23 @@
         <tbody>
           <tr><td>Create / edit a plan (template &rarr; materialised events)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">plans_service.dart</span>, <span class="fname">plan_creator_sheet.dart</span></td><td>Batched writes chunked at 300.</td></tr>
           <tr><td>Weekday mapping + repeat window</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">plan_creator_sheet.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>"Update upcoming instances?" 3-way dialog</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">plan_creator_sheet.dart</span></td><td>Deletes future instances and regenerates. Thoughtful; entirely unspecified.</td></tr>
-          <tr><td>Delete a plan</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">plan_creator_sheet.dart</span></td><td>The goal sheet has a delete. This one doesn't. A plan is permanent.</td></tr>
-          <tr><td>A single, consistent generation cap</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">plans_service.dart</span></td><td><strong>250 on create, 180 on update.</strong> Editing a large plan silently truncates it.</td></tr>
-          <tr><td>Plan lookup that can't collide</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">findPlanByNameForCurrentUser</span></td><td>Looks plans up <em>by name</em> — ambiguous with duplicates — and needs a <span class="fname">name+updatedAt</span> index that is <strong>not in <span class="fname">firestore.indexes.json</span></strong>, so it will fail at runtime the first time it's hit at scale.</td></tr>
-          <tr><td>A failed plan load tells the user</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">plan_creator_sheet.dart:60-93</span></td><td>A <span class="fname">finally</span> with <strong>no <span class="fname">catch</span></strong> — a failed load silently shows an empty edit form, and saving it wipes the plan.</td></tr>
-          <tr><td>One repetition mechanism</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">plans_service</span> vs <span class="fname">events_service</span></td><td>Plans materialise real docs; recurrence expands one doc client-side. Both ship. D22 documents the boundary; merging them is deferred.</td></tr>
+          <tr><td>"Update upcoming instances?" 3-way dialog</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">plan_creator_sheet.dart</span></td><td>Deletes future instances and regenerates.</td></tr>
+          <tr><td>Delete a plan</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">plan_creator_sheet.dart</span></td><td>A plan is permanent.</td></tr>
+          <tr><td>A single, consistent generation cap</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">plans_service.dart</span></td><td><strong>250 on create, 180 on update.</strong></td></tr>
+          <tr><td>Plan lookup that can't collide</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">findPlanByNameForCurrentUser</span></td><td>Looks plans up <em>by name</em>; index missing.</td></tr>
+          <tr><td>A failed plan load tells the user</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">plan_creator_sheet.dart:60-93</span></td><td>A <span class="fname">finally</span> with <strong>no <span class="fname">catch</span></strong>.</td></tr>
+          <tr><td>One repetition mechanism</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">plans_service</span> vs <span class="fname">events_service</span></td><td>Both ship; D22 documents the boundary.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>"Update upcoming instances?" 3-way dialog</strong> — thoughtful, and entirely unspecified.</li>
+      <li><strong>Delete a plan</strong> — the goal sheet has a delete; this one doesn't.</li>
+      <li><strong>A single, consistent generation cap</strong> — editing a large plan silently truncates it.</li>
+      <li><strong>Plan lookup that can't collide</strong> — name lookup is ambiguous with duplicates, and the <span class="fname">name+updatedAt</span> index it needs is <strong>not in <span class="fname">firestore.indexes.json</span></strong>, so it will fail at runtime the first time it is hit at scale.</li>
+      <li><strong>A failed plan load tells the user</strong> — a failed load silently shows an empty edit form, and saving it wipes the plan.</li>
+      <li><strong>One repetition mechanism</strong> — Plans materialise real docs while recurrence expands one doc client-side; merging them is deferred.</li>
+    </ul>
   </section>
 
   <section id="social">
@@ -409,28 +499,46 @@
       <table>
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>Search users and gyms</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">search_service.dart:106</span></td><td><strong>Breaks silently past 100 users.</strong> It fetches <span class="fname">users.limit(100)</span> and filters with <span class="fname">contains()</span> in memory — no query, no index, no ordering, no pagination. <span class="fname">displayNameLower</span> is written at signup for exactly this and never used.</td></tr>
+          <tr><td>Search users and gyms</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">search_service.dart:106</span></td><td><strong>Breaks silently past 100 users.</strong></td></tr>
           <tr><td>Search debounce + type filter</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">social_page.dart</span></td><td>350&nbsp;ms debounce, user/gym filter.</td></tr>
-          <tr><td>Send a friend request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span></td><td>Implemented as a DM with <span class="fname">messageKind: 'friend_request'</span>. Undocumented protocol, encoded in the rules.</td></tr>
-          <tr><td>Accept / decline a friend request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">friends_service.dart</span></td><td>Bidirectional batch write. The rule allows exactly the self-add diff — genuinely careful work.</td></tr>
-          <tr><td>Pending state after sending a request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">user_profile_detail_page.dart:79-100</span></td><td>The button still reads "Add Friend" after you tap it, so users fire duplicate requests until the service throws.</td></tr>
-          <tr><td>Unfriend / remove a friend</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">friends_service.dart</span></td><td>The profile list works, but the legacy <span class="fname">addFriend</span>/<span class="fname">removeFriend</span> pair is <strong>one-sided</strong> — it leaves an asymmetric friend graph.</td></tr>
-          <tr><td>Block a user</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>No blocking anywhere. Store blocker for a UGC app, and a safety requirement independent of the stores.</td></tr>
+          <tr><td>Send a friend request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span></td><td>A DM with <span class="fname">messageKind: 'friend_request'</span>.</td></tr>
+          <tr><td>Accept / decline a friend request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">friends_service.dart</span></td><td>Bidirectional batch write.</td></tr>
+          <tr><td>Pending state after sending a request</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">user_profile_detail_page.dart:79-100</span></td><td>The button still reads "Add Friend" after you tap it.</td></tr>
+          <tr><td>Unfriend / remove a friend</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">friends_service.dart</span></td><td>Profile list works; the legacy pair is <strong>one-sided</strong>.</td></tr>
+          <tr><td>Block a user</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>No blocking anywhere.</td></tr>
           <tr><td>Report a user or a post</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">moderation_service.dart</span> — 0 bytes</td><td>App Store guideline 1.2. Blocks iOS submission on its own.</td></tr>
-          <tr><td>DM threads (text)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span></td><td>Deterministic thread ids — <span class="fname">sorted(uidA,uidB).join('__')</span>, no lookup needed. Neat.</td></tr>
-          <tr><td>Permission-gated composer</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">canSendDirectChatTo</span>, <span class="fname">firestore.rules</span></td><td>Friends / gym / gym-member only. Costs 3–4 <span class="fname">get()</span> calls per message write, close to the 10-per-evaluation rule limit.</td></tr>
+          <tr><td>DM threads (text)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span></td><td>Deterministic thread ids, no lookup needed.</td></tr>
+          <tr><td>Permission-gated composer</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">canSendDirectChatTo</span>, <span class="fname">firestore.rules</span></td><td>Friends / gym / gym-member only.</td></tr>
           <tr><td>Event-invite DM bubble</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_message_page.dart</span></td><td>Renders, deep-links to the calendar.</td></tr>
-          <tr><td>RSVP (Attend / Decline) on an invite</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_message_page.dart:147</span></td><td><strong>H4 — 100% cosmetic.</strong> Nothing is written, the inviter is never told, and it's lost on navigation. This is the single feature the product thesis depends on, and it is fake.</td></tr>
-          <tr><td>Read receipts and unread counts</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span>, <span class="fname">bottom_nav.dart</span></td><td>Live badging across nav and gym rows. Undocumented. The rule lets either participant rewrite the other's count.</td></tr>
-          <tr><td>Incoming messages auto-scroll</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_message_page.dart</span></td><td>New messages arrive off-screen. Also: Decline pops the whole chat page, Accept doesn't.</td></tr>
-          <tr><td>Friend-request stream that doesn't fan out reads</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">getIncomingFriendRequestsStream</span></td><td><span class="fname">asyncMap</span> with one <span class="fname">.get()</span> <em>per thread, per snapshot</em>. O(threads) billed reads on every change.</td></tr>
-          <tr><td>Other-user profile page</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">user_profile_detail_page.dart</span></td><td>Avatar, name, and two buttons. No bio, and it doesn't show <span class="fname">contactInfo</span> even though the profile screen writes it. For an app about meeting people, the page where you decide whether to meet someone is nearly empty.</td></tr>
-          <tr><td>Dead Messages tab still querying on every load</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">social_page.dart:154,544,566</span></td><td>~140 lines unreachable, but <span class="fname">_loadMessagesList</span> still runs an <span class="fname">orderBy+limit(10)</span> query <strong>per joined gym</strong> on every page load, for a tab that no longer exists. Pure wasted reads.</td></tr>
-          <tr><td>Groups of friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs (core) &rarr; Final Specs (stretch)</td><td>No entity, collection, rule, index, or UI. Deferred with a trigger — see <a href="decisions.html#deferred">the deferred table</a>.</td></tr>
-          <tr><td>User-authored posts for friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs Stretch</td><td>D14 keeps this out of v1: a second UGC surface doubles the moderation burden before any moderation exists.</td></tr>
+          <tr><td>RSVP (Attend / Decline) on an invite</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_message_page.dart:147</span></td><td><strong>H4 — 100% cosmetic.</strong></td></tr>
+          <tr><td>Read receipts and unread counts</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">direct_messages_service.dart</span>, <span class="fname">bottom_nav.dart</span></td><td>Live badging across nav and gym rows.</td></tr>
+          <tr><td>Incoming messages auto-scroll</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_message_page.dart</span></td><td>New messages arrive off-screen.</td></tr>
+          <tr><td>Friend-request stream that doesn't fan out reads</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">getIncomingFriendRequestsStream</span></td><td>O(threads) billed reads on every change.</td></tr>
+          <tr><td>Other-user profile page</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">user_profile_detail_page.dart</span></td><td>Avatar, name, and two buttons.</td></tr>
+          <tr><td>Dead Messages tab still querying on every load</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">social_page.dart:154,544,566</span></td><td>~140 lines unreachable, still querying per gym.</td></tr>
+          <tr><td>Groups of friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs (core) &rarr; Final Specs (stretch)</td><td>No entity, collection, rule, index, or UI.</td></tr>
+          <tr><td>User-authored posts for friends</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs Stretch</td><td>D14 keeps this out of v1.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Search users and gyms</strong> — fetches <span class="fname">users.limit(100)</span> and filters with <span class="fname">contains()</span> in memory: no query, no index, no ordering, no pagination. <span class="fname">displayNameLower</span> is written at signup for exactly this and never used.</li>
+      <li><strong>Send a friend request</strong> — an undocumented protocol, encoded in the Firestore rules.</li>
+      <li><strong>Accept / decline a friend request</strong> — the rule allows exactly the self-add diff; genuinely careful work.</li>
+      <li><strong>Pending state after sending a request</strong> — users fire duplicate requests until the service throws.</li>
+      <li><strong>Unfriend / remove a friend</strong> — the legacy <span class="fname">addFriend</span>/<span class="fname">removeFriend</span> pair is one-sided and leaves an asymmetric friend graph.</li>
+      <li><strong>Block a user</strong> — a store blocker for a UGC app, and a safety requirement independent of the stores.</li>
+      <li><strong>DM threads (text)</strong> — ids are <span class="fname">sorted(uidA,uidB).join('__')</span>, so no lookup is needed. Neat.</li>
+      <li><strong>Permission-gated composer</strong> — costs 3–4 <span class="fname">get()</span> calls per message write, close to the 10-per-evaluation rule limit.</li>
+      <li><strong>RSVP (Attend / Decline) on an invite</strong> — nothing is written, the inviter is never told, and it is lost on navigation. This is the single feature the product thesis depends on, and it is fake.</li>
+      <li><strong>Read receipts and unread counts</strong> — undocumented, and the rule lets either participant rewrite the other's count.</li>
+      <li><strong>Incoming messages auto-scroll</strong> — Decline pops the whole chat page; Accept doesn't.</li>
+      <li><strong>Friend-request stream that doesn't fan out reads</strong> — <span class="fname">asyncMap</span> with one <span class="fname">.get()</span> <em>per thread, per snapshot</em>.</li>
+      <li><strong>Other-user profile page</strong> — no bio, and it doesn't show <span class="fname">contactInfo</span> even though the profile screen writes it. For an app about meeting people, the page where you decide whether to meet someone is nearly empty.</li>
+      <li><strong>Dead Messages tab still querying on every load</strong> — <span class="fname">_loadMessagesList</span> runs an <span class="fname">orderBy+limit(10)</span> query per joined gym on every page load, for a tab that no longer exists. Pure wasted reads.</li>
+      <li><strong>Groups of friends</strong> — deferred with a trigger; see <a href="decisions.html#deferred">the deferred table</a>.</li>
+      <li><strong>User-authored posts for friends</strong> — a second UGC surface doubles the moderation burden before any moderation exists.</li>
+    </ul>
   </section>
 
   <section id="gyms">
@@ -441,26 +549,39 @@
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Gym account type</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">register_page.dart</span>, <span class="fname">firestore.rules</span></td><td>Already built, already the differentiator. D4.</td></tr>
-          <tr><td>Join a gym community</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span></td><td>Transaction touching both docs. Always instant — see approval row below.</td></tr>
+          <tr><td>Join a gym community</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span></td><td>Transaction on both docs; always instant.</td></tr>
           <tr><td>Leave a gym</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span>, <span class="fname">profile_page.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>Gym creates / removes channels</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span></td><td>A flat <span class="fname">channelNames</span> array on the gym doc. There is no channel entity.</td></tr>
+          <tr><td>Gym creates / removes channels</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span></td><td>A flat <span class="fname">channelNames</span> array; no entity.</td></tr>
           <tr><td>Channel post feed (post, comment, like)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">channel_page.dart</span>, <span class="fname">channel_posts_service.dart</span></td><td>All live. 2 listeners per visible post.</td></tr>
-          <tr><td>A post's author can delete their own post</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">channel_posts_service.dart:357</span></td><td><strong>H6.</strong> <span class="fname">isCurrentUserGymOwner</span> is <span class="fname">uid == gymUid</span>. The Firestore rule <em>does</em> allow author delete; the client check is what's wrong.</td></tr>
-          <tr><td>Posts can't be rewritten by other members</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td><strong>Security.</strong> <span class="fname">allow update</span> on <span class="fname">channelPosts</span> is unconstrained — the intent was likes only, but nothing limits <span class="fname">affectedKeys()</span>, so any joined member can rewrite any post's <span class="fname">content</span> or <span class="fname">authorUid</span>.</td></tr>
-          <tr><td>Gym moderation (report / hide / takedown / ban)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">moderation_service.dart</span> — 0 bytes</td><td>A must-have in two requirements docs, both of which also admit the workflow is "not yet fully defined." Needs a spec before it needs code.</td></tr>
-          <tr><td>Gym community landing page</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">social_page.dart</span></td><td>The community main pane is an <strong>empty state</strong> — there is no gym feed. A prospect who opens a gym before joining sees nothing, which is exactly the moment the differentiator is supposed to fire.</td></tr>
+          <tr><td>A post's author can delete their own post</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">channel_posts_service.dart:357</span></td><td><strong>H6</strong> — the client check is wrong, not the rule.</td></tr>
+          <tr><td>Posts can't be rewritten by other members</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td><strong>Security.</strong> Any member can rewrite any post.</td></tr>
+          <tr><td>Gym moderation (report / hide / takedown / ban)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">moderation_service.dart</span> — 0 bytes</td><td>Needs a spec before it needs code.</td></tr>
+          <tr><td>Gym community landing page</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">social_page.dart</span></td><td>An <strong>empty state</strong> — there is no gym feed.</td></tr>
           <tr><td>Gym approves or rejects join requests</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs: joining "may be instant or require approval"</td><td>Only the kick half exists. No approval flow, no config flag.</td></tr>
-          <tr><td>Gym removes a member</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span>, <span class="fname">profile_page.dart</span></td><td>The rule allows a gym to remove only itself from a member's <span class="fname">joinedGymIds</span>. Correctly scoped.</td></tr>
-          <tr><td>Channel-level write permissions</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Proposal: users post on "<em>certain</em> channels"</td><td>Any joined member can post in any channel. An announcements-only channel is impossible today.</td></tr>
-          <tr><td>Developer errors kept out of the user UI</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">channel_page.dart:205-257</span></td><td>On a missing index the app tells the <em>end user</em> to run <span class="fname">firebase login --reauth</span> and <span class="fname">firebase deploy --only firestore:indexes</span>, with a copy-to-clipboard console URL.</td></tr>
-          <tr><td>Comment editing</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">firestore.rules</span> — <span class="fname">allow update: if false</span></td><td>Comments are immutable by rule, which also means no comment likes. Probably deliberate; nothing says so.</td></tr>
-          <tr><td>Gym subpages</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs + Final Specs</td><td>Channels may or may not be the same concept the notes call "subpages." Never reconciled.</td></tr>
-          <tr><td>Gym discovery via a map</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview: "map view similar to pokemon go"; Mission: "mapping system or a list at first"</td><td>Silently dropped — not deferred, not cut, just gone. Search is the only discovery path.</td></tr>
+          <tr><td>Gym removes a member</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">gyms_service.dart</span>, <span class="fname">profile_page.dart</span></td><td>Correctly scoped in the rules.</td></tr>
+          <tr><td>Channel-level write permissions</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Proposal: users post on "<em>certain</em> channels"</td><td>Any joined member can post in any channel.</td></tr>
+          <tr><td>Developer errors kept out of the user UI</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">channel_page.dart:205-257</span></td><td>Firebase CLI instructions shown to end users.</td></tr>
+          <tr><td>Comment editing</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">firestore.rules</span> — <span class="fname">allow update: if false</span></td><td>Comments are immutable by rule.</td></tr>
+          <tr><td>Gym subpages</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Initial Reqs + Final Specs</td><td>Never reconciled with channels.</td></tr>
+          <tr><td>Gym discovery via a map</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview: "map view similar to pokemon go"; Mission: "mapping system or a list at first"</td><td>Silently dropped — not deferred, not cut.</td></tr>
           <tr><td>Gym-linked programs / area-specific workouts</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Drifts toward programming (D11).</td></tr>
-          <tr><td>Paid premium gym tier</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs Stretch — one sentence</td><td>The <em>only</em> monetization statement in ~20 documents. D8 defers it; trigger is three gyms asking for something free can't do.</td></tr>
+          <tr><td>Paid premium gym tier</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs Stretch — one sentence</td><td>The <em>only</em> monetization statement in ~20 docs.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>A post's author can delete their own post</strong> — <span class="fname">isCurrentUserGymOwner</span> is literally <span class="fname">uid == gymUid</span>; the Firestore rule <em>does</em> allow author delete.</li>
+      <li><strong>Posts can't be rewritten by other members</strong> — <span class="fname">allow update</span> on <span class="fname">channelPosts</span> is unconstrained. The intent was likes only, but nothing limits <span class="fname">affectedKeys()</span>, so any joined member can rewrite any post's <span class="fname">content</span> or <span class="fname">authorUid</span>.</li>
+      <li><strong>Gym moderation (report / hide / takedown / ban)</strong> — a must-have in two requirements docs, both of which admit the workflow is "not yet fully defined."</li>
+      <li><strong>Gym community landing page</strong> — a prospect who opens a gym before joining sees nothing, which is exactly the moment the differentiator is supposed to fire.</li>
+      <li><strong>Gym removes a member</strong> — the rule allows a gym to remove only itself from a member's <span class="fname">joinedGymIds</span>.</li>
+      <li><strong>Channel-level write permissions</strong> — an announcements-only channel is impossible today.</li>
+      <li><strong>Developer errors kept out of the user UI</strong> — on a missing index the app tells the <em>end user</em> to run <span class="fname">firebase login --reauth</span> and <span class="fname">firebase deploy --only firestore:indexes</span>, with a copy-to-clipboard console URL.</li>
+      <li><strong>Comment editing</strong> — immutability also means no comment likes. Probably deliberate; nothing says so.</li>
+      <li><strong>Gym subpages</strong> — channels may or may not be the same concept the notes call "subpages."</li>
+      <li><strong>Gym discovery via a map</strong> — search is the only discovery path.</li>
+      <li><strong>Paid premium gym tier</strong> — D8 defers it; the trigger is three gyms asking for something free can't do.</li>
+    </ul>
   </section>
 
   <section id="profile">
@@ -470,21 +591,29 @@
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
           <tr><td>Edit display name</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart:368</span></td><td>Writes <span class="fname">displayName</span> + <span class="fname">displayNameLower</span>.</td></tr>
-          <tr><td>Edit contact info</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart:370</span></td><td>Optional per the notes. Never displayed on the other-user profile.</td></tr>
+          <tr><td>Edit contact info</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart:370</span></td><td>Optional per the notes.</td></tr>
           <tr><td>Avatar upload (camera / gallery / web)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_avatar_service.dart</span></td><td>Storage path <span class="fname">avatars/{uid}/profile</span>.</td></tr>
-          <tr><td>Profile save reports real success/failure</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">profile_page.dart:91,374,721,1002</span></td><td><strong>H7 — <span class="fname">catch (_) {}</span>.</strong> Optimistic UI reports success for writes that never landed. Four sites in one file, plus three other files.</td></tr>
+          <tr><td>Profile save reports real success/failure</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">profile_page.dart:91,374,721,1002</span></td><td><strong>H7 — <span class="fname">catch (_) {}</span>.</strong></td></tr>
           <tr><td>Friends list with remove</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart</span></td><td>&nbsp;</td></tr>
           <tr><td>Gyms list with leave</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart</span></td><td>&nbsp;</td></tr>
           <tr><td>Gym &rarr; members list with kick</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_page.dart</span>, <span class="fname">gyms_service.dart</span></td><td>&nbsp;</td></tr>
-          <tr><td>Avatar pipeline (3-layer cache + web fallback)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_avatar_service.dart</span>, <span class="fname">storage_avatar.dart</span></td><td>Session cache + bytes cache + in-flight dedupe, with an <span class="fname">http.get</span> fallback because <span class="fname">getData()</span> fails on Flutter web. Undocumented.</td></tr>
-          <tr><td>List loads that don't do N+1 fetches</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">profile_page.dart:211,235</span>, <span class="fname">friends_service</span>, <span class="fname">gyms_service</span></td><td>Sequential per-doc <span class="fname">.get()</span> in a <span class="fname">for</span> loop, each individually swallowed. Also <span class="fname">setState</span> after <span class="fname">await</span> with no <span class="fname">mounted</span> guard at five sites.</td></tr>
-          <tr><td><span class="fname">avatarUrl</span> is read, or not written</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">profile_avatar_service.dart:857</span></td><td>Written to the user doc and <strong>never read</strong> — every avatar re-resolves from Storage by uid. Pick one.</td></tr>
+          <tr><td>Avatar pipeline (3-layer cache + web fallback)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">profile_avatar_service.dart</span>, <span class="fname">storage_avatar.dart</span></td><td>Session + bytes cache + in-flight dedupe.</td></tr>
+          <tr><td>List loads that don't do N+1 fetches</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">profile_page.dart:211,235</span>, <span class="fname">friends_service</span>, <span class="fname">gyms_service</span></td><td>Sequential per-doc <span class="fname">.get()</span> in a loop.</td></tr>
+          <tr><td><span class="fname">avatarUrl</span> is read, or not written</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">profile_avatar_service.dart:857</span></td><td>Written but <strong>never read</strong> — pick one.</td></tr>
           <tr><td>Preview your public profile</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission doc</td><td>"View the public appearance of your profile."</td></tr>
           <tr><td>Settings / theme editing</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Mission (core) &rarr; Final Specs (stretch)</td><td>There is no settings screen at all.</td></tr>
-          <tr><td><span class="fname">user_preferences</span> collection</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules:192-204</span></td><td>Full CRUD rules for a collection referenced <strong>nowhere</strong> in <span class="fname">lib/</span>. Dead ruleset — delete it (D32).</td></tr>
+          <tr><td><span class="fname">user_preferences</span> collection</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules:192-204</span></td><td>Dead ruleset — delete it (D32).</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Edit contact info</strong> — never displayed on the other-user profile.</li>
+      <li><strong>Profile save reports real success/failure</strong> — optimistic UI reports success for writes that never landed. Four sites in one file, plus <span class="fname">friends_service</span>, <span class="fname">gyms_service</span> and <span class="fname">plan_creator_sheet</span>.</li>
+      <li><strong>Avatar pipeline (3-layer cache + web fallback)</strong> — an <span class="fname">http.get</span> fallback because <span class="fname">getData()</span> fails on Flutter web. Undocumented.</li>
+      <li><strong>List loads that don't do N+1 fetches</strong> — each <span class="fname">.get()</span> is individually swallowed, and <span class="fname">setState</span> runs after <span class="fname">await</span> with no <span class="fname">mounted</span> guard at five sites.</li>
+      <li><strong><span class="fname">avatarUrl</span> is read, or not written</strong> — every avatar re-resolves from Storage by uid.</li>
+      <li><strong><span class="fname">user_preferences</span> collection</strong> — full CRUD rules for a collection referenced <strong>nowhere</strong> in <span class="fname">lib/</span>.</li>
+    </ul>
   </section>
 
   <section id="notifications">
@@ -496,19 +625,25 @@
       <table>
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>Push infrastructure (FCM)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">push_service.dart</span> — 0 bytes</td><td>Fan-out realistically wants Cloud Functions, which wants the Blaze plan and a card on file — deliberately avoided so far. See <a href="../03-services/index.html">the service map</a>.</td></tr>
+          <tr><td>Push infrastructure (FCM)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">push_service.dart</span> — 0 bytes</td><td>Wants Cloud Functions &rarr; the Blaze plan.</td></tr>
           <tr><td>Event-invite notification</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>derived from the invite flow</td><td>An invite you never see is not an invite.</td></tr>
           <tr><td>DM notification</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>derived from DMs</td><td>&nbsp;</td></tr>
-          <tr><td>Notification preferences</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent everywhere</td><td>No model, no screen. <span class="fname">user_preferences</span> would have been the place, and it's dead.</td></tr>
+          <tr><td>Notification preferences</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent everywhere</td><td>No model, no screen.</td></tr>
           <tr><td>Workout reminder + "are you going?"</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>&nbsp;</td></tr>
           <tr><td>Buddy-cancellation alert</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>The highest-signal notification in the product.</td></tr>
           <tr><td>Goal archival notification</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs #10</td><td>&nbsp;</td></tr>
           <tr><td>Lock-screen goal check-in</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Goal Reqs Stretch</td><td>&nbsp;</td></tr>
-          <tr><td>Push-driven data refresh</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Already solved a different way — Firestore snapshot streams update live. Close this one.</td></tr>
-          <tr><td>Presence / online status</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">presence_service.dart</span> — 0 bytes</td><td>Scaffolded with no requirement anywhere. Delete the file or write the requirement.</td></tr>
+          <tr><td>Push-driven data refresh</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview doc</td><td>Firestore snapshot streams already do this.</td></tr>
+          <tr><td>Presence / online status</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">presence_service.dart</span> — 0 bytes</td><td>Scaffolded with no requirement anywhere.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Push infrastructure (FCM)</strong> — fan-out realistically wants Cloud Functions, which wants the Blaze plan and a card on file, deliberately avoided so far. See <a href="../03-services/index.html">the service map</a>.</li>
+      <li><strong>Notification preferences</strong> — <span class="fname">user_preferences</span> would have been the place, and it's dead.</li>
+      <li><strong>Push-driven data refresh</strong> — already solved a different way; close this one.</li>
+      <li><strong>Presence / online status</strong> — delete the file or write the requirement.</li>
+    </ul>
   </section>
 
   <section id="platform">
@@ -520,38 +655,63 @@
       <table>
         <thead><tr><th>Feature</th><th>Priority</th><th>Build state</th><th>Evidence</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>User table is not world-readable</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td>Fix first. Everything else on this page is cheaper than this one line.</td></tr>
+          <tr><td>User table is not world-readable</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td>Fix first.</td></tr>
           <tr><td>Firebase App Check</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no package, no config</td><td>Free. See <a href="../03-services/app-check.html">the App Check runbook</a>.</td></tr>
-          <tr><td>Field / shape validation in rules</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td>Not one rule checks a type, a length, or a required key. A client can write a 1&nbsp;MB <span class="fname">displayName</span>, or set <span class="fname">accountType: 'gym'</span> on its own doc and <strong>instantly become a gym</strong>.</td></tr>
-          <tr><td>Server timestamps instead of client clocks</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_messages_service</span>, <span class="fname">goals_service</span>, <span class="fname">plans_service</span></td><td><span class="fname">Timestamp.now()</span> on the client, no <span class="fname">request.time</span> check in rules. Message ordering is spoofable.</td></tr>
-          <tr><td>Storage upload size / MIME cap</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">storage.rules</span></td><td>A user can upload a 5&nbsp;GB file to their own avatar path. Unbounded write cost per user.</td></tr>
+          <tr><td>Field / shape validation in rules</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">firestore.rules</span></td><td>No rule checks a type, length, or required key.</td></tr>
+          <tr><td>Server timestamps instead of client clocks</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">direct_messages_service</span>, <span class="fname">goals_service</span>, <span class="fname">plans_service</span></td><td>Message ordering is spoofable.</td></tr>
+          <tr><td>Storage upload size / MIME cap</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">storage.rules</span></td><td>A 5&nbsp;GB avatar upload is allowed today.</td></tr>
           <tr><td>CORS scoped to real origins</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">storage-cors.json</span></td><td><span class="fname">origin: ["*"]</span> with <span class="fname">Authorization</span> in the response headers.</td></tr>
-          <tr><td>Store-valid bundle identifiers</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">com.example.forge_senior_project_version</span> / <span class="fname">com.example.forgeSeniorProjectVersion</span></td><td><strong>Both stores reject <span class="fname">com.example.*</span> outright.</strong> Also the Android app label is the raw project slug and the iOS display name is a placeholder.</td></tr>
-          <tr><td>Release builds signed with a real key</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">android/app/build.gradle.kts</span></td><td><span class="fname">signingConfig = signingConfigs.getByName("debug")</span> for release. The AAB cannot be uploaded.</td></tr>
-          <tr><td><span class="fname">minSdk</span> / <span class="fname">targetSdk</span> pinned</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">build.gradle.kts</span></td><td>All inherited from <span class="fname">flutter.*</span> — whatever the toolchain defaults to that week.</td></tr>
-          <tr><td>iOS + Android as the shipping targets</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>D3; <span class="fname">ios/</span>, <span class="fname">android/</span></td><td>Both build. Neither is releasable until the three rows above are fixed. iOS photo/camera usage strings are the one platform thing done right.</td></tr>
-          <tr><td>Automated tests</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no <span class="fname">test/</span> directory exists</td><td><strong>Zero tests. 0% coverage.</strong> <span class="fname">flutter_test</span> is declared and unused; even the generated <span class="fname">widget_test.dart</span> was deleted. No safety net for any refactor this page implies. D23 proposes rules tests + service unit tests first.</td></tr>
-          <tr><td>Analyzer strictness</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">analysis_options.yaml</span> — one line</td><td><span class="fname">strict-casts</span>, <span class="fname">strict-raw-types</span>, <span class="fname">strict-inference</span> all off, which is exactly why the unchecked <span class="fname">as Timestamp</span> / <span class="fname">as List&lt;String&gt;</span> casts compile clean.</td></tr>
-          <tr><td>Crash / error reporting</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no Crashlytics, no Sentry</td><td>Production failures would be completely invisible. See <a href="../03-services/index.html">the service map</a> — Sentry is <span class="tag tag-proposed">PROPOSED</span> there.</td></tr>
-          <tr><td>Error types, validators, date utils, converters</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>10 empty files under <span class="fname">core/</span></td><td><strong>H9.</strong> This absence is the direct cause of H7 (swallowed errors) and the missing email/date validation. Fill it before adding features (D21).</td></tr>
+          <tr><td>Store-valid bundle identifiers</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">com.example.forge_senior_project_version</span> / <span class="fname">com.example.forgeSeniorProjectVersion</span></td><td><strong>Both stores reject <span class="fname">com.example.*</span>.</strong></td></tr>
+          <tr><td>Release builds signed with a real key</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">android/app/build.gradle.kts</span></td><td>Release uses the <strong>debug</strong> signing config.</td></tr>
+          <tr><td><span class="fname">minSdk</span> / <span class="fname">targetSdk</span> pinned</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">build.gradle.kts</span></td><td>All inherited from <span class="fname">flutter.*</span>.</td></tr>
+          <tr><td>iOS + Android as the shipping targets</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-warn">partial</span></td><td>D3; <span class="fname">ios/</span>, <span class="fname">android/</span></td><td>Both build; neither is releasable yet.</td></tr>
+          <tr><td>Automated tests</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no <span class="fname">test/</span> directory exists</td><td><strong>Zero tests. 0% coverage.</strong></td></tr>
+          <tr><td>Analyzer strictness</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">analysis_options.yaml</span> — one line</td><td>All three <span class="fname">strict-*</span> modes are off.</td></tr>
+          <tr><td>Crash / error reporting</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no Crashlytics, no Sentry</td><td>Production failures would be invisible.</td></tr>
+          <tr><td>Error types, validators, date utils, converters</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>10 empty files under <span class="fname">core/</span></td><td><strong>H9</strong> — fill it before adding features (D21).</td></tr>
           <tr><td>Privacy policy + terms URL</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent from repo and UI</td><td>Required by both stores. D6 makes it real work.</td></tr>
           <tr><td>Latent crashes from unchecked casts</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">events_service</span>, <span class="fname">event_creator_page:1576</span>, <span class="fname">calendar_page:1245,1291</span></td><td>All reachable with data the app itself writes.</td></tr>
-          <tr><td>State management (<span class="fname">setState</span> + <span class="fname">StreamBuilder</span>)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>everywhere</td><td>D5 <span class="tag tag-proposed">PROPOSED</span>: keep it. No Riverpod migration. It works, and a solo dev with zero tests should not rewrite a working app.</td></tr>
-          <tr><td>Firebase client config committed to git</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">firebase_options.dart</span>, <span class="fname">google-services.json</span></td><td><strong>This is normal and acceptable</strong> for Firebase client config — those keys identify the project, they don't authorise anything. The real exposure is the rules file, not the config. No key-rotation theatre (D36).</td></tr>
-          <tr><td>Read amplification under control</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">events_service</span>, <span class="fname">social_page</span>, <span class="fname">friends_service</span></td><td>Calendar opens <strong>2&times;(friends+gyms)+1</strong> live listeners; friend-request stream is O(threads) reads per snapshot; friends/gyms/members all N+1. Billing grows superlinearly with friend count.</td></tr>
+          <tr><td>State management (<span class="fname">setState</span> + <span class="fname">StreamBuilder</span>)</td><td><span class="prio prio-must">must-have</span></td><td><span class="pill pill-good">works</span></td><td>everywhere</td><td>D5 <span class="tag tag-proposed">PROPOSED</span>: keep it.</td></tr>
+          <tr><td>Firebase client config committed to git</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-good">works</span></td><td><span class="fname">firebase_options.dart</span>, <span class="fname">google-services.json</span></td><td><strong>Normal and acceptable</strong> — no key rotation (D36).</td></tr>
+          <tr><td>Read amplification under control</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-warn">partial</span></td><td><span class="fname">events_service</span>, <span class="fname">social_page</span>, <span class="fname">friends_service</span></td><td>Billing grows superlinearly with friend count.</td></tr>
           <tr><td>Error / empty / loading states</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>no design for any screen</td><td>Named as a gap in both intakes.</td></tr>
-          <tr><td>Offline / sync-conflict behaviour</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs describes optimistic writes only</td><td>Firestore's offline cache is on by default, but nothing handles the disconnected state deliberately — in a gym, with bad signal.</td></tr>
-          <tr><td>Accessibility (Semantics, dynamic type, contrast)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Proposal: "I want the app to be usable by all ages"</td><td>No <span class="fname">Semantics</span> anywhere; <span class="fname">FittedBox</span> + <span class="fname">scaleDown</span> in the bottom nav <em>shrinks</em> labels at large text sizes rather than reflowing. An explicitly stated constraint with zero implementation.</td></tr>
+          <tr><td>Offline / sync-conflict behaviour</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Final Specs describes optimistic writes only</td><td>Offline cache is on; nothing handles disconnect.</td></tr>
+          <tr><td>Accessibility (Semantics, dynamic type, contrast)</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Proposal: "I want the app to be usable by all ages"</td><td>A stated constraint with zero implementation.</td></tr>
           <tr><td>Age gating / minors policy</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>absent</td><td>Relevant for gyms with under-18 members and a DM feature.</td></tr>
-          <tr><td>Shared colour / type constants</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">core/constants/colors.dart</span> — 0 bytes</td><td>"Forge blue" <span class="fname">0xFF4D7CFF</span> is redeclared as a private const in <strong>at least 6 files</strong>, while the theme's actual seed colour (<span class="fname">deepPurple</span>) is never seen because every screen overrides it.</td></tr>
-          <tr><td>Design system / palette / typography</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview lists "color palette" as an open to-do</td><td>The only typography directive in ~20 documents is one line on an orphan page ("Poppins, no bold"). No mockups survive in the repo.</td></tr>
-          <tr><td>Web / macOS / Windows / Linux targets</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td>D3; <span class="fname">firebase_options.dart</span></td><td>Scaffolds exist because Flutter generates them, not because a user asked. <strong>Linux throws <span class="fname">UnsupportedError</span>.</strong> Deferred — trigger: a gym admin asks to moderate from a desktop browser.</td></tr>
-          <tr><td>Dependency injection</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">di_providers.dart</span> — 0 bytes</td><td>Recommended twice in the old architecture notes, adopted zero times. D20 says leave it.</td></tr>
-          <tr><td>Repository abstraction over Firestore</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>every service calls <span class="fname">FirebaseAuth.instance.currentUser</span> directly</td><td>There is no seam. Any migration off Firebase touches all 15 service files and most of the UI — which is precisely why D1 locks Firebase in.</td></tr>
-          <tr><td>CI (build + test on push)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>no <span class="fname">.github/</span></td><td>Deferred in <a href="../03-services/index.html">the service map</a> — trigger: a second developer, or the first broken build that reaches a tester.</td></tr>
+          <tr><td>Shared colour / type constants</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">core/constants/colors.dart</span> — 0 bytes</td><td>"Forge blue" redeclared in <strong>at least 6 files</strong>.</td></tr>
+          <tr><td>Design system / palette / typography</td><td><span class="prio prio-important">should-have</span></td><td><span class="pill pill-bad">not built</span></td><td>Overview lists "color palette" as an open to-do</td><td>No mockups survive in the repo.</td></tr>
+          <tr><td>Web / macOS / Windows / Linux targets</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-warn">partial</span></td><td>D3; <span class="fname">firebase_options.dart</span></td><td><strong>Linux throws <span class="fname">UnsupportedError</span>.</strong></td></tr>
+          <tr><td>Dependency injection</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td><span class="fname">di_providers.dart</span> — 0 bytes</td><td>D20 says leave it.</td></tr>
+          <tr><td>Repository abstraction over Firestore</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>every service calls <span class="fname">FirebaseAuth.instance.currentUser</span> directly</td><td>No seam; D1 locks Firebase in.</td></tr>
+          <tr><td>CI (build + test on push)</td><td><span class="prio prio-optional">someday</span></td><td><span class="pill pill-bad">not built</span></td><td>no <span class="fname">.github/</span></td><td>Deferred in <a href="../03-services/index.html">the service map</a>.</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>User table is not world-readable</strong> — everything else on this page is cheaper than this one line.</li>
+      <li><strong>Field / shape validation in rules</strong> — a client can write a 1&nbsp;MB <span class="fname">displayName</span>, or set <span class="fname">accountType: 'gym'</span> on its own doc and <strong>instantly become a gym</strong>.</li>
+      <li><strong>Server timestamps instead of client clocks</strong> — <span class="fname">Timestamp.now()</span> on the client, no <span class="fname">request.time</span> check in the rules.</li>
+      <li><strong>Storage upload size / MIME cap</strong> — a user can upload a 5&nbsp;GB file to their own avatar path: unbounded write cost per user.</li>
+      <li><strong>Store-valid bundle identifiers</strong> — the Android app label is the raw project slug and the iOS display name is a placeholder.</li>
+      <li><strong>Release builds signed with a real key</strong> — <span class="fname">signingConfig = signingConfigs.getByName("debug")</span> for release, so the AAB cannot be uploaded.</li>
+      <li><strong><span class="fname">minSdk</span> / <span class="fname">targetSdk</span> pinned</strong> — whatever the toolchain defaults to that week.</li>
+      <li><strong>iOS + Android as the shipping targets</strong> — neither is releasable until the three rows above are fixed. iOS photo/camera usage strings are the one platform thing done right.</li>
+      <li><strong>Automated tests</strong> — <span class="fname">flutter_test</span> is declared and unused; even the generated <span class="fname">widget_test.dart</span> was deleted. No safety net for any refactor this page implies. D23 proposes rules tests + service unit tests first.</li>
+      <li><strong>Analyzer strictness</strong> — <span class="fname">strict-casts</span>, <span class="fname">strict-raw-types</span> and <span class="fname">strict-inference</span> are all off, which is exactly why the unchecked <span class="fname">as Timestamp</span> / <span class="fname">as List&lt;String&gt;</span> casts compile clean.</li>
+      <li><strong>Crash / error reporting</strong> — Sentry is <span class="tag tag-proposed">PROPOSED</span> in <a href="../03-services/index.html">the service map</a>.</li>
+      <li><strong>Error types, validators, date utils, converters</strong> — this absence is the direct cause of H7 (swallowed errors) and the missing email/date validation.</li>
+      <li><strong>State management (<span class="fname">setState</span> + <span class="fname">StreamBuilder</span>)</strong> — no Riverpod migration. It works, and a solo dev with zero tests should not rewrite a working app.</li>
+      <li><strong>Firebase client config committed to git</strong> — those keys identify the project, they don't authorise anything. The real exposure is the rules file, not the config.</li>
+      <li><strong>Read amplification under control</strong> — the calendar opens <strong>2&times;(friends+gyms)+1</strong> live listeners, the friend-request stream is O(threads) reads per snapshot, and friends/gyms/members are all N+1.</li>
+      <li><strong>Offline / sync-conflict behaviour</strong> — Firestore's offline cache is on by default, but nothing handles the disconnected state deliberately — in a gym, with bad signal.</li>
+      <li><strong>Accessibility (Semantics, dynamic type, contrast)</strong> — no <span class="fname">Semantics</span> anywhere, and <span class="fname">FittedBox</span> + <span class="fname">scaleDown</span> in the bottom nav <em>shrinks</em> labels at large text sizes rather than reflowing.</li>
+      <li><strong>Shared colour / type constants</strong> — "Forge blue" is <span class="fname">0xFF4D7CFF</span>, redeclared as a private const, while the theme's actual seed colour (<span class="fname">deepPurple</span>) is never seen because every screen overrides it.</li>
+      <li><strong>Design system / palette / typography</strong> — the only typography directive in ~20 documents is one line on an orphan page ("Poppins, no bold").</li>
+      <li><strong>Web / macOS / Windows / Linux targets</strong> — scaffolds exist because Flutter generates them, not because a user asked. Deferred; trigger: a gym admin asks to moderate from a desktop browser.</li>
+      <li><strong>Dependency injection</strong> — recommended twice in the old architecture notes, adopted zero times.</li>
+      <li><strong>Repository abstraction over Firestore</strong> — any migration off Firebase touches all 15 service files and most of the UI, which is precisely why D1 locks Firebase in.</li>
+      <li><strong>CI (build + test on push)</strong> — trigger: a second developer, or the first broken build that reaches a tester.</li>
+    </ul>
   </section>
 
   <section id="next">

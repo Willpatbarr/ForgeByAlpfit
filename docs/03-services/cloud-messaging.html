@@ -39,49 +39,31 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>FCM delivers a notification to a user's phone when something happens that they care about. For Forge that means the three things the app currently does entirely silently: <strong>a friend request arrives</strong>, <strong>a DM arrives</strong>, and <strong>a workout invite arrives</strong>. Right now the only way to learn any of those happened is to open the app and look — which, for an app whose entire thesis is planning workouts <em>together</em>, means the social loop never closes.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>OneSignal / Airship</td><td>Nicer dashboards and segmentation, but a third-party vendor holding device tokens when the first-party one is free and already inside the project we've adopted.</td></tr>
-          <tr><td>Raw APNs + raw FCM per platform</td><td>Two integrations, two token stores, two failure modes, for a solo dev — FCM already fronts APNs for you.</td></tr>
-          <tr><td>Local notifications only <span class="faint small">(<code>flutter_local_notifications</code>)</span></td><td>Can't help: local notifications fire from the device, and the device doesn't know a DM arrived until it opens the app. Solves the wrong half.</td></tr>
-          <tr><td>In-app badges only <span class="faint small">(what exists today)</span></td><td>Already built and genuinely useful — <code>getDirectUnreadCountsStream()</code> badges the bottom nav — but it only works while the app is open.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>OneSignal / Airship</strong> — nicer dashboards and segmentation, but a third-party vendor holding device tokens when the first-party one is free and already inside the project we've adopted.</li>
+      <li><strong>Raw APNs + raw FCM per platform</strong> — two integrations, two token stores, two failure modes, for a solo dev; FCM already fronts APNs for you.</li>
+      <li><strong>Local notifications only</strong> <span class="faint small">(<code>flutter_local_notifications</code>)</span> — can't help: local notifications fire from the device, and the device doesn't know a DM arrived until it opens the app. Solves the wrong half.</li>
+      <li><strong>In-app badges only</strong> <span class="faint small">(what exists today)</span> — already built and genuinely useful, since <code>getDirectUnreadCountsStream()</code> badges the bottom nav, but it only works while the app is open.</li>
+    </ul>
     <p><strong>Why FCM wins:</strong> free with no message quota, already in the Firebase project, and it is the only option that doesn't add a vendor.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why this tier</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t1">T1 Before first real user</span></td>
-            <td>Part of <strong>M4, Beta-ready</strong> — before the Rec Center beta, not before the first internal build.</td>
-            <td>Silence is survivable when the only user is him. It is fatal with 100 beta testers: an invite nobody sees looks like a broken feature, and the beta's whole purpose is finding out whether people actually plan workouts together.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t1">T1 Before first real user</span></p>
+    <p><strong>Trigger:</strong> part of <strong>M4, Beta-ready</strong> — before the Rec Center beta, not before the first internal build.</p>
+    <p><strong>Why this tier:</strong> silence is survivable when the only user is him. It is fatal with 100 beta testers: an invite nobody sees looks like a broken feature, and the beta's whole purpose is finding out whether people actually plan workouts together.</p>
     <div class="callout"><strong>When NOT to set this up yet.</strong> Not before real bundle IDs exist (APNs is keyed to the App ID). Not before an <a href="apple-developer.html">Apple Developer Program</a> membership exists — <strong>you cannot create an APNs key without one</strong>, so iOS push is hard-blocked on $99. And not before the <a href="firebase.html">rules</a> are fixed: a notification system that reaches into user data is a bad thing to build on top of a world-readable collection. Android-only push is possible earlier and is a reasonable partial step.</div>
 
     <h3 id="the-catch">The catch: FCM needs something to press "send"</h3>
     <div class="callout danger">
       <p><strong>FCM delivers messages. It does not decide to send them.</strong> Something has to notice "a DM was written to <code>directThreads/{t}/messages</code>" and call the FCM API. Forge has no server. That leaves three options and none is free of consequence:</p>
-      <div class="tablewrap">
-        <table>
-          <thead><tr><th>Option</th><th>Verdict</th></tr></thead>
-          <tbody>
-            <tr><td><strong>A. Send from the client</strong> — the sending device calls FCM directly</td><td><span class="pill pill-bad">Do not do this.</span> The FCM HTTP v1 API requires a <strong>service-account credential</strong>, which is a full-admin secret. Putting one in a shipped app hands every user the ability to push arbitrary notifications to every other user. This is not a tradeoff, it's a vulnerability.</td></tr>
-            <tr><td><strong>B. Cloud Functions</strong> — a Firestore <code>onCreate</code> trigger sends the push</td><td><span class="pill pill-good">The correct design.</span> ~30 lines. But Cloud Functions <strong>requires the Blaze plan</strong> — which, per the <a href="firebase.html#free-tier">Firebase runbook</a>, the project already needs anyway for Cloud Storage since Feb 2026. Blaze includes 2M invocations/month free, so the marginal cost of these functions is realistically <strong>$0</strong>.</td></tr>
-            <tr><td><strong>C. Ship without triggered push</strong> — FCM only for manual/topic broadcasts from the console</td><td><span class="pill pill-warn">Partial.</span> Lets a gym announce something to a channel topic with zero server code. Does nothing for DMs or invites, which is the actual problem.</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <ul>
+        <li><strong>A. Send from the client</strong> — the sending device calls FCM directly. <span class="pill pill-bad">Do not do this.</span> The FCM HTTP v1 API requires a <strong>service-account credential</strong>, which is a full-admin secret. Putting one in a shipped app hands every user the ability to push arbitrary notifications to every other user. This is not a tradeoff, it's a vulnerability.</li>
+        <li><strong>B. Cloud Functions</strong> — a Firestore <code>onCreate</code> trigger sends the push. <span class="pill pill-good">The correct design.</span> ~30 lines. But Cloud Functions <strong>requires the Blaze plan</strong> — which, per the <a href="firebase.html#free-tier">Firebase runbook</a>, the project already needs anyway for Cloud Storage since Feb 2026. Blaze includes 2M invocations/month free, so the marginal cost of these functions is realistically <strong>$0</strong>.</li>
+        <li><strong>C. Ship without triggered push</strong> — FCM only for manual/topic broadcasts from the console. <span class="pill pill-warn">Partial.</span> Lets a gym announce something to a channel topic with zero server code. Does nothing for DMs or invites, which is the actual problem.</li>
+      </ul>
       <p><strong><span class="tag tag-proposed">PROPOSED</span> — this is the decision to make, and it is a real one.</strong> Adopting FCM properly is what trips the "Cloud Functions" trigger listed as <a href="index.html#rejected">rejected as premature</a>. The recommendation is <strong>option B</strong>: DM/invite push is exactly the "first thing that genuinely can't be done in rules + client" that the trigger names, the Blaze plan is already required, and the free allowance swallows the cost. <strong>Flag for William:</strong> accepting this means accepting one small server-side component into an otherwise serverless app. The alternative is shipping a beta where invites stay silent.</p>
     </div>
   </section>
@@ -92,16 +74,22 @@
       <table>
         <thead><tr><th>Item</th><th>Limit</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td><strong>FCM message volume</strong></td><td><strong>No charge and no message quota</strong> — free on both Spark and Blaze, and it <strong>does not force a Blaze upgrade</strong> by itself.</td><td>n/a. There is no FCM bill.</td></tr>
-          <tr><td>Per-device rate limit</td><td>240 messages/minute and <strong>5,000 messages/hour</strong> to a single device</td><td>Throttled. Irrelevant at Forge's scale unless a bug loops.</td></tr>
-          <tr><td>Collapsible messages</td><td>Burst of 20 per app per device, refilling 1 every 3 minutes</td><td>Held until refill.</td></tr>
-          <tr><td>Project downstream default</td><td>600,000 messages/minute</td><td>Not reachable here.</td></tr>
+          <tr><td><strong>FCM message volume</strong></td><td><strong>No charge and no message quota</strong></td><td>n/a — there is no FCM bill</td></tr>
+          <tr><td>Per-device rate limit</td><td>240 messages/minute and <strong>5,000 messages/hour</strong></td><td>Throttled; irrelevant at Forge's scale</td></tr>
+          <tr><td>Collapsible messages</td><td>Burst of 20 per app per device, refilling 1 every 3 min</td><td>Held until refill</td></tr>
+          <tr><td>Project downstream default</td><td>600,000 messages/minute</td><td>Not reachable here</td></tr>
           <tr><td>Topic subscription changes</td><td>3,000 QPS/project; batch subscribe capped at 1,000 app instances per request</td><td><code>429 RESOURCE_EXHAUSTED</code></td></tr>
-          <tr><td>Concurrent topic fanouts</td><td>1,000 per project; the fanout quota is <strong>not adjustable</strong></td><td>Fanouts queue. Relevant only if gym channels become topics.</td></tr>
-          <tr><td><strong>The cost that actually exists</strong></td><td><strong>Cloud Functions on Blaze</strong>, if option B is taken: free allowance is <strong>2M invocations, 400K GB-seconds, 200K CPU-seconds, 5 GB egress per month</strong>.</td><td><strong>Blaze bills past the allowance.</strong> One invocation per DM at 100 users is a rounding error against 2M — but see the <a href="firebase.html#budget-alerts">budget-alert warning</a>, because this is the one Firebase surface where a runaway loop <em>could</em> spend money.</td></tr>
+          <tr><td>Concurrent topic fanouts</td><td>1,000 per project; <strong>not adjustable</strong></td><td>Fanouts queue</td></tr>
+          <tr><td><strong>The cost that actually exists</strong></td><td><strong>Cloud Functions on Blaze</strong>, if option B is taken</td><td><strong>Blaze bills past the allowance</strong></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>FCM message volume</strong> — free on both Spark and Blaze, and it <strong>does not force a Blaze upgrade</strong> by itself.</li>
+      <li><strong>Per-device rate limit</strong> — 240/minute and 5,000/hour to a single device. Only reachable if a bug loops.</li>
+      <li><strong>Concurrent topic fanouts</strong> — relevant only if gym channels become topics.</li>
+      <li><strong>The cost that actually exists</strong> — the Cloud Functions free allowance is <strong>2M invocations, 400K GB-seconds, 200K CPU-seconds, 5 GB egress per month</strong>. One invocation per DM at 100 users is a rounding error against 2M, but see the <a href="firebase.html#budget-alerts">budget-alert warning</a>: this is the one Firebase surface where a runaway loop <em>could</em> spend money.</li>
+    </ul>
     <p class="small muted">Limits from <a href="https://firebase.google.com/docs/cloud-messaging/throttling-and-quotas">FCM throttling and quotas</a> and <a href="https://firebase.google.com/pricing">firebase.google.com/pricing</a>. One genuinely good piece of news here: <strong>Firebase's budget <em>spend cap</em> feature — the one that actually pauses a service rather than just emailing you — does cover Cloud Functions</strong> (it does not cover Firestore or Storage). If option B is taken, set a spend cap on Functions.</p>
   </section>
 
@@ -135,31 +123,32 @@
       <table>
         <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td><code>messagingSenderId</code> in <code class="fname">firebase_options.dart</code></td><td><span class="pill pill-good">No</span> — client config, already committed, ships in the app by design</td><td>Committed</td><td>Compiled in</td><td>n/a</td></tr>
-          <tr><td>Per-device FCM registration token</td><td><span class="pill pill-warn">Not a credential, but user data</span> — it identifies a device. Store it in Firestore under the user, protect it with rules.</td><td>Device keychain</td><td><code>users/{uid}.fcmTokens</code></td><td>n/a</td></tr>
-          <tr><td><strong>APNs auth key <code class="fname">.p8</code></strong></td><td><span class="pill pill-bad">YES.</span> It can send push to your apps.</td><td><strong>Never in the repo.</strong> Password manager + offline backup.</td><td>Uploaded once to the Firebase console; not stored in the project</td><td><code>APNS_KEY_P8_PATH=</code><br><code>APNS_KEY_ID=</code><br><code>APPLE_TEAM_ID=</code></td></tr>
-          <tr><td><strong>Service-account JSON</strong> (FCM HTTP v1 sender)</td><td><span class="pill pill-bad">YES — full admin.</span> <strong>Server-only. It must never touch client code, and never be shipped in the app.</strong></td><td>Outside the repo</td><td>Cloud Functions get it implicitly from the runtime — <em>no key file needed at all</em>, which is another argument for option B</td><td><code>GOOGLE_APPLICATION_CREDENTIALS=</code></td></tr>
+          <tr><td><code>messagingSenderId</code> in <code class="fname">firebase_options.dart</code></td><td><span class="pill pill-good">No</span> — client config</td><td>Committed</td><td>Compiled in</td><td>n/a</td></tr>
+          <tr><td>Per-device FCM registration token</td><td><span class="pill pill-warn">Not a credential, but user data</span></td><td>Device keychain</td><td><code>users/{uid}.fcmTokens</code></td><td>n/a</td></tr>
+          <tr><td><strong>APNs auth key <code class="fname">.p8</code></strong></td><td><span class="pill pill-bad">YES</span> — it can push to your apps</td><td><strong>Never in the repo</strong>; password manager</td><td>Uploaded once to the Firebase console</td><td><code>APNS_KEY_P8_PATH=</code><br><code>APNS_KEY_ID=</code><br><code>APPLE_TEAM_ID=</code></td></tr>
+          <tr><td><strong>Service-account JSON</strong> (FCM HTTP v1 sender)</td><td><span class="pill pill-bad">YES — full admin</span></td><td>Outside the repo</td><td>Implicit in the Functions runtime</td><td><code>GOOGLE_APPLICATION_CREDENTIALS=</code></td></tr>
           <tr><td>Legacy FCM server key</td><td><span class="pill pill-bad">YES</span> — and deprecated; do not adopt it</td><td>—</td><td>—</td><td>—</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong><code>messagingSenderId</code></strong> — already committed, and it ships in the app by design.</li>
+      <li><strong>Per-device FCM registration token</strong> — it identifies a device. Store it in Firestore under the user and protect it with rules.</li>
+      <li><strong>APNs auth key <code class="fname">.p8</code></strong> — keep a password-manager copy plus an offline backup. It is not stored in the project once uploaded.</li>
+      <li><strong>Service-account JSON</strong> — <strong>server-only. It must never touch client code, and never be shipped in the app.</strong> Cloud Functions get it implicitly from the runtime — <em>no key file needed at all</em>, which is another argument for option B.</li>
+    </ul>
     <p><strong>Never commit a real secret.</strong> Add <code>*.p8</code> and <code>*service-account*.json</code> to <code class="fname">.gitignore</code> <em>before</em> downloading the APNs key — the <a href="github.html#setup-steps">GitHub runbook</a> has this as a step for exactly this reason. The clean split: <strong>anything that <em>receives</em> a push is client-safe; anything that <em>sends</em> one is server-only.</strong></p>
   </section>
 
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-good">Lock-in: LOW</span> <span class="faint small">(with one medium-lock-in footnote)</span></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>Device registration tokens — and only transiently, because the design above stores them in <em>Firestore</em>, not in FCM. FCM keeps delivery statistics; nothing irreplaceable.</td></tr>
-          <tr><td>How do I export?</td><td>Nothing to export. Tokens live in your own <code>users</code> docs.</td></tr>
-          <tr><td>What does migrating cost?</td><td><strong>A day or two.</strong> FCM tokens are FCM-specific, so moving to OneSignal or raw APNs means every device must re-register on next app launch — users with the app installed but never reopened simply stop receiving push. Annoying, not catastrophic.</td></tr>
-          <tr><td>The footnote</td><td>If option B is taken, the <em>Cloud Function</em> is the sticky part — it's Firebase-specific glue, and it deepens the <a href="firebase.html#escape-hatch">Firebase lock-in</a> slightly by moving a piece of business logic server-side into Google's runtime. Small, but real: worth writing it as a thin trigger that calls plain, portable logic.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — device registration tokens, and only transiently, because the design above stores them in <em>Firestore</em>, not in FCM. FCM keeps delivery statistics; nothing irreplaceable.</li>
+      <li><strong>How to export</strong> — nothing to export. Tokens live in your own <code>users</code> docs.</li>
+      <li><strong>What migrating costs</strong> — <strong>a day or two.</strong> FCM tokens are FCM-specific, so moving to OneSignal or raw APNs means every device must re-register on next app launch; users with the app installed but never reopened simply stop receiving push. Annoying, not catastrophic.</li>
+      <li><strong>The footnote</strong> — if option B is taken, the <em>Cloud Function</em> is the sticky part. It is Firebase-specific glue and it deepens the <a href="firebase.html#escape-hatch">Firebase lock-in</a> slightly by moving a piece of business logic server-side into Google's runtime. Small, but real: worth writing it as a thin trigger that calls plain, portable logic.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -168,12 +157,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing. FCM is free at any volume; Functions invocations are a rounding error against 2M/month. Perhaps a few hundred pushes a month.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta — the reason this exists)</span></td><td><strong>$0</strong></td><td>Nothing on cost. What breaks is <strong>relevance</strong>: with gym channels fanning out, a chatty channel can push every member on every post, and users turn notifications off permanently after roughly one bad day. Batch or debounce channel-post pushes; keep per-message push for DMs and invites only. Also watch the Firestore side — the sender function reads the recipient's user doc per message, which adds to the <a href="firebase.html#cost-scale">read amplification</a> already flagged.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>~$0–1/mo</strong> <span class="faint small">(Functions, estimated)</span></td><td>FCM itself still free. The 1,000-concurrent-topic-fanout limit becomes a real number if every gym channel is a topic. Stale-token accumulation becomes a real cost too: without pruning unregistered tokens you send — and pay Firestore reads for — pushes to devices that no longer exist. <strong>Build the pruning in from day one</strong>; retrofitting it means auditing every user doc.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong></td><td>Nothing — perhaps a few hundred pushes a month</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta — the reason this exists)</span></td><td><strong>$0</strong></td><td>Nothing on cost; what breaks is <strong>relevance</strong></td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>~$0–1/mo</strong> <span class="faint small">(Functions, estimated)</span></td><td>Topic fanout limits and stale-token accumulation</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — FCM is free at any volume; Functions invocations are a rounding error against 2M/month.</li>
+      <li><strong>~100 users</strong> — with gym channels fanning out, a chatty channel can push every member on every post, and users turn notifications off permanently after roughly one bad day. Batch or debounce channel-post pushes; keep per-message push for DMs and invites only. Also watch the Firestore side: the sender function reads the recipient's user doc per message, which adds to the <a href="firebase.html#cost-scale">read amplification</a> already flagged.</li>
+      <li><strong>~1,000 users</strong> — FCM itself is still free. The 1,000-concurrent-topic-fanout limit becomes a real number if every gym channel is a topic. Stale-token accumulation becomes a real cost too: without pruning unregistered tokens you send — and pay Firestore reads for — pushes to devices that no longer exist. <strong>Build the pruning in from day one</strong>; retrofitting it means auditing every user doc.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -182,13 +176,17 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0.</strong> FCM has no seats — it inherits <a href="firebase.html#teammate-delta">Firebase project IAM</a>.</td></tr>
-          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited.</td></tr>
-          <tr><td>Permission model</td><td>Firebase Editor/Owner covers console sending and key upload. On the Apple side, creating or revoking the APNs key needs an <strong>Account Holder or Admin</strong> role in the Apple Developer account — a Developer-role teammate <em>cannot</em> do it. See <a href="apple-developer.html#teammate-delta">Apple roles</a>.</td></tr>
-          <tr><td>What actually changes</td><td>Push is the hardest thing in this stack for a second developer to test: <strong>iOS push does not work in the simulator</strong>, so they need a physical device on the team's provisioning profile. Budget real onboarding time for that, and expect "push doesn't work on my machine" to be a provisioning problem roughly every time.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0</strong>, no seats — inherits <a href="firebase.html#teammate-delta">Firebase project IAM</a></td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited</td></tr>
+          <tr><td>Permission model</td><td>Firebase Editor/Owner, plus an Apple role for the APNs key</td></tr>
+          <tr><td>What actually changes</td><td><strong>iOS push does not work in the simulator</strong></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Permission model</strong> — Firebase Editor/Owner covers console sending and key upload. On the Apple side, creating or revoking the APNs key needs an <strong>Account Holder or Admin</strong> role in the Apple Developer account; a Developer-role teammate <em>cannot</em> do it. See <a href="apple-developer.html#teammate-delta">Apple roles</a>.</li>
+      <li><strong>What actually changes</strong> — push is the hardest thing in this stack for a second developer to test. They need a physical device on the team's provisioning profile. Budget real onboarding time for that, and expect "push doesn't work on my machine" to be a provisioning problem roughly every time.</li>
+    </ul>
   </section>
 
   <section id="next">

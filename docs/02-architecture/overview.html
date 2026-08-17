@@ -96,17 +96,28 @@ graph TD
       <table>
         <thead><tr><th>Edge</th><th>Status</th><th>Note</th></tr></thead>
         <tbody>
-          <tr><td>App &rarr; Firebase Auth</td><td><span class="pill pill-good">Live</span></td><td>Email/password only. No social auth, no email verification, no password reset.</td></tr>
-          <tr><td>App &rarr; Firestore</td><td><span class="pill pill-good">Live</span></td><td>Direct SDK calls from 11 services. No repository layer, no seam.</td></tr>
-          <tr><td>App &rarr; Storage</td><td><span class="pill pill-good">Live</span></td><td>One path: <span class="fname">avatars/{uid}/profile</span>. No size or MIME cap on write.</td></tr>
-          <tr><td>App Check &rarr; Firestore</td><td><span class="pill pill-bad">Planned</span></td><td>Not enabled. Combined with the open <span class="fname">/users</span> read rule, anyone with the project id can read the user table. See <a href="#risks">risks</a>.</td></tr>
-          <tr><td>FCM</td><td><span class="pill pill-bad">Planned</span></td><td><span class="fname">lib/services/push_service.dart</span> is 0 bytes. Invites and DMs are silent today. Lands in <a href="../04-plan/milestones.html#m4">M4</a> — see the Cloud Functions row below, because sending push properly needs one.</td></tr>
-          <tr><td>App &rarr; Crashlytics</td><td><span class="pill pill-bad">Planned</span></td><td>No error reporting exists today, against an app with known unchecked-cast crash paths. Adopted in <a href="../04-plan/milestones.html#m3">M3</a>; it replaced the earlier Sentry proposal once <a href="../01-product/decisions.html">D3</a> cut web as a target. See <a href="../03-services/crashlytics.html">the runbook</a>.</td></tr>
-          <tr><td>Docs &rarr; Cloudflare Pages</td><td><span class="pill pill-warn">Planned</span></td><td>D9. Firebase Hosting is already configured for <span class="fname">build/web</span> and stays only if the app itself needs it.</td></tr>
-          <tr><td>Cloud Functions</td><td><span class="pill pill-warn">Trigger expected to fire</span></td><td>No package, no <span class="fname">functions/</span> dir, no <span class="fname">firebase.json</span> entry — still <a href="../03-services/index.html#rejected">rejected as premature</a> today. But two <a href="../04-plan/milestones.html#m4">M4</a> items are expected to fire its trigger: sending FCM from the client would mean shipping an admin credential, and the account-deletion cascade may not be expressible in rules + client. Decide it there, not now.</td></tr>
+          <tr><td>App &rarr; Firebase Auth</td><td><span class="pill pill-good">Live</span></td><td>Email + password only</td></tr>
+          <tr><td>App &rarr; Firestore</td><td><span class="pill pill-good">Live</span></td><td>Direct SDK calls from 11 services</td></tr>
+          <tr><td>App &rarr; Storage</td><td><span class="pill pill-good">Live</span></td><td>One path: <span class="fname">avatars/{uid}/profile</span></td></tr>
+          <tr><td>App Check &rarr; Firestore</td><td><span class="pill pill-bad">Planned</span></td><td>Not enabled &mdash; <a href="../04-plan/milestones.html#m3">M3</a></td></tr>
+          <tr><td>FCM</td><td><span class="pill pill-bad">Planned</span></td><td>0-byte service &mdash; <a href="../04-plan/milestones.html#m4">M4</a></td></tr>
+          <tr><td>App &rarr; Crashlytics</td><td><span class="pill pill-bad">Planned</span></td><td>No error reporting today &mdash; <a href="../04-plan/milestones.html#m3">M3</a></td></tr>
+          <tr><td>Docs &rarr; Cloudflare Pages</td><td><span class="pill pill-warn">Planned</span></td><td>D9 &mdash; docs hosting only</td></tr>
+          <tr><td>Cloud Functions</td><td><span class="pill pill-warn">Trigger expected to fire</span></td><td>Rejected today, two M4 items may force it</td></tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>App &rarr; Firebase Auth</strong> — no social auth, no email verification, no password reset.</li>
+      <li><strong>App &rarr; Firestore</strong> — no repository layer, so there is no seam to substitute in a test.</li>
+      <li><strong>App &rarr; Storage</strong> — no size or MIME cap on write.</li>
+      <li><strong>App Check &rarr; Firestore</strong> — combined with the open <span class="fname">/users</span> read rule, anyone with the project id can read the user table. The Firebase config is committed, so the project id is discoverable. See <a href="#risks">risks</a>.</li>
+      <li><strong>FCM</strong> — <span class="fname">lib/services/push_service.dart</span> is 0 bytes; invites and DMs are silent today. Lands in <a href="../04-plan/milestones.html#m4">M4</a>, and sending push properly needs a Cloud Function.</li>
+      <li><strong>App &rarr; Crashlytics</strong> — no error reporting exists today, against an app with known unchecked-cast crash paths. Adopted in <a href="../04-plan/milestones.html#m3">M3</a>; it replaced the earlier Sentry proposal once <a href="../01-product/decisions.html">D3</a> cut web as a target. See <a href="../03-services/crashlytics.html">the runbook</a>.</li>
+      <li><strong>Docs &rarr; Cloudflare Pages</strong> — Firebase Hosting is already configured for <span class="fname">build/web</span> and stays only if the app itself needs it.</li>
+      <li><strong>Cloud Functions</strong> — no package, no <span class="fname">functions/</span> dir, no <span class="fname">firebase.json</span> entry; still <a href="../03-services/index.html#rejected">rejected as premature</a>. Two <a href="../04-plan/milestones.html#m4">M4</a> items are expected to fire its trigger: sending FCM from the client would mean shipping an admin credential, and the account-deletion cascade may not be expressible in rules + client. Decide it there, not now.</li>
+    </ul>
   </section>
 
   <section id="components">
@@ -225,60 +236,72 @@ graph TD
           <tr>
             <td><span class="fname">core/errors/</span></td>
             <td><span class="fname">app_exception.dart</span>, <span class="fname">failure.dart</span></td>
-            <td>No error type exists, so every service returns raw exceptions or nothing. Directly causes the <code>catch (_) {}</code> habit.</td>
-            <td><span class="tag tag-decided">DECIDED</span> Fill with <em>one</em> <code>AppException</code>. Not a Result/Either hierarchy.</td>
+            <td>No error type exists anywhere in the app</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill with <em>one</em> <code>AppException</code></td>
           </tr>
           <tr>
             <td><span class="fname">core/util/</span></td>
             <td><span class="fname">date_utils.dart</span>, <span class="fname">extensions.dart</span>, <span class="fname">validators.dart</span></td>
-            <td>No email validation (login checks non-empty only), no shared date maths — the 30-day "month" in <span class="fname">goals_service</span> lives alone.</td>
-            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">validators.dart</span> when auth hardening lands. Leave the other two until something needs them twice.</td>
+            <td>No email validation, no shared date maths</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">validators.dart</span> at auth hardening</td>
           </tr>
           <tr>
             <td><span class="fname">core/constants/</span></td>
             <td><span class="fname">colors.dart</span>, <span class="fname">icons.dart</span>, <span class="fname">strings.dart</span></td>
-            <td>The brand blue is copy-pasted into 6+ files. One theme change is a 6-file edit.</td>
-            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">colors.dart</span>. Leave <span class="fname">strings.dart</span> and <span class="fname">icons.dart</span> empty — no i18n is planned.</td>
+            <td>Brand blue copy-pasted into 6+ files</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill <span class="fname">colors.dart</span> only</td>
           </tr>
           <tr>
             <td><span class="fname">core/firebase/converters.dart</span></td>
             <td>1</td>
-            <td>No <code>withConverter</code>, so every read is an untyped map.</td>
-            <td><span class="tag tag-decided">DECIDED</span> Fill alongside the first typed model (<code>Event</code>).</td>
+            <td>No <code>withConverter</code>, so every read is untyped</td>
+            <td><span class="tag tag-decided">DECIDED</span> Fill alongside the first typed model</td>
           </tr>
           <tr>
             <td><span class="fname">app/di_providers.dart</span></td>
             <td>1</td>
-            <td>No dependency injection at all.</td>
-            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete it.</strong> Per D5 we are not adding DI; the file is a promise nobody is keeping.</td>
+            <td>No dependency injection at all</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete it</strong></td>
           </tr>
           <tr>
             <td>Feed MVVM layer</td>
             <td><span class="fname">feed_dto</span>, <span class="fname">feed_repository</span>, <span class="fname">feed_filter</span>, <span class="fname">feed_item</span>, <span class="fname">feed_card</span>, <span class="fname">feed_state</span>, <span class="fname">feed_viewmodel</span></td>
-            <td>Seven empty files implying an architecture the app does not use. Meanwhile <span class="fname">feed_page.dart</span> holds 1,333 lines of working <code>setState</code> + <code>StreamBuilder</code>.</td>
-            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete all seven.</strong> Folders that lie are worse than no folders. Consistent with D5.</td>
+            <td>Implies an architecture the app does not use</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete all seven</strong></td>
           </tr>
           <tr>
             <td><span class="fname">services/push_service.dart</span></td>
             <td>1</td>
-            <td>No push notifications. A social app where invites and DMs are silent.</td>
-            <td><span class="tag tag-deferred">DEFERRED</span> Keep the file. Trigger: post-beta, once retention is the problem worth solving (M5).</td>
+            <td>No push — invites and DMs are silent</td>
+            <td><span class="tag tag-deferred">DEFERRED</span> Keep the file; trigger post-beta (M5)</td>
           </tr>
           <tr>
             <td><span class="fname">services/moderation_service.dart</span></td>
             <td>1</td>
-            <td>No reporting, blocking, or content filtering. App Store guideline 1.2 blocks a UGC app without them.</td>
+            <td>No reporting, blocking, or content filtering</td>
             <td><span class="tag tag-locked">LOCKED</span> Must be filled before any external user. M3.</td>
           </tr>
           <tr>
             <td><span class="fname">services/presence_service.dart</span>, <span class="fname">link_preview_service.dart</span></td>
             <td>2</td>
-            <td>Online status and link previews. Neither has a requirement in any document.</td>
-            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete both.</strong> No requirement, no trigger, no reason to carry the file.</td>
+            <td>Online status and link previews — no requirement</td>
+            <td><span class="tag tag-decided">DECIDED</span> <strong>Delete both</strong></td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong><span class="fname">core/errors/</span></strong> — every service returns raw exceptions or nothing, which directly causes the <code>catch (_) {}</code> habit. Fill it with one <code>AppException</code>, not a Result/Either hierarchy.</li>
+      <li><strong><span class="fname">core/util/</span></strong> — login checks non-empty only; the 30-day "month" in <span class="fname">goals_service</span> lives alone. Leave the other two files until something needs them twice.</li>
+      <li><strong><span class="fname">core/constants/</span></strong> — one theme change is a 6-file edit. Leave <span class="fname">strings.dart</span> and <span class="fname">icons.dart</span> empty; no i18n is planned.</li>
+      <li><strong><span class="fname">core/firebase/converters.dart</span></strong> — fill it alongside the first typed model, <code>Event</code>.</li>
+      <li><strong><span class="fname">app/di_providers.dart</span></strong> — per D5 we are not adding DI; the file is a promise nobody is keeping.</li>
+      <li><strong>Feed MVVM layer</strong> — seven empty files, while <span class="fname">feed_page.dart</span> holds 1,333 lines of working <code>setState</code> + <code>StreamBuilder</code>. Folders that lie are worse than no folders. Consistent with D5.</li>
+      <li><strong><span class="fname">services/push_service.dart</span></strong> — trigger: post-beta, once retention is the problem worth solving (M5).</li>
+      <li><strong><span class="fname">services/moderation_service.dart</span></strong> — App Store guideline 1.2 blocks a UGC app without reporting and blocking.</li>
+      <li><strong><span class="fname">services/presence_service.dart</span>, <span class="fname">link_preview_service.dart</span></strong> — neither has a requirement in any document: no trigger, no reason to carry the file.</li>
+    </ul>
   </section>
 
   <section id="as-is">
@@ -291,61 +314,73 @@ graph TD
         <tbody>
           <tr>
             <td>Adopt Riverpod for state management</td>
-            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("Riverpod recommended") and again in <span class="fname">PROJECT_STATUS.md</span></td>
-            <td><span class="pill pill-bad">No</span> — no state package in <span class="fname">pubspec.yaml</span> at all</td>
-            <td><span class="tag tag-proposed">PROPOSED</span> <strong>D5 — do not migrate.</strong> Keep <code>setState</code> + <code>StreamBuilder</code>. Recommended twice, adopted zero times, and the app works. Introduce Riverpod only where state genuinely crosses screens. <em>This is the most reversible-but-expensive call in the plan — see <a href="../01-product/decisions.html">decisions</a>.</em></td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span>, <span class="fname">PROJECT_STATUS.md</span></td>
+            <td><span class="pill pill-bad">No</span> — no state package in <span class="fname">pubspec.yaml</span></td>
+            <td><span class="tag tag-proposed">PROPOSED</span> <strong>D5 — do not migrate</strong></td>
           </tr>
           <tr>
             <td>Set up proper dependency injection</td>
             <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span>; <span class="fname">di_providers.dart</span> scaffolded</td>
             <td><span class="pill pill-bad">No</span> — the file is 0 bytes</td>
-            <td><span class="tag tag-decided">DECIDED</span> Not doing it. <code>AuthService</code> already accepts optional <code>FirebaseAuth</code>/<code>FirebaseFirestore</code> — that constructor seam is the only injection we need, and it is currently unexercised. Delete <span class="fname">di_providers.dart</span>.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Not doing it; delete the file</td>
           </tr>
           <tr>
             <td>Create base classes / interfaces for repositories</td>
             <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
-            <td><span class="pill pill-bad">No</span> — services are top-level free functions calling Firebase directly</td>
-            <td><span class="tag tag-deferred">DEFERRED</span> Trigger: an actual backend migration, or a second non-Flutter client (same trigger as D1). Until then a repository interface buys one developer nothing. <strong>Cost of the debt, stated plainly:</strong> any move off Firebase touches all 15 service files and most of the UI.</td>
+            <td><span class="pill pill-bad">No</span> — services call Firebase directly</td>
+            <td><span class="tag tag-deferred">DEFERRED</span> Same trigger as D1</td>
           </tr>
           <tr>
             <td>Feature-based clean architecture — <span class="fname">data/domain/presentation</span> per feature</td>
-            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("Excellent separation by feature", "DON'T START OVER")</td>
-            <td><span class="pill pill-warn">Partially</span> — the folder tree exists everywhere; only <span class="fname">presentation/view/</span> ever has content</td>
-            <td><span class="tag tag-decided">DECIDED</span> Keep the feature folders (they work). Delete the empty <span class="fname">data/</span>, <span class="fname">domain/</span>, and <span class="fname">viewmodel/</span> folders under <span class="fname">feed/</span>. One convention, honestly applied, beats two conventions where one is fictional.</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
+            <td><span class="pill pill-warn">Partially</span> — only <span class="fname">presentation/view/</span> has content</td>
+            <td><span class="tag tag-decided">DECIDED</span> Keep the folders, delete the empty ones</td>
           </tr>
           <tr>
             <td>Move services to <span class="fname">lib/core/services/</span></td>
-            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> — raised twice in the same file, decided neither time</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> — raised twice, decided neither time</td>
             <td><span class="pill pill-bad">No</span></td>
-            <td><span class="tag tag-decided">DECIDED</span> Keep <span class="fname">lib/services/</span>. Zero functional benefit, touches every import in the app. The question is closed.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Keep <span class="fname">lib/services/</span></td>
           </tr>
           <tr>
             <td>Firestore converters / typed reads</td>
             <td><span class="fname">core/firebase/converters.dart</span> scaffolded at commit 1</td>
             <td><span class="pill pill-bad">No</span> — 0 bytes; every read is <code>Map&lt;String, dynamic&gt;</code></td>
-            <td><span class="tag tag-decided">DECIDED</span> Adopt incrementally, starting with <code>Event</code>, because <code>Event</code> carries the live crash path. See <a href="data-model.html#headline">data-model</a>.</td>
+            <td><span class="tag tag-decided">DECIDED</span> Adopt incrementally, starting with <code>Event</code></td>
           </tr>
           <tr>
             <td>Error boundaries and proper error handling</td>
-            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span> ("structural improvement, not done")</td>
+            <td><span class="fname">ARCHITECTURE_ANALYSIS.md</span></td>
             <td><span class="pill pill-bad">No</span> — <span class="fname">core/errors/</span> is two empty files</td>
-            <td><span class="tag tag-decided">DECIDED</span> One <code>AppException</code> plus a rule that no <code>catch</code> block may be empty. Lands with M1.</td>
+            <td><span class="tag tag-decided">DECIDED</span> One <code>AppException</code>. Lands with M1.</td>
           </tr>
           <tr>
             <td>Replace direct-Firebase with a frontend + API gateway</td>
             <td><span class="fname">Ideas for Future.docx</span></td>
             <td><span class="pill pill-bad">No</span></td>
-            <td><span class="tag tag-deferred">DEFERRED</span> (D1). Trigger: a second client that isn't Flutter, or Firestore read cost past $25/mo. Not a rewrite anyone should start from this codebase's current test coverage.</td>
+            <td><span class="tag tag-deferred">DEFERRED</span> (D1)</td>
           </tr>
           <tr>
             <td>Multi-platform targets — web, macOS, Windows, Linux</td>
-            <td><span class="fname">Forge Proposal</span> ("deploy to mobile, desktop and web without extra code")</td>
-            <td><span class="pill pill-warn">Scaffolds exist</span> — <span class="fname">firebase_options.dart</span> configures web/macOS/Windows; Linux throws <code>UnsupportedError</code></td>
-            <td><span class="tag tag-decided">DECIDED</span> D3 — iOS + Android only. The other targets exist because Flutter generates them, not because a user asked. <span class="tag tag-deferred">DEFERRED</span> trigger: a gym admin asks to moderate from a desktop browser.</td>
+            <td><span class="fname">Forge Proposal</span></td>
+            <td><span class="pill pill-warn">Scaffolds exist</span> — generated, never asked for</td>
+            <td><span class="tag tag-decided">DECIDED</span> D3 — iOS + Android only</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>Adopt Riverpod</strong> — <span class="fname">ARCHITECTURE_ANALYSIS.md</span> said "Riverpod recommended" and <span class="fname">PROJECT_STATUS.md</span> repeated it. Keep <code>setState</code> + <code>StreamBuilder</code>: recommended twice, adopted zero times, and the app works. Introduce Riverpod only where state genuinely crosses screens. <em>The most reversible-but-expensive call in the plan — see <a href="../01-product/decisions.html">decisions</a>.</em></li>
+      <li><strong>Dependency injection</strong> — <code>AuthService</code> already accepts optional <code>FirebaseAuth</code>/<code>FirebaseFirestore</code>; that constructor seam is the only injection we need, and it is currently unexercised. Delete <span class="fname">di_providers.dart</span>.</li>
+      <li><strong>Repository base classes</strong> — services are top-level free functions calling Firebase directly. Trigger: an actual backend migration, or a second non-Flutter client (same trigger as D1). Until then a repository interface buys one developer nothing. <strong>Cost of the debt, stated plainly:</strong> any move off Firebase touches all 15 service files and most of the UI.</li>
+      <li><strong>Feature-based clean architecture</strong> — the source called it "Excellent separation by feature" and "DON'T START OVER". The folder tree exists everywhere but only <span class="fname">presentation/view/</span> ever has content. Keep the feature folders; delete the empty <span class="fname">data/</span>, <span class="fname">domain/</span> and <span class="fname">viewmodel/</span> folders under <span class="fname">feed/</span>. One convention honestly applied beats two where one is fictional.</li>
+      <li><strong>Move services</strong> — zero functional benefit, touches every import in the app. The question is closed.</li>
+      <li><strong>Firestore converters</strong> — start with <code>Event</code>, because <code>Event</code> carries the live crash path. See <a href="data-model.html#headline">data-model</a>.</li>
+      <li><strong>Error boundaries</strong> — the source logged it as a "structural improvement, not done". One <code>AppException</code> plus a rule that no <code>catch</code> block may be empty.</li>
+      <li><strong>Frontend + API gateway</strong> — trigger: a second client that isn't Flutter, or Firestore read cost past $25/mo. Not a rewrite anyone should start from this codebase's current test coverage.</li>
+      <li><strong>Multi-platform targets</strong> — the proposal promised "deploy to mobile, desktop and web without extra code". <span class="fname">firebase_options.dart</span> configures web/macOS/Windows; Linux throws <code>UnsupportedError</code>. <span class="tag tag-deferred">DEFERRED</span> trigger: a gym admin asks to moderate from a desktop browser.</li>
+    </ul>
 
     <div class="callout">
       <strong>The pattern to notice:</strong> every abandoned recommendation left behind an empty file rather than a decision. That is why <span class="fname">core/</span> is a directory tree of blanks. The fix is not to fill them all — it is to <em>delete the ones we have decided against</em> so the tree stops implying an architecture nobody is building.
@@ -363,90 +398,105 @@ graph TD
           <tr>
             <td><strong><span class="fname">/users</span> is <code>allow read: if true</code></strong> — the whole user collection is world-readable, unauthenticated</td>
             <td><span class="pill pill-bad">Critical</span></td>
-            <td>An inline rule comment justifies it: "needed for friend lists, gym lists". But the app only ever reads user docs while signed in — the rule is wider than any code path requires. No App Check, and the Firebase config is committed, so the project id is discoverable.</td>
-            <td>Require <code>request.auth != null</code> immediately. Then split the doc: public profile fields vs private <code>email</code>/<code>contactInfo</code>. App Check hardens this further but is <em>not</em> a prerequisite and lands later, in <a href="../04-plan/milestones.html#m3">M3</a> — do not wait for it.</td>
+            <td>Wider than any code path requires</td>
+            <td>Require <code>request.auth != null</code>, then split the doc</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
             <td><strong><span class="fname">channelPosts</span> <code>allow update</code> is unconstrained</strong> — any joined member can rewrite any field of any post</td>
             <td><span class="pill pill-bad">High</span></td>
-            <td>The rule was written to permit likes, but nothing narrows <code>affectedKeys()</code>. A member can overwrite another member's <code>content</code> — or their <code>authorUid</code>.</td>
-            <td>Constrain the member path to <code>hasOnly(['likeIds'])</code>. Give content edits to <code>resource.data.authorUid</code> only. Fix <code>isCurrentUserGymOwner</code> in the same change so authors can delete their own posts.</td>
+            <td>Written to permit likes; nothing narrows <code>affectedKeys()</code></td>
+            <td>Constrain the member path to <code>hasOnly(['likeIds'])</code></td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
             <td><strong>Event <code>startAt</code>/<code>endAt</code>: nullable on write, non-null cast on read</strong> — a live crash path</td>
             <td><span class="pill pill-bad">High</span></td>
-            <td><code>createEvent</code> writes the fields as nullable; <code>events_service._mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. <code>strict-casts</code> is off, so it compiles clean. Any event saved without a start time crashes the calendar for its owner and everyone it is shared with.</td>
-            <td>Regression test first, then a typed <code>Event</code> model with a required <code>startAt</code> at the write boundary and a null-safe read. Add rule-level shape validation so bad docs can't be written at all.</td>
+            <td>Written nullable, read with an unchecked cast</td>
+            <td>Regression test first, then a typed <code>Event</code> model</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
             <td><strong>No field validation in any security rule</strong>; client-supplied timestamps</td>
             <td><span class="pill pill-bad">High</span></td>
-            <td>Not one rule checks a type, a length, or a required key. A client can write <code>accountType: 'gym'</code> onto its own user doc and instantly gain channel creation and DM-anyone privileges. <code>sentAt</code>/<code>createdAt</code> are <code>Timestamp.now()</code> from the device, so ordering is spoofable.</td>
-            <td>Shape validation on <code>users</code>, <code>events</code>, <code>channelPosts</code>, and <code>messages</code>. Make <code>accountType</code> immutable after create. Validate <code>createdAt == request.time</code>.</td>
+            <td>No rule checks a type, a length, or a required key</td>
+            <td>Shape validation on the four write-heavy collections</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
             <td><strong>Storage has no size or MIME cap; CORS is <code>origin: ["*"]</code></strong></td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><span class="fname">storage.rules</span> allows any owner write of any size. <span class="fname">storage-cors.json</span> exposes <code>Authorization</code> to every origin.</td>
-            <td>Add <code>request.resource.size &lt; 5 * 1024 * 1024</code> and a <code>contentType.matches('image/.*')</code> check. Narrow CORS to the app origins that actually need it.</td>
+            <td><span class="fname">storage.rules</span> allows any owner write of any size</td>
+            <td>Add a 5&nbsp;MB size cap and an <code>image/.*</code> MIME check</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
           <tr>
             <td><strong>Calendar opens <code>2&times;(friends + gyms) + 1</code> live listeners</strong></td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><code>events_service._mergeEventStreams</code> is a hand-rolled merger that fans out two snapshot listeners per friend and two per joined gym, deduping and sorting in Dart. <code>getNextWorkoutEventForUser</code> builds the entire 60-day range stream just to take <code>.first</code>.</td>
-            <td>Replace the fan-out with one collection-group query over <code>events</code> windowed by date. If that can't satisfy the visibility rules, cap concurrent listeners and page the rest.</td>
+            <td>A hand-rolled merger fans out two listeners per friend and gym</td>
+            <td>One collection-group query over <code>events</code>, windowed by date</td>
             <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>threshold:</em> a user with &gt;15 friends+gyms, or Firestore reads past 50k/day</td>
           </tr>
           <tr>
             <td><strong>N+1 sequential fetches throughout</strong></td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><code>friends_service.getFriendIdsWithNames</code>, <code>gyms_service</code> member profiles, and <span class="fname">profile_page</span>'s friends/gyms lists all loop <code>.get()</code> one doc at a time. <code>getIncomingFriendRequestsStream</code> runs an <code>asyncMap</code> with one <code>.get()</code> per thread <em>on every snapshot</em>. <span class="fname">social_page</span> still queries every joined gym for a tab that was deleted.</td>
-            <td>Batch with <code>whereIn</code> chunks. Lean on the names already denormalised onto the docs instead of re-fetching. Delete the dead <code>_loadMessagesList</code> call outright — that one is free.</td>
+            <td>Four call sites loop <code>.get()</code> one document at a time</td>
+            <td>Batch with <code>whereIn</code> chunks; use the denormalised names</td>
             <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>except</em> the dead query, which goes in <a href="../04-plan/milestones.html#m2">M2</a></td>
           </tr>
           <tr>
             <td><strong>Search is <code>limit(100)</code> + in-memory <code>contains()</code></strong> — silently breaks past 100 users</td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><code>search_service</code> reads the first 100 user docs Firestore happens to return and filters in Dart. No query, no index, no ordering, no pagination. Users beyond that window are unfindable, with no error. <code>displayNameLower</code> is written at signup precisely for this and never queried.</td>
-            <td>Prefix range query on <code>displayNameLower</code> (<code>&gt;= q</code>, <code>&lt; q + ''</code>) with a real limit and pagination. The field already exists — this is a small change, and it is invisible until the day it isn't.</td>
+            <td>Reads 100 arbitrary user docs and filters them in Dart</td>
+            <td>Prefix range query on <code>displayNameLower</code>, with pagination</td>
             <td><a href="../04-plan/milestones.html#m3">M3</a> — before the beta cohort can exceed 100 accounts</td>
           </tr>
           <tr>
             <td><strong>No abstraction over Firestore anywhere</strong> — no seam for tests or backend swap</td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td>14 of 15 services are top-level free functions calling <code>FirebaseAuth.instance.currentUser</code> and <code>FirestoreRefs</code> directly. There is nothing to substitute in a test.</td>
-            <td>Not a rewrite. As each service is next touched, give its Firestore handle a default parameter so a test can pass a fake. Incremental, one file at a time.</td>
+            <td>14 of 15 services call the Firebase statics directly</td>
+            <td>Give each Firestore handle a default parameter, one file at a time</td>
             <td><a href="../04-plan/milestones.html#m2">M2</a> onward, opportunistically</td>
           </tr>
           <tr>
             <td><strong>Two competing repetition mechanisms</strong> — events expand recurrence client-side, Plans materialise real docs</td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><code>events_service._expandDocToEventsForRange</code> renders N occurrences from one stored doc. <code>plans_service</code> writes N actual event documents, capped at 250 on create and 180 on update. Nothing reconciles them; an event can be both recurring and plan-generated.</td>
-            <td>Pick one. <span class="tag tag-deferred">DEFERRED</span> — trigger: the first bug report where a recurring event and a plan instance both appear on the same day.</td>
+            <td>Nothing reconciles the two; an event can be both</td>
+            <td>Pick one <span class="tag tag-deferred">DEFERRED</span></td>
             <td><a href="../04-plan/milestones.html#m6">M6</a></td>
           </tr>
           <tr>
             <td><strong>DM rules make 3&ndash;4 <code>get()</code> calls per message write</strong></td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td><code>dmAllowedBetween()</code> reads the thread, both user docs, and sometimes a membership array. Each is a billed read and counts against Firestore's 10-<code>get()</code>-per-evaluation ceiling. It is close to the limit already.</td>
-            <td>Denormalise the permission answer onto the thread doc at creation time, so the rule reads one document instead of four.</td>
+            <td><code>dmAllowedBetween()</code> reads up to four documents</td>
+            <td>Denormalise the permission answer onto the thread doc</td>
             <td><a href="../04-plan/milestones.html#m6">M6</a> — <em>threshold:</em> the first <code>resource-exhausted</code> rule error</td>
           </tr>
           <tr>
             <td><strong>Message read is allowed when the thread doc does not exist</strong></td>
             <td><span class="pill pill-warn">Medium</span></td>
-            <td>A race-condition escape hatch at <span class="fname">firestore.rules</span> line 161. Threads are <code>delete: if false</code>, which narrows the window, but the clause is a hole by construction.</td>
-            <td>Remove the <code>!exists(...)</code> branch. If thread creation genuinely races message creation, fix it with a batched write instead of a rule exemption.</td>
+            <td>Race-condition escape hatch, <span class="fname">firestore.rules</span> line 161</td>
+            <td>Remove the <code>!exists(...)</code> branch</td>
             <td><a href="../04-plan/milestones.html#m1">M1</a></td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong><span class="fname">/users</span> read rule</strong> — an inline rule comment justifies it: "needed for friend lists, gym lists". But the app only ever reads user docs while signed in. There is no App Check, and the Firebase config is committed, so the project id is discoverable. Split the doc into public profile fields vs private <code>email</code>/<code>contactInfo</code>. App Check hardens this further but is <em>not</em> a prerequisite and lands later, in <a href="../04-plan/milestones.html#m3">M3</a> — do not wait for it.</li>
+      <li><strong><span class="fname">channelPosts</span> update</strong> — a member can overwrite another member's <code>content</code>, or their <code>authorUid</code>. Give content edits to <code>resource.data.authorUid</code> only, and fix <code>isCurrentUserGymOwner</code> in the same change so authors can delete their own posts.</li>
+      <li><strong>Event <code>startAt</code>/<code>endAt</code></strong> — <code>createEvent</code> writes the fields as nullable; <code>events_service._mapDocToEvent</code> does <code>(d['startAt'] as Timestamp)</code>. <code>strict-casts</code> is off, so it compiles clean. Any event saved without a start time crashes the calendar for its owner and everyone it is shared with. The typed model needs a required <code>startAt</code> at the write boundary and a null-safe read, plus rule-level shape validation so bad docs can't be written at all.</li>
+      <li><strong>No field validation in rules</strong> — a client can write <code>accountType: 'gym'</code> onto its own user doc and instantly gain channel creation and DM-anyone privileges. <code>sentAt</code>/<code>createdAt</code> are <code>Timestamp.now()</code> from the device, so ordering is spoofable. Validate <code>users</code>, <code>events</code>, <code>channelPosts</code> and <code>messages</code>; make <code>accountType</code> immutable after create; validate <code>createdAt == request.time</code>.</li>
+      <li><strong>Storage caps and CORS</strong> — <span class="fname">storage-cors.json</span> exposes <code>Authorization</code> to every origin. Add <code>request.resource.size &lt; 5 * 1024 * 1024</code> and a <code>contentType.matches('image/.*')</code> check, and narrow CORS to the app origins that actually need it.</li>
+      <li><strong>Calendar listeners</strong> — <code>events_service._mergeEventStreams</code> is a hand-rolled merger that fans out two snapshot listeners per friend and two per joined gym, deduping and sorting in Dart. <code>getNextWorkoutEventForUser</code> builds the entire 60-day range stream just to take <code>.first</code>. If one collection-group query can't satisfy the visibility rules, cap concurrent listeners and page the rest.</li>
+      <li><strong>N+1 sequential fetches</strong> — <code>friends_service.getFriendIdsWithNames</code>, <code>gyms_service</code> member profiles, and <span class="fname">profile_page</span>'s friends/gyms lists all loop <code>.get()</code> one doc at a time. <code>getIncomingFriendRequestsStream</code> runs an <code>asyncMap</code> with one <code>.get()</code> per thread <em>on every snapshot</em>. <span class="fname">social_page</span> still queries every joined gym for a tab that was deleted — delete the dead <code>_loadMessagesList</code> call outright, that one is free.</li>
+      <li><strong>Search</strong> — <code>search_service</code> reads the first 100 user docs Firestore happens to return and filters in Dart: no query, no index, no ordering, no pagination. Users beyond that window are unfindable, with no error. <code>displayNameLower</code> is written at signup precisely for this and never queried, so the prefix range query (<code>&gt;= q</code>, <code>&lt; q + ''</code>) is a small change — and it is invisible until the day it isn't.</li>
+      <li><strong>No abstraction over Firestore</strong> — 14 of 15 services are top-level free functions calling <code>FirebaseAuth.instance.currentUser</code> and <code>FirestoreRefs</code> directly, so there is nothing to substitute in a test. Not a rewrite: as each service is next touched, give its Firestore handle a default parameter so a test can pass a fake.</li>
+      <li><strong>Two repetition mechanisms</strong> — <code>events_service._expandDocToEventsForRange</code> renders N occurrences from one stored doc; <code>plans_service</code> writes N actual event documents, capped at 250 on create and 180 on update. Trigger: the first bug report where a recurring event and a plan instance both appear on the same day.</li>
+      <li><strong>DM rule <code>get()</code> cost</strong> — <code>dmAllowedBetween()</code> reads the thread, both user docs, and sometimes a membership array. Each is a billed read and counts against Firestore's 10-<code>get()</code>-per-evaluation ceiling; it is close to the limit already. Denormalising at thread-creation time makes the rule read one document instead of four.</li>
+      <li><strong>Message read without a thread doc</strong> — threads are <code>delete: if false</code>, which narrows the window, but the clause is a hole by construction. If thread creation genuinely races message creation, fix it with a batched write instead of a rule exemption.</li>
+    </ul>
   </section>
 
   <section id="not-building">
@@ -459,27 +509,34 @@ graph TD
         <tbody>
           <tr>
             <td><strong>A backend service of our own</strong></td>
-            <td>The Flutter client talks to Firebase directly and will keep doing so; there is no server to write, deploy, or page someone about.</td>
-            <td>A second client that isn't Flutter, or Firestore read cost past $25/mo (D1). Cloud Functions specifically also requires the Blaze plan, i.e. a card on file.</td>
+            <td>The client talks to Firebase directly and will keep doing so</td>
+            <td>A non-Flutter client, or Firestore reads past $25/mo (D1)</td>
           </tr>
           <tr>
             <td><strong>Microservices</strong></td>
-            <td>There is no service to split. One app, one Firebase project.</td>
-            <td>Never, at this size. If the backend above ever gets built, it starts as one process.</td>
+            <td>There is no service to split — one app, one Firebase project</td>
+            <td>Never, at this size</td>
           </tr>
           <tr>
             <td><strong>A caching layer</strong></td>
-            <td>Firestore's SDK already caches locally; the three hand-rolled avatar caches in <span class="fname">profile_avatar_service</span> are the maximum caching this app gets.</td>
-            <td>A measured read-cost problem that batching and query fixes did not solve. Measure first — the N+1 loops are the actual cost, not the absence of a cache.</td>
+            <td>Firestore's SDK already caches locally</td>
+            <td>A measured read-cost problem that query fixes did not solve</td>
           </tr>
           <tr>
             <td><strong>An offline-first sync engine</strong></td>
-            <td>Firestore's default offline persistence is on and that is the whole strategy. We are not writing conflict resolution, an outbox, or a mutation queue.</td>
-            <td>Beta feedback showing users actually lose work in the gym's dead zones. Until then the gap is a <em>UI</em> gap — deliberate offline/empty/error states — not a sync-engine gap.</td>
+            <td>Firestore's default offline persistence is the whole strategy</td>
+            <td>Beta feedback showing users lose work in dead zones</td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>A backend service of our own</strong> — there is no server to write, deploy, or page someone about. Cloud Functions specifically also requires the Blaze plan, i.e. a card on file.</li>
+      <li><strong>Microservices</strong> — if the backend above ever gets built, it starts as one process.</li>
+      <li><strong>A caching layer</strong> — the three hand-rolled avatar caches in <span class="fname">profile_avatar_service</span> are the maximum caching this app gets. Measure first: the N+1 loops are the actual cost, not the absence of a cache.</li>
+      <li><strong>An offline-first sync engine</strong> — we are not writing conflict resolution, an outbox, or a mutation queue. Until the trigger fires the gap is a <em>UI</em> gap — deliberate offline/empty/error states — not a sync-engine gap.</li>
+    </ul>
   </section>
 
   <section id="next">

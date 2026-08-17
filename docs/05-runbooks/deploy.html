@@ -245,17 +245,27 @@
       <table>
         <thead><tr><th>Rejection</th><th>What it actually means</th><th>What to do</th></tr></thead>
         <tbody>
-          <tr><td>App Store <strong>Guideline 5.1.1(v)</strong> &mdash; account deletion</td><td>Any app with account creation must let a user delete their account from inside the app. Forge's rules currently deny user-doc delete outright.</td><td>Not appealable. It's an <a href="../04-plan/milestones.html#m4">M4</a> issue &mdash; build the deletion flow.</td></tr>
-          <tr><td>App Store <strong>Guideline 1.2</strong> &mdash; UGC safety</td><td>User-generated content needs a report mechanism, a block mechanism, and a way to remove content. <span class="fname">moderation_service.dart</span> is a 0-byte file.</td><td>Not appealable. <a href="../04-plan/milestones.html#m4">M4</a>.</td></tr>
-          <tr><td>Missing privacy policy URL</td><td>Both stores require one before the listing can be published.</td><td><a href="../04-plan/milestones.html#m4">M4</a>. Host it on the Cloudflare Pages site you already have.</td></tr>
-          <tr><td>Invalid bundle ID / package name</td><td><span class="fname">com.example.*</span> is reserved scaffold namespace.</td><td><a href="../04-plan/milestones.html#m3">M3</a>. Changing it means re-registering the Firebase apps &mdash; do it once, deliberately.</td></tr>
-          <tr><td>"You uploaded a debuggable APK or Android App Bundle"</td><td>Release build used the debug signing config.</td><td><a href="../04-plan/milestones.html#m3">M3</a>. Real keystore.</td></tr>
-          <tr><td>Missing purpose strings / privacy manifest</td><td>iOS needs usage descriptions for camera and photo library. Forge already has both, correctly &mdash; the one platform thing done right.</td><td>If it still trips, check the privacy manifest requirements for the Firebase SDKs in the current Xcode version.</td></tr>
-          <tr><td>Metadata rejection (screenshots, description, age rating)</td><td>The listing, not the binary.</td><td>Fix in App Store Connect / Play Console and resubmit. No new build needed. Answer the age-rating questionnaire honestly &mdash; social features and UGC raise the rating.</td></tr>
-          <tr><td>Anything else</td><td>&mdash;</td><td>Read the actual reviewer note, fix exactly what it says, resubmit. Do not bundle unrelated changes into a resubmission &mdash; it makes the next rejection harder to diagnose.</td></tr>
+          <tr><td>App Store <strong>Guideline 5.1.1(v)</strong> &mdash; account deletion</td><td>No in-app account deletion</td><td>Not appealable &mdash; <a href="../04-plan/milestones.html#m4">M4</a></td></tr>
+          <tr><td>App Store <strong>Guideline 1.2</strong> &mdash; UGC safety</td><td>No report, block or content removal</td><td>Not appealable &mdash; <a href="../04-plan/milestones.html#m4">M4</a></td></tr>
+          <tr><td>Missing privacy policy URL</td><td>Required before a listing can publish</td><td><a href="../04-plan/milestones.html#m4">M4</a> &mdash; host it on Cloudflare Pages</td></tr>
+          <tr><td>Invalid bundle ID / package name</td><td><span class="fname">com.example.*</span> is reserved scaffold namespace</td><td><a href="../04-plan/milestones.html#m3">M3</a> &mdash; then re-register the Firebase apps</td></tr>
+          <tr><td>"You uploaded a debuggable APK or Android App Bundle"</td><td>Release build used the debug signing config</td><td><a href="../04-plan/milestones.html#m3">M3</a> &mdash; real keystore</td></tr>
+          <tr><td>Missing purpose strings / privacy manifest</td><td>iOS usage descriptions &mdash; Forge already has both</td><td>Check the Firebase SDK privacy manifests</td></tr>
+          <tr><td>Metadata rejection (screenshots, description, age rating)</td><td>The listing, not the binary</td><td>Fix in the console and resubmit &mdash; no new build</td></tr>
+          <tr><td>Anything else</td><td>&mdash;</td><td>Do exactly what the reviewer note says</td></tr>
         </tbody>
       </table>
     </div>
+
+    <ul>
+      <li><strong>Guideline 5.1.1(v)</strong> &mdash; any app with account creation must let a user delete their account from inside the app. Forge's rules currently deny user-doc delete outright. Build the deletion flow in <a href="../04-plan/milestones.html#m4">M4</a>.</li>
+      <li><strong>Guideline 1.2</strong> &mdash; user-generated content needs a report mechanism, a block mechanism, and a way to remove content. <span class="fname">moderation_service.dart</span> is a 0-byte file.</li>
+      <li><strong>Privacy policy URL</strong> &mdash; both stores require one before the listing can be published. Host it on the Cloudflare Pages site you already have.</li>
+      <li><strong>Bundle ID / package name</strong> &mdash; changing it means re-registering the Firebase apps. Do it once, deliberately.</li>
+      <li><strong>Purpose strings</strong> &mdash; iOS needs usage descriptions for camera and photo library. Forge already has both, correctly &mdash; the one platform thing done right. If it still trips, check the privacy manifest requirements for the Firebase SDKs in the current Xcode version.</li>
+      <li><strong>Metadata</strong> &mdash; fix in App Store Connect / Play Console and resubmit; no new build needed. Answer the age-rating questionnaire honestly &mdash; social features and UGC raise the rating.</li>
+      <li><strong>Anything else</strong> &mdash; read the actual reviewer note, fix exactly what it says, resubmit. Do not bundle unrelated changes into a resubmission &mdash; it makes the next rejection harder to diagnose.</li>
+    </ul>
   </section>
 
   <section id="ci">

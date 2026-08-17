@@ -39,33 +39,20 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>Linear holds the project, milestones, documents, and issues for Forge in the <strong>ForgeAlt</strong> team — so that "what am I doing next" has exactly one answer that isn't a markdown file going stale. That last part is not hypothetical: this repo already contains four status documents that all describe a version of the app that stopped existing months ago.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td>GitHub Issues <span class="faint small">(free, already in the repo)</span></td><td>Genuinely the frugal answer, and it loses only because <a href="../01-product/decisions.html">D10</a> is <span class="tag tag-locked">LOCKED</span> — Linear is where his work already lives, and splitting a solo developer's attention across two trackers is how both go stale.</td></tr>
-          <tr><td>Jira</td><td>Ceremony built for teams of thirty, aimed at a team of one.</td></tr>
-          <tr><td>Notion / a markdown TODO file</td><td>This project has already run the experiment. Four stale status files is the result.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>GitHub Issues</strong> <span class="faint small">(free, already in the repo)</span> — genuinely the frugal answer, and it loses only because <a href="../01-product/decisions.html">D10</a> is <span class="tag tag-locked">LOCKED</span>: Linear is where his work already lives, and splitting a solo developer's attention across two trackers is how both go stale.</li>
+      <li><strong>Jira</strong> — ceremony built for teams of thirty, aimed at a team of one.</li>
+      <li><strong>Notion / a markdown TODO file</strong> — this project has already run the experiment; four stale status files is the result.</li>
+    </ul>
     <p><strong>Why Linear wins:</strong> it is already the place he works, it is free at this size, and keyboard-first triage suits someone who will abandon a tracker that costs friction.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Tier</th><th>When</th><th>Why</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><span class="tier tier-t0">T0 Now</span></td>
-            <td>Already adopted — workspace and ForgeAlt team exist</td>
-            <td>D10 <span class="tag tag-locked">LOCKED</span>. The plan in <a href="../04-plan/milestones.html">04-plan</a> is only useful if its items live somewhere he actually looks.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Tier:</strong> <span class="tier tier-t0">T0 Now</span></p>
+    <p><strong>Trigger:</strong> already adopted — workspace and ForgeAlt team exist.</p>
+    <p><strong>Why:</strong> D10 <span class="tag tag-locked">LOCKED</span>. The plan in <a href="../04-plan/milestones.html">04-plan</a> is only useful if its items live somewhere he actually looks.</p>
     <div class="callout"><strong>When NOT to add more Linear:</strong> no Cycles, no estimates, no velocity, no triage rotation, no automations, no roadmap views. All of that is instrumentation for coordinating people, and there is one person. Projects + milestones + issues + three statuses is the entire T0 surface. Adding sprint ceremony to a solo project is the fastest way to make the tracker feel like homework and get abandoned.</div>
   </section>
 
@@ -75,15 +62,22 @@
       <table>
         <thead><tr><th>Limit</th><th>Free plan</th><th>What happens at the edge</th></tr></thead>
         <tbody>
-          <tr><td><strong>Issues</strong></td><td><strong>250</strong></td><td><span class="pill pill-bad">Hard stop on creation.</span> Linear's wording: "If you have over 250 issues, you will no longer be able to create new issues." Existing issues keep working. <strong>This is the binding constraint and it arrives suddenly.</strong></td></tr>
-          <tr><td>Members</td><td><strong>Unlimited</strong></td><td>No cap, no seat cost. <span class="faint small">(This corrects a common belief that Free is capped at 10 members — it is not.)</span></td></tr>
-          <tr><td>Teams</td><td><strong>2</strong></td><td>ForgeAlt is one. One spare.</td></tr>
-          <tr><td>File upload size</td><td>10 MB</td><td>Larger attachments rejected. Fine for screenshots; not fine for a video repro.</td></tr>
-          <tr><td>History / archive retention</td><td><span class="faint small">Not listed on Linear's pricing page — <strong>unverified</strong>, check at <a href="https://linear.app/pricing">linear.app/pricing</a> before relying on long-term history.</span></td><td>—</td></tr>
-          <tr><td><strong>First paid tier</strong></td><td><strong>Basic — $10 / user / month, billed yearly</strong>. Unlimited issues, unlimited file uploads, 5 teams.</td><td>Monthly-billing price is not published on Linear's own page — <strong>unverified</strong>; third-party sources say $12, do not quote it.</td></tr>
+          <tr><td><strong>Issues</strong></td><td><strong>250</strong></td><td><span class="pill pill-bad">Hard stop on creation</span></td></tr>
+          <tr><td>Members</td><td><strong>Unlimited</strong></td><td>No cap, no seat cost</td></tr>
+          <tr><td>Teams</td><td><strong>2</strong></td><td>ForgeAlt is one; one spare</td></tr>
+          <tr><td>File upload size</td><td>10 MB</td><td>Larger attachments rejected</td></tr>
+          <tr><td>History / archive retention</td><td><span class="faint small"><strong>Unverified</strong></span></td><td>—</td></tr>
+          <tr><td><strong>First paid tier</strong></td><td><strong>Basic — $10 / user / month, billed yearly</strong></td><td>Monthly price <strong>unverified</strong></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Issues</strong> — Linear's wording: "If you have over 250 issues, you will no longer be able to create new issues." Existing issues keep working. <strong>This is the binding constraint and it arrives suddenly.</strong></li>
+      <li><strong>Members</strong> — this corrects a common belief that Free is capped at 10 members; it is not.</li>
+      <li><strong>File upload size</strong> — fine for screenshots, not fine for a video repro.</li>
+      <li><strong>History / archive retention</strong> — not listed on Linear's pricing page. Check at <a href="https://linear.app/pricing">linear.app/pricing</a> before relying on long-term history.</li>
+      <li><strong>First paid tier</strong> — Basic buys unlimited issues, unlimited file uploads, and 5 teams. The monthly-billing price is not published on Linear's own page; third-party sources say $12, do not quote it.</li>
+    </ul>
     <div class="callout warn"><strong>No surprise-bill risk — but a surprise <em>wall</em>.</strong> Linear Free cannot charge you. What it can do is refuse a new issue at the exact moment you are trying to write down a bug you just found. The intake report alone lists ~20 ship blockers, ~14 named stubs, and 21 empty files; a fully decomposed plan for this app plausibly runs 150–250 issues. <strong>Budget the 250, don't discover it.</strong></div>
     <p><strong>How to stay under 250 without paying:</strong> write issues at milestone granularity, not at line-of-code granularity — "Fix the four hollow calendar surfaces" is one issue with a checklist, not four. Archive aggressively; <em>verify whether archived issues still count toward the 250</em>, because Linear's pricing page doesn't say and that single fact decides whether archiving is a real escape valve. If the answer is no, $10/user/month billed yearly is the cheapest unblock in this entire plan.</p>
   </section>
@@ -125,17 +119,12 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-good">Lock-in: LOW</span></p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td>Issue titles, descriptions, comments, milestones, and project documents. That is real — it is the thinking behind the plan — but it is <em>text about</em> the app, never the app itself and never user data.</td></tr>
-          <tr><td>How do I export?</td><td>Workspace settings → Import / Export → CSV export of all issues. The GraphQL API (<code>api.linear.app/graphql</code>) gets everything including comments and documents if CSV is too lossy.</td></tr>
-          <tr><td>What does migrating cost?</td><td><strong>An hour.</strong> Export CSV, import to GitHub Issues or Jira, accept that comment threading and issue IDs get mangled. Nothing breaks; no code references Linear.</td></tr>
-          <tr><td>The real risk</td><td>Not lock-in — <strong>abandonment</strong>. The failure mode for a solo tracker is that it quietly stops being updated and becomes the fifth stale status document in this project. That is why the setup above is deliberately minimal.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — issue titles, descriptions, comments, milestones, and project documents. That is real; it is the thinking behind the plan. But it is <em>text about</em> the app, never the app itself and never user data.</li>
+      <li><strong>How to export</strong> — Workspace settings → Import / Export → CSV export of all issues. The GraphQL API (<code>api.linear.app/graphql</code>) gets everything including comments and documents if CSV is too lossy.</li>
+      <li><strong>What migrating costs</strong> — <strong>an hour.</strong> Export CSV, import to GitHub Issues or Jira, accept that comment threading and issue IDs get mangled. Nothing breaks; no code references Linear.</li>
+      <li><strong>The real risk</strong> — not lock-in but <strong>abandonment</strong>. The failure mode for a solo tracker is that it quietly stops being updated and becomes the fifth stale status document in this project. That is why the setup above is deliberately minimal.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -145,12 +134,16 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong> <span class="faint small">(today; ~50–100 issues as the plan lands)</span></td><td><strong>$0</strong></td><td>Nothing. Comfortably inside 250 issues and 2 teams.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta, M5)</span></td><td><strong>$0</strong> — or <strong>$10/mo</strong> if the cap hits</td><td><strong>This is where the 250-issue wall most likely lands.</strong> Beta feedback is a bug-report firehose, and every crash report someone sends becomes an issue. Nothing degrades — issue creation simply refuses. Mitigate by triaging beta reports into a handful of parent issues instead of one issue per report.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$10/mo</strong>, realistically</td><td>Issue volume at this scale makes Basic the sane choice regardless of the cap; at that point unlimited issues and 5 teams cost roughly a third of what <a href="firebase.html#cost-scale">Firestore</a> costs at the same user count. Note Linear bills <em>per user</em>, so this is $10/mo solo and $20/mo with a teammate.</td></tr>
+          <tr><td><strong>~10 users</strong> <span class="faint small">(today; ~50–100 issues)</span></td><td><strong>$0</strong></td><td>Nothing — inside 250 issues and 2 teams</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the Rec Center beta, M5)</span></td><td><strong>$0</strong> — or <strong>$10/mo</strong> if the cap hits</td><td><strong>The 250-issue wall most likely lands here</strong></td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$10/mo</strong>, realistically</td><td>Issue volume makes Basic the sane choice</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~100 users</strong> — beta feedback is a bug-report firehose, and every crash report someone sends becomes an issue. Nothing degrades; issue creation simply refuses. Mitigate by triaging beta reports into a handful of parent issues instead of one issue per report.</li>
+      <li><strong>~1,000 users</strong> — Basic is the sane choice regardless of the cap; at that point unlimited issues and 5 teams cost roughly a third of what <a href="firebase.html#cost-scale">Firestore</a> costs at the same user count. Note Linear bills <em>per user</em>, so this is $10/mo solo and $20/mo with a teammate.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -159,14 +152,21 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Does the free tier allow another member?</td><td><strong>Yes — Free allows unlimited members.</strong> Seats are not the constraint; the 250 issues are.</td></tr>
-          <tr><td>Extra seat cost</td><td><strong>$0 on Free.</strong> On Basic it is $10 per person per month billed yearly, so a second person doubles the bill the moment you upgrade.</td></tr>
-          <tr><td>Permission model</td><td>Workspace-level roles (Admin / Member / Guest) plus team membership. A Guest sees only the teams you add them to — the right setting for a designer or a Rec Center contact who should see the beta board and nothing else.</td></tr>
-          <tr><td>What actually changes</td><td>Two habits become mandatory: <strong>assignees</strong> (a solo board doesn't need them; a two-person board is chaos without them) and <strong>issue descriptions written for someone else</strong> — "fix the calendar thing" is fine when you are the only reader and useless the moment you aren't.</td></tr>
-          <tr><td>Counter-pressure</td><td>A second person roughly doubles issue creation rate, which pulls the 250-issue wall closer. Adding a teammate and staying on Free is possible but unlikely to last a month.</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td><strong>Yes — Free allows unlimited members</strong></td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0 on Free</strong>; $10/person/month on Basic</td></tr>
+          <tr><td>Permission model</td><td>Workspace-level roles plus team membership</td></tr>
+          <tr><td>What actually changes</td><td>Assignees and readable descriptions become mandatory</td></tr>
+          <tr><td>Counter-pressure</td><td>A second person pulls the 250-issue wall closer</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Does the free tier allow another member</strong> — seats are not the constraint; the 250 issues are.</li>
+      <li><strong>Extra seat cost</strong> — Basic is billed yearly, so a second person doubles the bill the moment you upgrade.</li>
+      <li><strong>Permission model</strong> — the workspace-level roles are Admin / Member / Guest. A Guest sees only the teams you add them to, the right setting for a designer or a Rec Center contact who should see the beta board and nothing else.</li>
+      <li><strong>What actually changes</strong> — two habits become mandatory: <strong>assignees</strong> (a solo board doesn't need them; a two-person board is chaos without them) and <strong>issue descriptions written for someone else</strong> — "fix the calendar thing" is fine when you are the only reader and useless the moment you aren't.</li>
+      <li><strong>Counter-pressure</strong> — a second person roughly doubles issue creation rate. Adding a teammate and staying on Free is possible but unlikely to last a month.</li>
+    </ul>
   </section>
 
   <section id="next">

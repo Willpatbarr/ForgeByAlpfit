@@ -39,39 +39,22 @@
   <section id="what-why">
     <h2>1. What &amp; why</h2>
     <p>Cloudflare Pages serves static files straight from a Git branch, so pushing to <code class="fname">docs/</code> publishes the plan you're reading. Its second job is the one with a deadline attached: <strong>Apple requires a privacy policy URL for every app, and Google Play requires both a privacy policy URL and a separate publicly-reachable web page where a user can request account deletion.</strong> Forge has no privacy policy anywhere in the repo or the UI. Those pages need somewhere to live, and it is the same somewhere.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Alternative considered</th><th>One-line reason it lost</th></tr></thead>
-        <tbody>
-          <tr><td><strong>Firebase Hosting</strong> <span class="faint small">(already configured!)</span></td><td>The genuinely tempting option — <code class="fname">firebase.json</code> already has a hosting block and it has been deployed at least once. It loses to <a href="../01-product/decisions.html">D9</a>, which puts docs on Cloudflare for consistency with his other projects. Worth noting the configured block points at <code class="fname">build/web</code>, the Flutter <em>web build</em> — and <a href="../01-product/decisions.html">D3</a> cut web as a target, so <strong>Firebase Hosting is currently pointed at something nobody ships.</strong> It is not load-bearing and can be left dormant.</td></tr>
-          <tr><td>GitHub Pages</td><td>Free and about as simple; loses on D9 consistency and on custom-domain/edge flexibility.</td></tr>
-          <tr><td>Netlify / Vercel</td><td>Equivalent for a static folder, but another vendor for no gain.</td></tr>
-          <tr><td>A page inside the Flutter app</td><td>Doesn't work: the store forms require a URL reachable <em>before</em> install, by a reviewer who hasn't downloaded anything.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Alternatives considered, and why each lost:</strong></p>
+    <ul>
+      <li><strong>Firebase Hosting</strong> <span class="faint small">(already configured!)</span> — the genuinely tempting option: <code class="fname">firebase.json</code> already has a hosting block and it has been deployed at least once. It loses to <a href="../01-product/decisions.html">D9</a>, which puts docs on Cloudflare for consistency with his other projects. Worth noting the configured block points at <code class="fname">build/web</code>, the Flutter <em>web build</em>, and <a href="../01-product/decisions.html">D3</a> cut web as a target — so <strong>Firebase Hosting is currently pointed at something nobody ships.</strong> It is not load-bearing and can be left dormant.</li>
+      <li><strong>GitHub Pages</strong> — free and about as simple; loses on D9 consistency and on custom-domain/edge flexibility.</li>
+      <li><strong>Netlify / Vercel</strong> — equivalent for a static folder, but another vendor for no gain.</li>
+      <li><strong>A page inside the Flutter app</strong> — doesn't work: the store forms require a URL reachable <em>before</em> install, by a reviewer who hasn't downloaded anything.</li>
+    </ul>
     <p><strong>Why Cloudflare Pages wins:</strong> D9 <span class="tag tag-decided">DECIDED</span> for consistency, and the free tier has no bandwidth or request charges at all — which for a public privacy-policy URL means no surprise anything.</p>
   </section>
 
   <section id="adoption-trigger">
     <h2>2. Adoption trigger</h2>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Piece</th><th>Tier</th><th>Trigger</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><strong>Docs rendering</strong></td>
-            <td><span class="tier tier-t1">T1</span> <span class="faint small">(could be T0 — it costs 15 minutes)</span></td>
-            <td>Whenever he wants to read this plan on a phone instead of opening local files. No urgency, no cost, no risk.</td>
-          </tr>
-          <tr>
-            <td><strong>Privacy policy + account-deletion page</strong></td>
-            <td><span class="tier tier-t1">T1 Before first real user</span> <span class="prio prio-must faint small">MUST</span></td>
-            <td><strong>Hard-required by both stores before submission</strong> — part of <strong>M4, Beta-ready</strong>. Not paperwork: with <a href="../01-product/decisions.html">D6</a> putting real external users in the beta, these are the documents that make collecting their emails legitimate.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <p><strong>Docs rendering</strong> — <span class="tier tier-t1">T1</span> <span class="faint small">(could be T0 — it costs 15 minutes)</span></p>
+    <p><strong>Trigger:</strong> whenever he wants to read this plan on a phone instead of opening local files. No urgency, no cost, no risk.</p>
+    <p><strong>Privacy policy + account-deletion page</strong> — <span class="tier tier-t1">T1 Before first real user</span> <span class="prio prio-must faint small">MUST</span></p>
+    <p><strong>Trigger:</strong> <strong>hard-required by both stores before submission</strong> — part of <strong>M4, Beta-ready</strong>. Not paperwork: with <a href="../01-product/decisions.html">D6</a> putting real external users in the beta, these are the documents that make collecting their emails legitimate.</p>
     <div class="callout"><strong>When NOT to do more:</strong> no Cloudflare Workers, no KV, no D1, no Access rules, no Zero Trust, no analytics beyond what Pages gives free. Pages here is a file server. The moment it starts running code, it stops being the zero-maintenance choice that made it worth adopting.</div>
     <div class="callout warn"><strong>One honest sequencing note:</strong> hosting is the easy half. <strong>Writing</strong> a privacy policy that accurately describes what Forge collects — emails, display names, contact info, avatars, DMs, channel posts, crash data — is the actual work, and it has to match the Apple App Privacy questionnaire and the Play Data safety form or the mismatch is itself a rejection reason. Budget for the writing, not the deploy.</div>
   </section>
@@ -82,19 +65,25 @@
       <table>
         <thead><tr><th>Limit</th><th>Free plan</th><th>When exceeded</th></tr></thead>
         <tbody>
-          <tr><td><strong>Builds</strong></td><td><strong>500 / month</strong>, <strong>account-wide across all projects</strong> — not per project</td><td><span class="pill pill-warn">Cloudflare does not document the behaviour.</span> Community consensus is that builds are blocked until the monthly reset; there is <strong>no first-party statement</strong>. Verify at <a href="https://developers.cloudflare.com/pages/platform/limits/">developers.cloudflare.com/pages/platform/limits</a>.</td></tr>
+          <tr><td><strong>Builds</strong></td><td><strong>500 / month</strong>, <strong>account-wide</strong> — not per project</td><td><span class="pill pill-warn">Behaviour undocumented</span></td></tr>
           <tr><td>Concurrent builds</td><td>1</td><td>Queued</td></tr>
-          <tr><td>Build timeout</td><td>20 minutes</td><td>Build fails. Irrelevant — this site has no build step.</td></tr>
-          <tr><td><strong>Bandwidth / requests</strong></td><td><strong>No published limit.</strong> Cloudflare documents static-asset requests as free and unlimited, with "no additional charges for data transfer (egress) or throughput".</td><td>n/a — <strong>this is the reason there is no surprise-bill risk here at all.</strong></td></tr>
-          <tr><td>Files per site</td><td>20,000 on Free</td><td>Deploy rejected. This <code class="fname">docs/</code> tree is ~30 files.</td></tr>
+          <tr><td>Build timeout</td><td>20 minutes</td><td>Build fails — irrelevant, no build step here</td></tr>
+          <tr><td><strong>Bandwidth / requests</strong></td><td><strong>No published limit</strong> — free and unlimited</td><td>n/a — <strong>no surprise-bill risk at all</strong></td></tr>
+          <tr><td>Files per site</td><td>20,000 on Free</td><td>Deploy rejected; this tree is ~30 files</td></tr>
           <tr><td>Max asset size</td><td>25 MiB</td><td>Deploy rejected</td></tr>
           <tr><td>Custom domains</td><td>100 per project</td><td>—</td></tr>
           <tr><td>Projects</td><td>100 per account; preview deployments unlimited</td><td>—</td></tr>
-          <tr><td>Dashboard users</td><td><strong>Unlimited</strong> — "your Pages site can be managed by an unlimited number of users"</td><td>—</td></tr>
-          <tr><td>First paid tier</td><td>Pages build tiers are named <strong>Pro</strong> (5,000 builds/mo) and <strong>Business</strong> (20,000/mo), but <span class="pill pill-warn">Cloudflare's limits page states no price and doesn't say which subscription unlocks them — unverified.</span> The adjacent confirmed figure is <strong>Workers Paid at $5/month minimum</strong>.</td><td>—</td></tr>
+          <tr><td>Dashboard users</td><td><strong>Unlimited</strong></td><td>—</td></tr>
+          <tr><td>First paid tier</td><td><strong>Pro</strong> (5,000 builds/mo), <strong>Business</strong> (20,000/mo)</td><td><span class="pill pill-warn">Price unverified</span></td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Builds</strong> — the 500/month budget is account-wide across all projects, not per project. Cloudflare does not document what happens at the cap. Community consensus is that builds are blocked until the monthly reset; there is <strong>no first-party statement</strong>. Verify at <a href="https://developers.cloudflare.com/pages/platform/limits/">developers.cloudflare.com/pages/platform/limits</a>.</li>
+      <li><strong>Bandwidth / requests</strong> — Cloudflare documents static-asset requests as free and unlimited, with "no additional charges for data transfer (egress) or throughput".</li>
+      <li><strong>Dashboard users</strong> — Cloudflare's wording: "your Pages site can be managed by an unlimited number of users".</li>
+      <li><strong>First paid tier</strong> — Cloudflare's limits page states no price and doesn't say which subscription unlocks the Pro and Business build tiers. The adjacent confirmed figure is <strong>Workers Paid at $5/month minimum</strong>.</li>
+    </ul>
     <div class="callout"><strong>No surprise-bill risk.</strong> The Free plan has no card attached and no metered egress. The only ceiling that could realistically bite is <strong>500 builds/month account-wide</strong> — and note "account-wide" carefully, because if he has other projects auto-building on every push, that budget drains faster than a docs site suggests. At roughly one build per docs commit, this site alone would need ~16 commits a day to threaten it.</div>
     <div class="callout warn"><strong>Platform-direction caveat, stated once.</strong> Cloudflare has publicly confirmed that Pages and Workers are converging into a single platform, with a migration guide from Pages to Workers Static Assets. There is <strong>no deprecation notice for Pages</strong> in current docs, and Cloudflare says existing projects keep working without users lifting a finger. <span class="tag tag-proposed">PROPOSED</span> <strong>stay on Pages</strong> — it is the simpler product, D9 named it, and the migration path is documented. Revisit if Cloudflare publishes an actual deprecation date. Verify at <a href="https://blog.cloudflare.com/pages-and-workers-are-converging-into-one-experience/">the Cloudflare convergence post</a>.</div>
   </section>
@@ -126,14 +115,19 @@
       <table>
         <thead><tr><th>Item</th><th>Real secret?</th><th>Local</th><th>Production</th><th><code class="fname">.env.example</code></th></tr></thead>
         <tbody>
-          <tr><td>The <code class="fname">docs/</code> HTML and CSS</td><td><span class="pill pill-good">No</span> — but it is <strong>public the moment it deploys</strong>. See the warning below.</td><td>Committed</td><td>Served publicly</td><td>n/a</td></tr>
-          <tr><td>Build configuration</td><td><span class="pill pill-good">No</span> — Cloudflare dashboard settings, no file</td><td>—</td><td>Dashboard</td><td>n/a</td></tr>
-          <tr><td>GitHub → Cloudflare authorisation</td><td><span class="pill pill-good">No file</span> — an OAuth grant, revocable from GitHub settings</td><td>—</td><td>—</td><td>n/a</td></tr>
-          <tr><td>Cloudflare <strong>API token</strong> <span class="faint small">(only if deploying via Wrangler in CI — not needed today)</span></td><td><span class="pill pill-bad">YES</span> — server-only</td><td>Env var outside the repo</td><td>GitHub Actions secret</td><td><code>CLOUDFLARE_API_TOKEN=</code><br><code>CLOUDFLARE_ACCOUNT_ID=</code></td></tr>
+          <tr><td>The <code class="fname">docs/</code> HTML and CSS</td><td><span class="pill pill-good">No</span> — but <strong>public the moment it deploys</strong></td><td>Committed</td><td>Served publicly</td><td>n/a</td></tr>
+          <tr><td>Build configuration</td><td><span class="pill pill-good">No</span> — dashboard settings, no file</td><td>—</td><td>Dashboard</td><td>n/a</td></tr>
+          <tr><td>GitHub → Cloudflare authorisation</td><td><span class="pill pill-good">No file</span> — a revocable OAuth grant</td><td>—</td><td>—</td><td>n/a</td></tr>
+          <tr><td>Cloudflare <strong>API token</strong> <span class="faint small">(Wrangler CI only)</span></td><td><span class="pill pill-bad">YES</span> — server-only</td><td>Env var outside the repo</td><td>GitHub Actions secret</td><td><code>CLOUDFLARE_API_TOKEN=</code><br><code>CLOUDFLARE_ACCOUNT_ID=</code></td></tr>
           <tr><td>Cloudflare account password / 2FA</td><td><span class="pill pill-bad">YES</span></td><td>Password manager</td><td>n/a</td><td>n/a</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>The <code class="fname">docs/</code> HTML and CSS</strong> — see the danger callout below before deploying any of it.</li>
+      <li><strong>GitHub → Cloudflare authorisation</strong> — revocable from GitHub settings.</li>
+      <li><strong>Cloudflare API token</strong> — only needed if deploying via Wrangler in CI, which is not the case today.</li>
+    </ul>
     <p><strong>Never commit a real secret</strong> — and Cloudflare Pages introduces none in the configuration above, because Git-connected deploys need no token at all. If a Wrangler-based CI deploy is ever added, scope the API token to <em>Pages: Edit</em> on one account and nothing else.</p>
     <div class="callout danger"><strong>The real risk on this page is the opposite of a leaked key: it is publishing something you meant to keep internal.</strong> Cloudflare Pages makes the entire <code class="fname">docs/</code> tree world-readable. This documentation set currently contains a detailed, itemised description of <strong>unpatched security holes in a live Firebase project</strong> — including the exact rule that leaves <code>/users</code> world-readable. <strong>Do not deploy <code class="fname">docs/</code> publicly until <a href="firebase.html">M1</a> is closed</strong>, or exclude the security-detail pages, or put Cloudflare Access in front of the site. Publishing the map to an unlocked door is worse than leaving it in a local folder.</div>
   </section>
@@ -141,17 +135,12 @@
   <section id="escape-hatch">
     <h2>6. Escape hatch</h2>
     <p><span class="pill pill-good">Lock-in: LOW</span> — the lowest on the entire service map.</p>
-    <div class="tablewrap">
-      <table>
-        <thead><tr><th>Question</th><th>Answer</th></tr></thead>
-        <tbody>
-          <tr><td>What data lives only here?</td><td><strong>Nothing.</strong> Every byte Pages serves is a file in the Git repo. Cloudflare holds deployment history and traffic analytics, which are diagnostics.</td></tr>
-          <tr><td>How do I export?</td><td>You already have it. <code>git clone</code> is the export.</td></tr>
-          <tr><td>What does migrating cost?</td><td><strong>Ten minutes.</strong> Point GitHub Pages, Netlify, or Firebase Hosting at the same <code class="fname">docs/</code> folder. No build step to port, no config to translate. Nothing in <code class="fname">lib/</code> knows Cloudflare exists.</td></tr>
-          <tr><td>The only sticky thing</td><td><strong>The published URL</strong> — because it appears in two store listings and in a privacy policy users have agreed to. Owning a custom domain (rather than using <code class="fname">*.pages.dev</code>) makes even that portable: point the DNS elsewhere and the URL survives the move. That is a decent argument for buying the domain.</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <ul>
+      <li><strong>What data lives only here</strong> — <strong>nothing.</strong> Every byte Pages serves is a file in the Git repo. Cloudflare holds deployment history and traffic analytics, which are diagnostics.</li>
+      <li><strong>How to export</strong> — you already have it. <code>git clone</code> is the export.</li>
+      <li><strong>What migrating costs</strong> — <strong>ten minutes.</strong> Point GitHub Pages, Netlify, or Firebase Hosting at the same <code class="fname">docs/</code> folder. No build step to port, no config to translate. Nothing in <code class="fname">lib/</code> knows Cloudflare exists.</li>
+      <li><strong>The only sticky thing</strong> — <strong>the published URL</strong>, because it appears in two store listings and in a privacy policy users have agreed to. Owning a custom domain (rather than using <code class="fname">*.pages.dev</code>) makes even that portable: point the DNS elsewhere and the URL survives the move. That is a decent argument for buying the domain.</li>
+    </ul>
   </section>
 
   <section id="cost-scale">
@@ -160,12 +149,17 @@
       <table>
         <thead><tr><th>Scale</th><th>Cost</th><th>What breaks</th></tr></thead>
         <tbody>
-          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong> <span class="faint small">(+ ~$10–15/yr if a custom domain is bought)</span></td><td>Nothing. A handful of docs commits a month against 500 builds; traffic is him.</td></tr>
-          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta)</span></td><td><strong>$0</strong></td><td>Nothing. Requests and bandwidth are unmetered on Free, so even if every beta tester reads the privacy policy the cost line does not move. The pressure is <em>editorial</em>: the deletion-request page starts receiving real requests, and someone has to act on them within a reasonable time.</td></tr>
-          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong></td><td>Still nothing — this is the only service on the map that is genuinely free at every scale with no ceiling in sight, because static-asset serving has no metered egress. The 500-builds/month cap remains the sole theoretical limit and it scales with <em>his commit rate</em>, not with users. Compare <a href="firebase.html#cost-scale">Firestore at ~$25–40/mo</a> for the same user count.</td></tr>
+          <tr><td><strong>~10 users</strong></td><td><strong>$0</strong> <span class="faint small">(+ ~$10–15/yr for a custom domain)</span></td><td>Nothing — a handful of docs commits against 500 builds</td></tr>
+          <tr><td><strong>~100 users</strong> <span class="faint small">(the beta)</span></td><td><strong>$0</strong></td><td>Nothing on cost; the pressure is <em>editorial</em></td></tr>
+          <tr><td><strong>~1,000 users</strong></td><td><strong>$0</strong></td><td>Still nothing — free at every scale, no ceiling in sight</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>~10 users</strong> — traffic is him.</li>
+      <li><strong>~100 users</strong> — requests and bandwidth are unmetered on Free, so even if every beta tester reads the privacy policy the cost line does not move. The deletion-request page starts receiving real requests, and someone has to act on them within a reasonable time.</li>
+      <li><strong>~1,000 users</strong> — this is the only service on the map that is genuinely free at every scale, because static-asset serving has no metered egress. The 500-builds/month cap remains the sole theoretical limit and it scales with <em>his commit rate</em>, not with users. Compare <a href="firebase.html#cost-scale">Firestore at ~$25–40/mo</a> for the same user count.</li>
+    </ul>
   </section>
 
   <section id="teammate-delta">
@@ -174,13 +168,19 @@
       <table>
         <thead><tr><th>Question</th><th>Answer</th></tr></thead>
         <tbody>
-          <tr><td>Extra seat cost</td><td><strong>$0.</strong> Cloudflare's own docs: a Pages site "can be managed by an unlimited number of users via the Cloudflare dashboard", and dashboard membership is not per-seat billed on any tier.</td></tr>
-          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited. <span class="faint small">Do not confuse this with the widely-quoted "50 free users" figure — that is <strong>Cloudflare Zero Trust seats</strong>, a different product.</span></td></tr>
-          <tr><td>Permission model</td><td>Account members with role scoping in the dashboard. In practice a teammate usually needs <em>no</em> Cloudflare access at all — <strong>they push to GitHub and the site rebuilds.</strong> Grant dashboard access only to whoever manages the domain.</td></tr>
-          <tr><td>What actually changes</td><td>Almost nothing, which is the point. The only shared-state gotcha is the <strong>500 builds/month account-wide budget</strong>: two people pushing docs changes drains a shared pool, and if the account also hosts other projects that pool is smaller than it looks.</td></tr>
+          <tr><td>Extra seat cost</td><td><strong>$0</strong> — dashboard membership is never per-seat billed</td></tr>
+          <tr><td>Does the free tier allow another member?</td><td>Yes, unlimited</td></tr>
+          <tr><td>Permission model</td><td>Account members with role scoping in the dashboard</td></tr>
+          <tr><td>What actually changes</td><td>Almost nothing, which is the point</td></tr>
         </tbody>
       </table>
     </div>
+    <ul>
+      <li><strong>Extra seat cost</strong> — Cloudflare's own docs: a Pages site "can be managed by an unlimited number of users via the Cloudflare dashboard".</li>
+      <li><strong>Does the free tier allow another member</strong> — do not confuse this with the widely-quoted "50 free users" figure; that is <strong>Cloudflare Zero Trust seats</strong>, a different product.</li>
+      <li><strong>Permission model</strong> — in practice a teammate usually needs <em>no</em> Cloudflare access at all: <strong>they push to GitHub and the site rebuilds.</strong> Grant dashboard access only to whoever manages the domain.</li>
+      <li><strong>What actually changes</strong> — the only shared-state gotcha is the <strong>500 builds/month account-wide budget</strong>. Two people pushing docs changes drains a shared pool, and if the account also hosts other projects that pool is smaller than it looks.</li>
+    </ul>
   </section>
 
   <section id="next">
